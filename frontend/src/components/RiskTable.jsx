@@ -1,4 +1,4 @@
-import Riskometer from "./Riskometer.jsx";
+import RiskBar from "./RiskBar.jsx";
 import InfoTip from "./InfoTip.jsx";
 import "./RiskTable.css";
 
@@ -48,7 +48,7 @@ export default function RiskTable({ assets }) {
             <th className="num">ES EWMA <InfoTip text={TIPS.esEwma} /></th>
             <th className="num">Mean <InfoTip text={TIPS.mean} /></th>
             <th className="num">α <InfoTip text={TIPS.alpha} /></th>
-            <th className="center">Risk <InfoTip text={TIPS.risk} /></th>
+            <th className="left">Risk <InfoTip text={TIPS.risk} /></th>
           </tr>
         </thead>
         <tbody>
@@ -68,8 +68,8 @@ export default function RiskTable({ assets }) {
               <VarCell value={a.es_ewma} />
               <td className="num mean-cell">{a.mean_var?.toFixed(2)}</td>
               <td className="num alpha-cell">{a.tail_index?.toFixed(2)}</td>
-              <td className="center gauge-cell">
-                <Riskometer level={a.risk_level} />
+              <td className="left gauge-cell">
+                <RiskBar level={a.risk_level} />
               </td>
             </tr>
           ))}

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   ComposedChart,
   Bar,
@@ -95,6 +96,7 @@ const tickFormatter = (v) => {
 };
 
 export default function HistoricalChart({ data }) {
+  const [insightOpen, setInsightOpen] = useState(false);
   if (!data?.length) return null;
 
   const chartData = data
@@ -117,7 +119,30 @@ export default function HistoricalChart({ data }) {
         <span className="chart-subtitle">
           Daily EWMA VaR (1% / $100 portfolio) · min &amp; max per year
         </span>
+        <button
+          className="insight-toggle"
+          onClick={() => setInsightOpen((o) => !o)}
+          aria-expanded={insightOpen}
+        >
+          {insightOpen ? "▾" : "▸"} Key insight
+        </button>
       </div>
+      {insightOpen && (
+        <div className="insight-panel">
+          <span className="insight-label">💡</span>
+          <p>
+            The <span className="ins-blue">blue bars</span> (peak daily risk each year) spike{" "}
+            <em>during</em> crises — not after. In 2008, the blue bar hit{" "}
+            <strong>$15</strong> on a $100 position before the year's total loss
+            was confirmed. In 2020, risk spiked and collapsed within months.
+            This is the core value of daily risk monitoring:{" "}
+            <strong>the model sees stress building in real time</strong>, while
+            annual returns only tell you what already happened.
+            The <span className="ins-red">red bars</span> show the damage;
+            the <span className="ins-blue">blue bars</span> show the warning.
+          </p>
+        </div>
+      )}
       <div style={{ width: "100%", height: 380 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
