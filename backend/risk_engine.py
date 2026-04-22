@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from scipy.stats import norm
+from scipy.stats import norm, genpareto
 from arch import arch_model
 
 WINDOW = 1000
@@ -34,6 +34,56 @@ def var_es_ewma(returns: np.ndarray, p: float = P, lam: float = 0.94) -> tuple[f
     var_val = sigma * z * PORTFOLIO_VALUE
     es_val = sigma * norm.pdf(norm.ppf(p)) / p * PORTFOLIO_VALUE
     return _cap(var_val), _cap(es_val)
+
+
+def var_es_tgarch(returns: np.ndarray, p: float = P) -> tuple[float, float]:
+    """GJR-GARCH(1,1,1) — asymmetric GARCH that weights negative shocks more heavily."""
+    try:
+        scaled = returns * 100
+        am = arch_model(scaled, vol="GARCH", p=1, o=1, q=1, dist="normal", rescale=False)
+        res = am.fit(disp="off", show_warning=False)
+        forecast = res.forecast(horizon=1, reindex=False)
+        var_forecast = forecast.variance.iloc[-1, 0]
+        sigma = np.sqrt(var_forecast) / 100
+        z = norm.ppf(1 - p)
+        var_val = sigma * z * PORTFOLIO_VALUE
+        es_val = sigma * norm.pdf(norm.ppf(p)) / p * PORTFOLIO_VALUE
+        return _cap(var_val), _cap(es_val)
+    except Exception:
+        return var_es_ewma(returns, p)
+
+
+def var_es_evt(returns: np.ndarray, p: float = P, threshold_pct: float = 0.10) -> tuple[float, float]:
+    """Peaks-over-Threshold EVT using Generalized Pareto Distribution."""
+    try:
+        losses = -returns
+        u = np.quantile(losses, 1 - threshold_pct)
+        exceedances = losses[losses > u] - u
+        if len(exceedances) < 10:
+            return var_es_ewma(returns, p)
+        xi, _, sigma = genpareto.fit(exceedances, floc=0)
+        n = len(losses)
+        Nu = len(exceedances)
+        if abs(xi) < 1e-8:
+            var = u + sigma * np.log(n / (Nu * p))
+        else:
+            var = u + (sigma / xi) * ((n / (Nu * p)) ** xi - 1)
+        if xi < 1:
+            es = (var + sigma - xi * u) / (1 - xi)
+        else:
+            es = var * 1.5
+        return _cap(var * PORTFOLIO_VALUE), _cap(es * PORTFOLIO_VALUE)
+    except Exception:
+        return var_es_hs(returns, p)
+
+
+def tail_index_hill(returns: np.ndarray) -> float:
+    """Hill estimator for tail index alpha. Lower = fatter tails."""
+    losses = np.sort(-returns)[::-1]
+    k = max(10, int(len(losses) ** 0.5))
+    k = min(k, len(losses) - 1)
+    alpha = k / np.sum(np.log(losses[:k] / losses[k]))
+    return round(float(alpha), 2)
 
 
 def var_es_garch(returns: np.ndarray, p: float = P) -> tuple[float, float]:
@@ -122,6 +172,11 @@ def compute_asset_risk(ticker: str, returns: pd.Series, prices: pd.Series) -> di
     var_hs, es_hs = var_es_hs(window_rets)
     var_ewma, es_ewma = var_es_ewma(window_rets)
     var_garch, es_garch = var_es_garch(window_rets)
+    var_tgarch, es_tgarch = var_es_tgarch(window_rets)
+    var_evt, es_evt = var_es_evt(window_rets)
+    alpha = tail_index_hill(window_rets)
+
+    mean_var = round(float(np.mean([var_hs, var_ewma, var_garch, var_tgarch, var_evt])), 4)
 
     risk_level = compute_risk_level(returns)
 
@@ -143,5 +198,11 @@ def compute_asset_risk(ticker: str, returns: pd.Series, prices: pd.Series) -> di
         "es_ewma": round(es_ewma, 4),
         "var_garch": round(var_garch, 4),
         "es_garch": round(es_garch, 4),
+        "var_tgarch": round(var_tgarch, 4),
+        "es_tgarch": round(es_tgarch, 4),
+        "var_evt": round(var_evt, 4),
+        "es_evt": round(es_evt, 4),
+        "tail_index": alpha,
+        "mean_var": mean_var,
         "risk_level": round(risk_level, 4),
     }

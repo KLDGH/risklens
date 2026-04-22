@@ -8,10 +8,10 @@
   --bg: #0a0c0f;
   --bg2: #0f1217;
   --bg3: #151a21;
-  --border: #1e2530;
-  --text: #c8d0dc;
-  --text-dim: #5a6678;
-  --text-bright: #e8edf5;
+  --border: #263040;
+  --text: #d4dce8;
+  --text-dim: #8896aa;
+  --text-bright: #f0f4fa;
   --green: #00c97a;
   --yellow: #f0b429;
   --red: #e53e3e;
@@ -23,13 +23,13 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.6;
   min-height: 100vh;
 }
 
 #root {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 28px 20px;
 }

@@ -1,7 +1,7 @@
 .app {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .header {
@@ -10,18 +10,18 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px;
-  padding-bottom: 12px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
 }
 
 .header-left {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .logo {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 600;
   letter-spacing: 0.06em;
   color: var(--text-bright);
@@ -32,27 +32,27 @@
 }
 
 .subtitle {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--text-dim);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
 .generated-at {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 1px;
+  gap: 2px;
 }
 
 .generated-at .label {
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-dim);
 }
 
 .generated-at .value {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text);
 }
 
@@ -61,14 +61,14 @@
   gap: 16px;
   flex-wrap: wrap;
   align-items: center;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--text-dim);
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .legend-note {
@@ -77,8 +77,8 @@
 }
 
 .dot {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   display: inline-block;
 }
@@ -90,7 +90,7 @@
   min-height: 120px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .state-msg {
@@ -110,7 +110,7 @@
 .state-msg .hint {
   margin-top: 8px;
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .state-msg code {
@@ -140,9 +140,9 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 6px;
-  padding-top: 12px;
+  padding-top: 14px;
   border-top: 1px solid var(--border);
-  font-size: 9px;
+  font-size: 11px;
   color: var(--text-dim);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
 }

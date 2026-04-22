@@ -60,7 +60,7 @@ const EventLabel = ({ viewBox, label, row = 0 }) => {
           x={x}
           y={textTop + i * lineH + lineH - 2}
           textAnchor="middle"
-          fill="#6a7a8e"
+          fill="#8896aa"
           fontSize={7.5}
           fontFamily="JetBrains Mono, monospace"
         >
@@ -139,14 +139,14 @@ export default function HistoricalChart({ data }) {
 
             <XAxis
               dataKey="year"
-              tick={{ fill: "#4a5a6a", fontSize: 9, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: "#8896aa", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={{ stroke: "#1e2530" }}
               interval={4}
             />
 
             <YAxis
-              tick={{ fill: "#4a5a6a", fontSize: 9, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: "#8896aa", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={false}
               tickFormatter={tickFormatter}
@@ -169,7 +169,7 @@ export default function HistoricalChart({ data }) {
                 return (
                   <span
                     title={tips[value] ?? ""}
-                    style={{ color: "#7a8a9a", fontSize: 10, fontFamily: "JetBrains Mono, monospace", cursor: "help" }}
+                    style={{ color: "#8896aa", fontSize: 11, fontFamily: "JetBrains Mono, monospace", cursor: "help" }}
                   >
                     {value}
                   </span>

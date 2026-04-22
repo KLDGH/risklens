@@ -16,10 +16,10 @@
 }
 
 .risk-table th {
-  padding: 8px 12px;
-  font-size: 10px;
+  padding: 10px 14px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-dim);
 }
@@ -42,7 +42,8 @@
 }
 
 .risk-table td {
-  padding: 6px 12px;
+  padding: 8px 14px;
+  font-size: 13px;
 }
 
 .risk-table td.left  { text-align: left; }
@@ -52,18 +53,18 @@
 .asset-cell {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
 }
 
 .ticker {
   color: var(--text-bright);
   font-weight: 600;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .name {
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .price {
@@ -71,7 +72,16 @@
   font-weight: 600;
 }
 
+.mean-cell {
+  color: #60a5fa;
+  font-weight: 600;
+}
+
+.alpha-cell {
+  color: var(--text-dim);
+}
+
 .gauge-cell {
-  padding: 4px 12px;
+  padding: 4px 14px;
   vertical-align: middle;
 }
