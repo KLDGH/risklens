@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from fetch_data import NAMES, TICKERS, compute_log_returns, fetch_prices
 from risk_engine import compute_asset_risk
 
-OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "risk_output.json")
+OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "frontend", "public", "data", "risk_output.json")
 
 
 def main():
