@@ -13,26 +13,13 @@ import "./HistoricalChart.css";
 
 // row: 0 = tallest (furthest from chart), 1 = mid, 2 = closest
 const EVENTS = [
-  { year: 1929, label: "Great\nDepression",      row: 0 },
-  { year: 1939, label: "WWII\nstarts",            row: 0 },
-  { year: 1941, label: "US in\nWWII",             row: 1 },
-  { year: 1945, label: "WWII\nends",              row: 2 },
-  { year: 1950, label: "Korean\nwar",             row: 0 },
-  { year: 1957, label: "Sputnik\nlaunched",       row: 0 },
-  { year: 1962, label: "Cuban\nmissile crisis",   row: 0 },
-  { year: 1971, label: "Bretton\nWoods ends",     row: 0 },
-  { year: 1973, label: "First oil\nshock",        row: 1 },
-  { year: 1979, label: "Second\noil shock",       row: 0 },
-  { year: 1981, label: "Interest\nrate shock",    row: 1 },
-  { year: 1987, label: "1987\ncrash",             row: 0 },
-  { year: 1997, label: "Asian\ncrisis",           row: 0 },
-  { year: 2000, label: "Dot com\nbubble bursts",  row: 1 },
-  { year: 2001, label: "9/11",                    row: 2 },
-  { year: 2008, label: "Global\ncrisis",          row: 0 },
-  { year: 2010, label: "Euro\ncrisis",            row: 1 },
-  { year: 2017, label: "Trump\npresident",        row: 0 },
-  { year: 2020, label: "Covid-19",                row: 1 },
-  { year: 2022, label: "Ukraine",                 row: 2 },
+  { year: 1997, label: "Asian\ncrisis",          row: 0 },
+  { year: 2000, label: "Dot com\nbubble bursts", row: 0 },
+  { year: 2001, label: "9/11",                   row: 1 },
+  { year: 2008, label: "Global\nfinancial crisis", row: 0 },
+  { year: 2010, label: "Euro\ncrisis",           row: 1 },
+  { year: 2020, label: "Covid-19",               row: 0 },
+  { year: 2022, label: "Ukraine\nwar",           row: 1 },
 ];
 
 // Bottom y-coordinate of each row's text block (in SVG units from top of SVG)
@@ -108,12 +95,14 @@ const tickFormatter = (v) => {
 export default function HistoricalChart({ data }) {
   if (!data?.length) return null;
 
-  const chartData = data.map((d) => ({
-    ...d,
-    loss: d.annual_return_pct != null && d.annual_return_pct < 0
-      ? d.annual_return_pct
-      : undefined,
-  }));
+  const chartData = data
+    .filter((d) => d.year >= 1990)
+    .map((d) => ({
+      ...d,
+      loss: d.annual_return_pct != null && d.annual_return_pct < 0
+        ? d.annual_return_pct
+        : undefined,
+    }));
 
   const visibleEvents = EVENTS.filter((e) =>
     chartData.some((d) => d.year === e.year)
@@ -127,7 +116,7 @@ export default function HistoricalChart({ data }) {
           Daily EWMA VaR (1% / $100 portfolio) · min &amp; max per year
         </span>
       </div>
-      <div style={{ width: "100%", height: 400 }}>
+      <div style={{ width: "100%", height: 360 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData}
