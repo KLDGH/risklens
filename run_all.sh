@@ -36,4 +36,4 @@ npm install --silent
 
 echo ""
 echo "==> Starting dev server at http://localhost:5173"
-npm run dev
+npm run dev -- --host
