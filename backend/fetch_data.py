@@ -51,7 +51,7 @@ def fetch_prices(period: str = "10y") -> pd.DataFrame:
 def compute_log_returns(prices: pd.DataFrame) -> pd.DataFrame:
     return np.log(prices / prices.shift(1)).dropna()
 
-# TODO: Explore not going back as far given what we want to visualize
+# TODO: Explore not going back as far given what we want to visualize.
 
 def fetch_sp500_history() -> tuple[pd.Series, pd.Series]:
     """Fetch maximum available S&P 500 history (^GSPC, back to 1927)."""
