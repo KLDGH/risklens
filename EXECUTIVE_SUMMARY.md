@@ -1,12 +1,11 @@
 # RiskLens — Executive Summary
 
----
+
 
 ## What It Is
 
 RiskLens is a quantitative market risk dashboard that computes daily Value-at-Risk (VaR) and tail-risk metrics across a portfolio of assets using multiple statistical models. It is modelled on academic risk measurement tools used by institutional researchers, but built to be accessible and visual. In its current form it covers six major liquid assets (S&P 500, Nasdaq, Gold, Long-dated Treasuries, Emerging Markets, and Bitcoin) and produces a fresh risk snapshot each time the backend is run.
 
----
 
 ## What the Metrics Mean
 
@@ -26,7 +25,7 @@ RiskLens computes VaR four ways, each with different assumptions:
 
 **The Risk Gauge** contextualises today's EWMA VaR against the past two years of daily estimates for that asset. A reading of 85% doesn't mean high absolute risk — it means risk is elevated relative to recent history. This is more actionable than a raw number because it accounts for the asset's own volatility regime.
 
----
+
 
 ## Current Usefulness — Even as a Pilot
 
@@ -34,7 +33,7 @@ In its current form, RiskLens already does something most Bloomberg terminals an
 
 The historical S&P 500 chart also provides instant macro context: where does current volatility sit relative to the Dot-com crash, GFC, and Covid? That framing matters for risk communication to clients and investment committees.
 
----
+
 
 ## What It Becomes with Fund-Specific Work
 
@@ -52,7 +51,7 @@ The real value for a PM comes from pointing this at *the actual portfolio* rathe
 
 **PDF/scheduled reporting** — daily one-pager auto-generated and distributed to the investment committee. The data is already there; it's a rendering problem.
 
----
+
 
 ## Bottom Line
 
