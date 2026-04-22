@@ -1,0 +1,60 @@
+.historical-chart-wrapper {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 16px;
+}
+
+.chart-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.chart-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-bright);
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+}
+
+.chart-subtitle {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.chart-tooltip {
+  background: #0f1217;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-family: var(--font);
+  font-size: 11px;
+  min-width: 140px;
+}
+
+.tt-year {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-bottom: 4px;
+}
+
+.tt-event {
+  color: var(--accent);
+  font-size: 10px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+
+.tt-row {
+  color: var(--text);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
+}

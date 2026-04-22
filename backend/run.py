@@ -3,8 +3,8 @@ import os
 import sys
 from datetime import datetime, timezone
 
-from fetch_data import NAMES, TICKERS, compute_log_returns, fetch_prices
-from risk_engine import compute_asset_risk
+from fetch_data import NAMES, TICKERS, compute_log_returns, fetch_prices, fetch_sp500_history
+from risk_engine import compute_asset_risk, compute_sp500_history
 
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "frontend", "public", "data", "risk_output.json")
 
@@ -34,9 +34,15 @@ def main():
         asset_data["name"] = NAMES.get(ticker, ticker)
         assets.append(asset_data)
 
+    print("Fetching S&P 500 full history (^GSPC)...")
+    sp500_returns, sp500_prices = fetch_sp500_history()
+    print("  Computing yearly risk history...")
+    sp500_history = compute_sp500_history(sp500_returns, sp500_prices)
+
     output = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "assets": assets,
+        "sp500_history": sp500_history,
     }
 
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)

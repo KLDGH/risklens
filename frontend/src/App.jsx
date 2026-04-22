@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import RiskTable from "./components/RiskTable.jsx";
+import HistoricalChart from "./components/HistoricalChart.jsx";
 import "./App.css";
 
 export default function App() {
@@ -68,6 +69,9 @@ export default function App() {
           </div>
         )}
         {data && <RiskTable assets={data.assets} />}
+        {data?.sp500_history && (
+          <HistoricalChart data={data.sp500_history} />
+        )}
       </main>
 
       <footer className="footer">

@@ -88,6 +88,9 @@
 
 .main {
   min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .state-msg {

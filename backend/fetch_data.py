@@ -39,3 +39,16 @@ def fetch_prices(period: str = "10y") -> pd.DataFrame:
 
 def compute_log_returns(prices: pd.DataFrame) -> pd.DataFrame:
     return np.log(prices / prices.shift(1)).dropna()
+
+
+def fetch_sp500_history() -> tuple[pd.Series, pd.Series]:
+    """Fetch maximum available S&P 500 history (^GSPC, back to 1927)."""
+    raw = yf.download("^GSPC", period="max", auto_adjust=True,
+                      progress=False, threads=False)
+    if isinstance(raw.columns, pd.MultiIndex):
+        prices = raw["Close"].iloc[:, 0]
+    else:
+        prices = raw["Close"]
+    prices = prices.ffill().dropna()
+    returns = np.log(prices / prices.shift(1)).dropna()
+    return returns, prices

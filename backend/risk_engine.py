@@ -77,6 +77,42 @@ def compute_risk_level(ticker_returns: pd.Series, window: int = WINDOW) -> float
     return float(np.clip(rank, 0.0, 1.0))
 
 
+def compute_daily_ewma_var(returns: pd.Series, p: float = P, lam: float = 0.94, warmup: int = 252) -> pd.Series:
+    """Daily EWMA VaR series for the full return history."""
+    z = norm.ppf(1 - p)
+    vals = returns.values
+    var_t = np.var(vals[:warmup]) if len(vals) >= warmup else np.var(vals)
+    results = np.full(len(vals), np.nan)
+    for i, r in enumerate(vals):
+        if i >= warmup:
+            results[i] = np.sqrt(var_t) * z * PORTFOLIO_VALUE
+        var_t = (1 - lam) * r ** 2 + lam * var_t
+    return pd.Series(results, index=returns.index)
+
+
+def compute_sp500_history(returns: pd.Series, prices: pd.Series) -> list[dict]:
+    """Per-year min/max EWMA VaR and annual return for the S&P 500 historical chart."""
+    daily_var = compute_daily_ewma_var(returns)
+    daily_var = daily_var.dropna()
+
+    # Annual return: last price of year / first price of year - 1
+    annual_ret = prices.resample("YE").last().pct_change() * 100
+
+    rows = []
+    for year, group in daily_var.groupby(daily_var.index.year):
+        if len(group) < 20:
+            continue
+        yr_str = str(year)
+        ret = float(annual_ret[annual_ret.index.year == year].iloc[0]) if year in annual_ret.index.year else None
+        rows.append({
+            "year": year,
+            "min_var": round(float(group.min()), 2),
+            "max_var": round(float(group.max()), 2),
+            "annual_return_pct": round(ret, 2) if ret is not None else None,
+        })
+    return rows
+
+
 def compute_asset_risk(ticker: str, returns: pd.Series, prices: pd.Series) -> dict:
     if len(returns) < WINDOW:
         window_rets = returns.values
