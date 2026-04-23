@@ -4,16 +4,17 @@ import InfoTip from "./InfoTip.jsx";
 import "./RiskTable.css";
 
 const TIPS = {
-  ret:      "Yesterday's log return for this asset.",
-  varHs:    "Historical Simulation VaR — the 1% worst daily loss drawn directly from the last 1000 trading days. No distribution assumption.",
-  varEwma:  "EWMA VaR — normal distribution VaR using exponentially weighted volatility (λ=0.94). Recent days get more weight than older ones.",
+  ret:       "Yesterday's log return for this asset.",
+  varHs:     "Historical Simulation VaR — the 1% worst daily loss drawn directly from the last 1000 trading days. No distribution assumption.",
+  varEwma:   "EWMA VaR — normal distribution VaR using exponentially weighted volatility (λ=0.94). Recent days get more weight than older ones.",
   varGarch:  "GARCH(1,1) VaR — like EWMA but uses a GARCH model to forecast tomorrow's volatility. Falls back to EWMA if fitting fails.",
   varTgarch: "GJR-GARCH VaR — asymmetric GARCH that gives extra weight to negative return shocks. Better captures the 'volatility is higher after crashes' effect.",
-  varEvt:   "Extreme Value Theory VaR — fits a Generalized Pareto Distribution to the worst losses. Best for fat-tailed assets like crypto.",
-  esEwma:   "Expected Shortfall (CVaR) — the average loss on the worst 1% of days. Always larger than VaR; a better measure of tail risk.",
-  range:    "Range across all five VaR models (min – max). When tight, the models agree and standard assumptions hold. When wide — usually EVT pulling high — the asset's tail losses are more extreme than normal-distribution models capture. That gap is a warning, not noise.",
-  alpha:    "Hill tail index — estimated from the worst losses. Lower = fatter tails. Equities typically 3–5; crypto often below 3.",
-  risk:     "Percentile rank of today's EWMA VaR vs the past 2 years of daily values for this asset. 100% = highest risk seen in 2 years.",
+  varEvt:    "Extreme Value Theory VaR — fits a Generalized Pareto Distribution to the worst losses. Best for fat-tailed assets like crypto.",
+  esEwma:    "Expected Shortfall (CVaR) — the average loss on the worst 1% of days. Always larger than VaR; a better measure of tail risk.",
+  consensus: "Simple average across all five VaR models. A rough consensus proxy — useful as a single reference number but not a coherent risk measure. Treat it as a heuristic, not a precise estimate.",
+  range:     "Range across all five VaR models (min – max). When tight, the models agree and standard assumptions hold. When wide — usually EVT pulling high — the asset's tail losses are more extreme than normal-distribution models capture. That gap is a warning, not noise.",
+  alpha:     "Hill tail index — estimated from the worst losses. Lower = fatter tails. Equities typically 3–5; crypto often below 3.",
+  risk:      "Percentile rank of today's EWMA VaR vs the past 2 years of daily values for this asset. 100% = highest risk seen in 2 years.",
 };
 
 // Map column key → value extractor for sorting
@@ -27,6 +28,7 @@ const SORT_FNS = {
   varTgarch: (a) => a.var_tgarch,
   varEvt:    (a) => a.var_evt,
   esEwma:    (a) => a.es_ewma,
+  consensus: (a) => a.mean_var,
   range:     (a) => (Math.max(a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt) - Math.min(a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt)),
   alpha:     (a) => a.tail_index,
   risk:      (a) => a.risk_level,
@@ -37,7 +39,7 @@ function SortIcon({ col, sortKey, sortDir }) {
   return <span className="sort-icon active">{sortDir === "asc" ? "↑" : "↓"}</span>;
 }
 
-function Th({ col, label, className, sortKey, sortDir, onSort, children }) {
+function Th({ col, label, className, sortKey, sortDir, onSort }) {
   return (
     <th
       className={`${className ?? ""} sortable`}
@@ -45,9 +47,8 @@ function Th({ col, label, className, sortKey, sortDir, onSort, children }) {
       title="Click to sort"
     >
       <span className="th-inner">
-        {label ?? children}
+        {label}
         <SortIcon col={col} sortKey={sortKey} sortDir={sortDir} />
-        {children && label ? children : null}
       </span>
     </th>
   );
@@ -69,11 +70,26 @@ function ThWithTip({ col, label, tip, className, sortKey, sortDir, onSort }) {
   );
 }
 
+// Expand/collapse toggle header for the model detail columns
+function ThToggle({ expanded, onToggle, colSpan }) {
+  return (
+    <th
+      className="num model-toggle-th"
+      colSpan={colSpan}
+      onClick={onToggle}
+      title={expanded ? "Hide individual model VaRs" : "Show individual model VaRs"}
+    >
+      <span className="th-inner">
+        {expanded ? "▾ Models" : "▸ Models"}
+      </span>
+    </th>
+  );
+}
+
 function RangeCell({ values }) {
   const min = Math.min(...values);
   const max = Math.max(...values);
   const spread = max - min;
-  // Wide spread = EVT diverging = warning colour
   const color = spread > 3 ? "var(--red)" : spread > 1.5 ? "var(--yellow)" : "var(--text-dim)";
   return (
     <td className="num range-cell" style={{ color }}>
@@ -101,6 +117,7 @@ function VarCell({ value }) {
 export default function RiskTable({ assets }) {
   const [sortKey, setSortKey] = useState("risk");
   const [sortDir, setSortDir] = useState("desc");
+  const [modelsExpanded, setModelsExpanded] = useState(false);
 
   const handleSort = useCallback((col) => {
     setSortKey((prev) => {
@@ -108,7 +125,6 @@ export default function RiskTable({ assets }) {
         setSortDir((d) => (d === "asc" ? "desc" : "asc"));
         return col;
       }
-      // Default direction: desc for numeric risk columns, asc for name
       setSortDir(col === "name" ? "asc" : "desc");
       return col;
     });
@@ -129,40 +145,52 @@ export default function RiskTable({ assets }) {
       <table className="risk-table">
         <thead>
           <tr>
-            <Th col="name" label="Asset" className="left" {...sp} />
-            <Th col="price" label="Price" className="num" {...sp} />
+            <Th col="name"  label="Asset"   className="left sticky-col" {...sp} />
+            <Th col="price" label="Price"   className="num" {...sp} />
             <ThWithTip col="ret"       label="1d Ret%"    tip={TIPS.ret}      className="num" {...sp} />
-            <ThWithTip col="varHs"     label="VaR HS"     tip={TIPS.varHs}    className="num" {...sp} />
-            <ThWithTip col="varEwma"   label="VaR EWMA"   tip={TIPS.varEwma}  className="num" {...sp} />
-            <ThWithTip col="varGarch"  label="VaR GARCH"  tip={TIPS.varGarch} className="num" {...sp} />
-            <ThWithTip col="varTgarch" label="VaR tGARCH" tip={TIPS.varTgarch} className="num" {...sp} />
-            <ThWithTip col="varEvt"    label="VaR EVT"    tip={TIPS.varEvt}   className="num" {...sp} />
             <ThWithTip col="esEwma"    label="ES EWMA"    tip={TIPS.esEwma}   className="num" {...sp} />
+            <ThWithTip col="consensus" label="Consensus"  tip={TIPS.consensus} className="num" {...sp} />
             <ThWithTip col="range"     label="Range"      tip={TIPS.range}    className="num" {...sp} />
             <ThWithTip col="alpha"     label="α"          tip={TIPS.alpha}    className="num" {...sp} />
             <ThWithTip col="risk"      label="Risk"       tip={TIPS.risk}     className="left" {...sp} />
+            <ThToggle expanded={modelsExpanded} onToggle={() => setModelsExpanded(e => !e)} colSpan={modelsExpanded ? 5 : 1} />
           </tr>
+          {modelsExpanded && (
+            <tr className="model-subheader">
+              <th className="sticky-col" colSpan={8} />
+              <ThWithTip col="varHs"     label="VaR HS"     tip={TIPS.varHs}     className="num" {...sp} />
+              <ThWithTip col="varEwma"   label="VaR EWMA"   tip={TIPS.varEwma}   className="num" {...sp} />
+              <ThWithTip col="varGarch"  label="VaR GARCH"  tip={TIPS.varGarch}  className="num" {...sp} />
+              <ThWithTip col="varTgarch" label="VaR tGARCH" tip={TIPS.varTgarch} className="num" {...sp} />
+              <ThWithTip col="varEvt"    label="VaR EVT"    tip={TIPS.varEvt}    className="num" {...sp} />
+            </tr>
+          )}
         </thead>
         <tbody>
           {sorted.map((a) => (
             <tr key={a.ticker}>
-              <td className="left asset-cell">
+              <td className="left asset-cell sticky-col">
                 <span className="ticker">{a.ticker}</span>
                 <span className="name">{a.name}</span>
               </td>
               <td className="num price">${a.last_price.toLocaleString()}</td>
               <ReturnCell value={a.last_return_pct} />
-              <VarCell value={a.var_hs} />
-              <VarCell value={a.var_ewma} />
-              <VarCell value={a.var_garch} />
-              <VarCell value={a.var_tgarch} />
-              <VarCell value={a.var_evt} />
               <VarCell value={a.es_ewma} />
+              <td className="num consensus-cell">{a.mean_var?.toFixed(2)}</td>
               <RangeCell values={[a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt]} />
               <td className="num alpha-cell">{a.tail_index?.toFixed(2)}</td>
               <td className="left gauge-cell">
                 <RiskBar level={a.risk_level} />
               </td>
+              {modelsExpanded && (
+                <>
+                  <VarCell value={a.var_hs} />
+                  <VarCell value={a.var_ewma} />
+                  <VarCell value={a.var_garch} />
+                  <VarCell value={a.var_tgarch} />
+                  <VarCell value={a.var_evt} />
+                </>
+              )}
             </tr>
           ))}
         </tbody>
