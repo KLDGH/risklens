@@ -153,7 +153,7 @@ export default function RiskTable({ assets }) {
             <ThWithTip col="varTgarch" label="VaR tGARCH" tip={TIPS.varTgarch} className="num" {...sp} />
             <ThWithTip col="varEvt"    label="VaR EVT"    tip={TIPS.varEvt}    className="num" {...sp} />
             <ThWithTip col="esEwma"    label="ES EWMA"    tip={TIPS.esEwma}    className="num" {...sp} />
-            <ThWithTip col="alpha"     label="α"          tip={TIPS.alpha}     className="num" {...sp} />
+            <ThWithTip col="alpha"     label={<span style={{textTransform:"none"}}>α tail</span>} tip={TIPS.alpha} className="num" {...sp} />
             <ThWithTip col="risk"      label="Risk"       tip={TIPS.risk}      className="left" {...sp} />
             <ThWithTip col="consensus" label="Consensus"  tip={TIPS.consensus} className="num" {...sp} />
             <ThWithTip col="range"     label="Range"      tip={TIPS.range}     className="num" {...sp} />
