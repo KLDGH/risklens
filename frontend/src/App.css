@@ -146,3 +146,15 @@
   color: var(--text-dim);
   letter-spacing: 0.03em;
 }
+
+.footer-link {
+  color: var(--text-dim);
+  text-decoration: none;
+  border-bottom: 1px solid #2a3a50;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.footer-link:hover {
+  color: #60a5fa;
+  border-bottom-color: #60a5fa;
+}

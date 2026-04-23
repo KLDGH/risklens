@@ -80,7 +80,7 @@ export default function App() {
 
       <footer className="footer">
         <span>VaR models: Historical Simulation · EWMA (λ=0.94) · GARCH(1,1)</span>
-        <span>Data via yfinance · Not financial advice</span>
+        <span>Data via yfinance · Not financial advice · <a href="https://github.com/KLDGH/risklens/blob/main/FAQ.md" target="_blank" rel="noopener noreferrer" className="footer-link">Methodology &amp; FAQ</a></span>
       </footer>
     </div>
   );
