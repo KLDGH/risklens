@@ -4,17 +4,18 @@ A quantitative market risk dashboard that computes daily Value-at-Risk (VaR) and
 
 Live at: **https://kldgh.github.io/risklens/**
 
----
 
 ## What it shows
 
-- **1% VaR** — on a bad day (worst 1% historically), how much do you lose on a $100 position?
-- **Expected Shortfall (ES/CVaR)** — given it *is* a bad day, what's the average loss?
-- **Tail index (α)** — how fat are the tails? Lower = more extreme events possible.
-- **Risk Gauge** — where does today's volatility sit relative to the past 2 years? 85% means risk is elevated, not just high in absolute terms.
-- **S&P 500 historical chart** — 35+ years of daily VaR and annual returns with major crisis labels (Dot-com, GFC, COVID, etc.).
+RiskLens answers one question every morning: **how much risk am I carrying right now, and is it getting worse?** It pulls yesterday's closing prices for 12 major assets and runs five statistical models to estimate how bad a bad day could get. The results land in a sortable table — click Risk to put the most stressed assets at the top — so you can see at a glance where pressure is building across equities, bonds, gold, crypto, and real estate.
 
----
+- **Risk Gauge** — the most actionable number. Where does today's volatility sit relative to the past 2 years for that asset? 85% means risk is more elevated than 85% of recent history — not just high in absolute terms, but high *for that asset right now*.
+- **VaR (Value at Risk)** — on a genuinely bad day (the worst 1% historically), how many dollars do you lose on a $100 position? Computed five different ways so you can see whether the models agree or disagree — that spread is itself a signal.
+- **Expected Shortfall (ES)** — given it already is a bad day, how bad on average? Goes one step further than VaR by describing the full tail, not just where it starts.
+- **Tail index (α)** — how fat are the tails? Lower = more extreme events possible than standard models assume. Useful for spotting assets where the VaR numbers may be underestimating true exposure.
+- **S&P 500 historical chart** — 35+ years of daily risk estimates and annual returns with major crisis labels, so you can see where current volatility sits relative to the Dot-com crash, GFC, and COVID.
+- **Cross-asset correlation chart** — rolling average pairwise correlation across 10 core ETFs since 2007. Shows when diversification is working and when it isn't.
+
 
 ## Data sources
 
@@ -52,7 +53,6 @@ All price data is fetched via **[yfinance](https://github.com/ranaroussi/yfinanc
 
 Each ticker is downloaded individually (not in bulk) to avoid SQLite lock issues in yfinance's local cache. Gaps are forward-filled — this means Bitcoin's Sunday prices carry forward into Monday if equity markets are closed, keeping the return series aligned. The S&P 500 index (`^GSPC`) is fetched separately with the full available history for the historical chart.
 
----
 
 ## Risk models
 
@@ -72,7 +72,6 @@ All figures are **dollar loss on a $100 portfolio** at **1% confidence** (worst 
 
 **Tail index (α)** — Hill estimator on the return series. Equities typically sit around 3–4; values below 3 indicate meaningfully fatter tails than standard normal models assume.
 
----
 
 ## Setup
 
@@ -118,13 +117,11 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173).
 
----
 
 ## GitHub Codespaces
 
 Click **Code → Codespaces → Create codespace** on the repo page. The devcontainer installs all dependencies and auto-runs the backend + dev server on startup. The port 5173 preview opens automatically in your browser.
 
----
 
 ## Deployment (GitHub Pages)
 
@@ -138,7 +135,6 @@ The repo includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) tha
 
 To enable: go to **Settings → Pages → Source → GitHub Actions** in your repo.
 
----
 
 ## Output schema
 
@@ -179,7 +175,6 @@ To enable: go to **Settings → Pages → Source → GitHub Actions** in your re
 }
 ```
 
----
 
 ## Stack
 
