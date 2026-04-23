@@ -117,7 +117,6 @@ function VarCell({ value }) {
 export default function RiskTable({ assets }) {
   const [sortKey, setSortKey] = useState("risk");
   const [sortDir, setSortDir] = useState("desc");
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
 
   const handleSort = useCallback((col) => {
     setSortKey((prev) => {
@@ -156,15 +155,9 @@ export default function RiskTable({ assets }) {
             <ThWithTip col="esEwma"    label="ES EWMA"    tip={TIPS.esEwma}    className="num" {...sp} />
             <ThWithTip col="alpha"     label="α"          tip={TIPS.alpha}     className="num" {...sp} />
             <ThWithTip col="risk"      label="Risk"       tip={TIPS.risk}      className="left" {...sp} />
-            <ThToggle expanded={summaryExpanded} onToggle={() => setSummaryExpanded(e => !e)} colSpan={summaryExpanded ? 2 : 1} />
+            <ThWithTip col="consensus" label="Consensus"  tip={TIPS.consensus} className="num" {...sp} />
+            <ThWithTip col="range"     label="Range"      tip={TIPS.range}     className="num" {...sp} />
           </tr>
-          {summaryExpanded && (
-            <tr className="model-subheader">
-              <th className="sticky-col" colSpan={11} />
-              <ThWithTip col="consensus" label="Consensus" tip={TIPS.consensus} className="num" {...sp} />
-              <ThWithTip col="range"     label="Range"     tip={TIPS.range}     className="num" {...sp} />
-            </tr>
-          )}
         </thead>
         <tbody>
           {sorted.map((a) => (
@@ -185,13 +178,8 @@ export default function RiskTable({ assets }) {
               <td className="left gauge-cell">
                 <RiskBar level={a.risk_level} />
               </td>
-              {summaryExpanded && (
-                <>
-                  <td className="num consensus-cell">{a.mean_var?.toFixed(2)}</td>
-                  <RangeCell values={[a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt]} />
-                </>
-              )}
-              {!summaryExpanded && <td />}
+              <td className="num consensus-cell">{a.mean_var?.toFixed(2)}</td>
+              <RangeCell values={[a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt]} />
             </tr>
           ))}
         </tbody>
