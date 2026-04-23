@@ -11,7 +11,7 @@ const TIPS = {
   varTgarch: "GJR-GARCH VaR — asymmetric GARCH that gives extra weight to negative return shocks. Better captures the 'volatility is higher after crashes' effect.",
   varEvt:   "Extreme Value Theory VaR — fits a Generalized Pareto Distribution to the worst losses. Best for fat-tailed assets like crypto.",
   esEwma:   "Expected Shortfall (CVaR) — the average loss on the worst 1% of days. Always larger than VaR; a better measure of tail risk.",
-  mean:     "Simple average of all five VaR models (HS, EWMA, GARCH, tGARCH, EVT). A quick ensemble estimate.",
+  range:    "Range across all five VaR models (min – max). When tight, the models agree and standard assumptions hold. When wide — usually EVT pulling high — the asset's tail losses are more extreme than normal-distribution models capture. That gap is a warning, not noise.",
   alpha:    "Hill tail index — estimated from the worst losses. Lower = fatter tails. Equities typically 3–5; crypto often below 3.",
   risk:     "Percentile rank of today's EWMA VaR vs the past 2 years of daily values for this asset. 100% = highest risk seen in 2 years.",
 };
@@ -27,7 +27,7 @@ const SORT_FNS = {
   varTgarch: (a) => a.var_tgarch,
   varEvt:    (a) => a.var_evt,
   esEwma:    (a) => a.es_ewma,
-  mean:      (a) => a.mean_var,
+  range:     (a) => (Math.max(a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt) - Math.min(a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt)),
   alpha:     (a) => a.tail_index,
   risk:      (a) => a.risk_level,
 };
@@ -66,6 +66,19 @@ function ThWithTip({ col, label, tip, className, sortKey, sortDir, onSort }) {
         <InfoTip text={tip} />
       </span>
     </th>
+  );
+}
+
+function RangeCell({ values }) {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const spread = max - min;
+  // Wide spread = EVT diverging = warning colour
+  const color = spread > 3 ? "var(--red)" : spread > 1.5 ? "var(--yellow)" : "var(--text-dim)";
+  return (
+    <td className="num range-cell" style={{ color }}>
+      {min.toFixed(2)}<span className="range-sep"> – </span>{max.toFixed(2)}
+    </td>
   );
 }
 
@@ -125,7 +138,7 @@ export default function RiskTable({ assets }) {
             <ThWithTip col="varTgarch" label="VaR tGARCH" tip={TIPS.varTgarch} className="num" {...sp} />
             <ThWithTip col="varEvt"    label="VaR EVT"    tip={TIPS.varEvt}   className="num" {...sp} />
             <ThWithTip col="esEwma"    label="ES EWMA"    tip={TIPS.esEwma}   className="num" {...sp} />
-            <ThWithTip col="mean"      label="Mean"       tip={TIPS.mean}     className="num" {...sp} />
+            <ThWithTip col="range"     label="Range"      tip={TIPS.range}    className="num" {...sp} />
             <ThWithTip col="alpha"     label="α"          tip={TIPS.alpha}    className="num" {...sp} />
             <ThWithTip col="risk"      label="Risk"       tip={TIPS.risk}     className="left" {...sp} />
           </tr>
@@ -145,7 +158,7 @@ export default function RiskTable({ assets }) {
               <VarCell value={a.var_tgarch} />
               <VarCell value={a.var_evt} />
               <VarCell value={a.es_ewma} />
-              <td className="num mean-cell">{a.mean_var?.toFixed(2)}</td>
+              <RangeCell values={[a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt]} />
               <td className="num alpha-cell">{a.tail_index?.toFixed(2)}</td>
               <td className="left gauge-cell">
                 <RiskBar level={a.risk_level} />
