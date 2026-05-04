@@ -25,14 +25,16 @@ const BOND_SHORT_LABELS = {
   LQD: "LQD (IG corp.)",
 };
 
-// Window-specific styling — distinct hues from ColorBrewer Set2 (3-class)
-// for genuine categorical separation rather than just shade variation.
-// Stroke width still encodes "slower = thicker" so the eye reads the
-// 252d line as the grounded baseline.
+// Warm-neutral-cool diverging palette. The data is sequentially ordered
+// (20 → 60 → 252) but the visual job is comparing extremes — so the
+// extremes get fundamentally different hues (warm orange vs cool blue)
+// rather than gradations of one. The neutral grey middle plays the
+// supporting role its data plays. Distinct from the page's indigo
+// accent so the chart has its own visual identity.
 const WINDOW_STYLES = {
-  "20d":  { stroke: "#fc8d62", width: 1.25, opacity: 0.75, label: "20-day"  },
-  "60d":  { stroke: "#66c2a5", width: 1.5,  opacity: 0.95, label: "60-day"  },
-  "252d": { stroke: "#8da0cb", width: 2.5,  opacity: 1.0,  label: "252-day" },
+  "20d":  { stroke: "#fb923c", width: 1.0, opacity: 0.7,  label: "20-day"  }, // warm orange — recent / leading
+  "60d":  { stroke: "#94a3b8", width: 1.5, opacity: 0.85, label: "60-day"  }, // neutral slate — middle
+  "252d": { stroke: "#0ea5e9", width: 2.5, opacity: 1.0,  label: "252-day" }, // cool sky — baseline / grounded
 };
 
 /** Merge per-window series into a single date-indexed array for recharts. */
