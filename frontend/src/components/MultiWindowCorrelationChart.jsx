@@ -8,7 +8,6 @@ import {
   Tooltip,
   ReferenceLine,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 import "./HistoricalChart.css"; // reuse shared chart styles
 
@@ -26,11 +25,14 @@ const BOND_SHORT_LABELS = {
   LQD: "LQD (IG corp.)",
 };
 
-// Window-specific styling — 20d sharpest/lightest; 252d thickest/darkest
+// Window-specific styling — distinct hues from ColorBrewer Set2 (3-class)
+// for genuine categorical separation rather than just shade variation.
+// Stroke width still encodes "slower = thicker" so the eye reads the
+// 252d line as the grounded baseline.
 const WINDOW_STYLES = {
-  "20d":  { stroke: "#93c5fd", width: 1.0,  label: "20-day" },
-  "60d":  { stroke: "#3b82f6", width: 1.5,  label: "60-day" },
-  "252d": { stroke: "#1e3a8a", width: 2.25, label: "252-day" },
+  "20d":  { stroke: "#fc8d62", width: 1.25, opacity: 0.75, label: "20-day"  },
+  "60d":  { stroke: "#66c2a5", width: 1.5,  opacity: 0.95, label: "60-day"  },
+  "252d": { stroke: "#8da0cb", width: 2.5,  opacity: 1.0,  label: "252-day" },
 };
 
 /** Merge per-window series into a single date-indexed array for recharts. */
@@ -73,6 +75,12 @@ export default function MultiWindowCorrelationChart({ data }) {
   const bonds = Object.keys(data || {});
   const [bond, setBond] = useState(bonds.includes("AGG") ? "AGG" : bonds[0]);
   const [insightOpen, setInsightOpen] = useState(false);
+  const [showWindows, setShowWindows] = useState({
+    "20d":  true,
+    "60d":  true,
+    "252d": true,
+  });
+  const toggleWindow = (w) => setShowWindows((prev) => ({ ...prev, [w]: !prev[w] }));
 
   if (!bonds.length) return null;
 
@@ -100,8 +108,25 @@ export default function MultiWindowCorrelationChart({ data }) {
       <div className="chart-header">
         <span className="chart-title">Stock-Bond Correlation Across Time Scales</span>
         <span className="chart-subtitle">
-          SPY × {BOND_SHORT_LABELS[bond] ?? bond} · rolling 20-day / 60-day / 252-day · weekly samples
+          SPY × {BOND_SHORT_LABELS[bond] ?? bond} · weekly samples · click windows to toggle
         </span>
+
+        <div className="window-toggle">
+          {Object.entries(WINDOW_STYLES).map(([w, style]) => (
+            <button
+              key={w}
+              className={`window-btn${showWindows[w] ? " active" : ""}`}
+              style={showWindows[w] ? {
+                color: style.stroke,
+                borderColor: style.stroke,
+              } : {}}
+              onClick={() => toggleWindow(w)}
+            >
+              <span className="window-btn-dot" style={{ background: showWindows[w] ? style.stroke : "transparent", borderColor: style.stroke }} />
+              {style.label}
+            </button>
+          ))}
+        </div>
 
         {bonds.length > 1 && (
           <div className="interval-toggle">
@@ -209,35 +234,28 @@ export default function MultiWindowCorrelationChart({ data }) {
 
             <ReferenceLine y={0} stroke="#2e4460" strokeWidth={1.5} />
 
-            <Legend
-              verticalAlign="bottom"
-              iconType="line"
-              wrapperStyle={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace", color: "#8896aa" }}
-            />
-
             {Object.entries(WINDOW_STYLES).map(([w, style]) => (
-              <Line
-                key={w}
-                type="monotone"
-                dataKey={w}
-                name={style.label}
-                stroke={style.stroke}
-                strokeWidth={style.width}
-                dot={false}
-                isAnimationActive={false}
-                connectNulls={false}
-              />
+              showWindows[w] && (
+                <Line
+                  key={w}
+                  type="monotone"
+                  dataKey={w}
+                  name={style.label}
+                  stroke={style.stroke}
+                  strokeWidth={style.width}
+                  strokeOpacity={style.opacity}
+                  dot={false}
+                  isAnimationActive={false}
+                  connectNulls={false}
+                />
+              )
             ))}
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      <div style={{ fontSize: 11, color: "#4a5a6e", marginTop: 8, display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <span>
-          When the 20-day line diverges above the 252-day line, you're seeing a regime change
-          before slower measures register it.
-        </span>
-        <span>{BOND_LABELS[bond] ?? bond} · daily rolling correlation, weekly samples</span>
+      <div style={{ fontSize: 11, color: "#4a5a6e", marginTop: 8 }}>
+        When the 20-day line diverges above the 252-day line, you're seeing a regime change before slower measures register it.
       </div>
     </div>
   );

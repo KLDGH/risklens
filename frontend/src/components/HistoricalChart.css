@@ -206,3 +206,49 @@
   border-color: var(--accent);
   font-weight: 600;
 }
+
+/* Window-visibility toggle: each button shows/hides one rolling-window
+   line, with the button's color matching its line. Inactive state is
+   greyed out. Used in the multi-window correlation chart. */
+.window-toggle {
+  display: flex;
+  gap: 4px;
+}
+
+.window-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, opacity 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0.02em;
+}
+
+.window-btn:hover {
+  border-color: var(--text);
+}
+
+.window-btn:not(.active) {
+  opacity: 0.55;
+}
+
+.window-btn.active {
+  background: var(--bg3);
+  font-weight: 600;
+}
+
+.window-btn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid;
+  display: inline-block;
+}
