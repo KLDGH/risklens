@@ -19,8 +19,15 @@ from risk_engine import (
     compute_portfolio_risk_history, compute_component_var,
     backtest_portfolio_var, backtest_portfolio_garch,
     nyfed_recession_probability, compute_intraday_correlation_daily,
+    compute_multi_window_correlation,
     CORR_TICKERS,
 )
+
+# Bond proxies for the multi-window stock-bond correlation chart. AGG and IEF
+# are added beyond the portfolio-resident TLT/LQD/HYG so we can show how the
+# regime is hitting different parts of the bond market spectrum (broad
+# aggregate vs intermediate Treasury vs IG corporate).
+EXTRA_BOND_PROXIES = ["AGG", "IEF"]
 
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "frontend", "public", "data", "risk_output.json")
 
@@ -292,8 +299,11 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
 
 
 def main():
-    # Master ticker list — union of everything we need across all modes
-    all_tickers = list(dict.fromkeys(TICKERS + TDF_2055_TICKERS + CG_2055_TICKERS))
+    # Master ticker list — union of everything we need across all modes,
+    # plus extra bond proxies for the multi-window correlation chart.
+    all_tickers = list(dict.fromkeys(
+        TICKERS + TDF_2055_TICKERS + CG_2055_TICKERS + EXTRA_BOND_PROXIES
+    ))
 
     print("Fetching 10y price data...")
     prices_10y = fetch_prices(period="10y", tickers=all_tickers)
@@ -402,6 +412,20 @@ def main():
             v = vix_smooth.iloc[idx] if idx >= 0 else None
         entry["vix"] = round(float(v), 2) if v is not None and pd.notna(v) else None
 
+    # Multi-window stock-bond correlation: SPY × {AGG, TLT, IEF, LQD} at
+    # 20d, 60d, 252d windows. Different windows reveal different time scales
+    # of regime change — recent shifts surface in the 20d series first.
+    print("Computing multi-window SPY × bond correlations (AGG, TLT, IEF, LQD)...")
+    multi_window_corr = compute_multi_window_correlation(
+        prices_long,
+        primary="SPY",
+        bond_proxies=["AGG", "TLT", "IEF", "LQD"],
+        windows=[20, 60, 252],
+    )
+    for bond, by_window in multi_window_corr.items():
+        windows_present = [w for w in by_window if by_window[w]]
+        print(f"  {bond}: windows {windows_present}")
+
     # Intraday SPY-TLT correlation at multiple sampling intervals.
     # 5-min:  more observations per day (78), but more microstructure noise / Epps attenuation
     # 15-min: cleaner magnitudes (academic-literature default for cross-asset corr), but fewer obs (26)
@@ -443,6 +467,7 @@ def main():
         "portfolios":             portfolios,
         "sp500_history":          sp500_history,
         "correlation_history":    corr_history,
+        "multi_window_corr":      multi_window_corr,
         "intraday_corr_history":  intraday_corr,
     }
 

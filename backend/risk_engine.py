@@ -1010,3 +1010,65 @@ def compute_intraday_correlation_daily(
             "n_obs": int(len(group)),
         })
     return results
+
+
+def compute_multi_window_correlation(
+    prices: pd.DataFrame,
+    primary: str = "SPY",
+    bond_proxies: list = None,
+    windows: list = None,
+    sample_every: int = 5,
+) -> dict:
+    """
+    Rolling correlation of `primary` vs each bond proxy at multiple window
+    lengths. Used for the multi-window/multi-bond chart that pairs the
+    intraday signal with longer-horizon daily-data context.
+
+    Output structure:
+        {
+            "AGG": {"20d": [{date, corr}, ...], "60d": [...], "252d": [...]},
+            "TLT": {...},
+            ...
+        }
+
+    Different window lengths reveal different time scales of regime change.
+    Recent regime intensification shows up in the 20d series before it
+    becomes visible in the 252d series — the latter is dominated by the
+    longer history and smooths over recent shifts.
+    """
+    if bond_proxies is None:
+        bond_proxies = ["AGG", "TLT", "IEF", "LQD"]
+    if windows is None:
+        windows = [20, 60, 252]
+
+    if primary not in prices.columns:
+        return {}
+
+    a_log_ret = np.log(prices[primary] / prices[primary].shift(1))
+
+    out = {}
+    for bond in bond_proxies:
+        if bond not in prices.columns:
+            continue
+
+        b_log_ret = np.log(prices[bond] / prices[bond].shift(1))
+        df = pd.concat([a_log_ret.rename("a"), b_log_ret.rename("b")], axis=1).dropna()
+        if df.empty:
+            continue
+
+        bond_data = {}
+        for w in windows:
+            rolling = df["a"].rolling(w).corr(df["b"]).dropna()
+            if rolling.empty:
+                continue
+            sampled = rolling.iloc[::sample_every]
+            bond_data[f"{w}d"] = [
+                {"date": idx.strftime("%Y-%m-%d"), "corr": round(float(v), 4)}
+                for idx, v in sampled.items()
+                if pd.notna(v)
+            ]
+
+        if bond_data:
+            out[bond] = bond_data
+
+    return out

@@ -174,6 +174,24 @@ Rolling 60-day average pairwise correlation across 10 core ETFs (SPY, QQQ, GLD, 
 **Why is 2022 the peak and not the GFC?**
 This is the most counterintuitive finding in the data. In the GFC (2008-09), equities crashed but treasuries and gold surged — flight to safety kept average pairwise correlation moderate. In 2022, the Fed's aggressive rate hiking cycle caused stocks AND bonds to sell off simultaneously, breaking the traditional 60/40 hedge. The correlation hit 0.70 — the highest in the dataset. The correlation breakdown problem is most dangerous in inflation and rate shocks, not just in equity crashes.
 
+**What is the multi-window stock-bond correlation chart showing?**
+The same stock-bond correlation question, looked at through three different rolling-window lengths simultaneously: **20-day** (fast, picks up regime changes within weeks), **60-day** (medium), and **252-day** (slow, roughly a one-year average). Plotted on the same chart for one bond proxy at a time, with a toggle to switch bonds (AGG / TLT / IEF / LQD).
+
+The point is to compare time scales. The 20-day line moves quickly when news hits; the 252-day line is dominated by the prior year's history and only shifts decisively after a regime has been live for a long time. **When the 20-day line diverges sharply above the 252-day line, you're seeing a recent regime change before longer-horizon measures register it.** That's a common situation when a regime is in its early stages: short windows catch it, long windows haven't caught up.
+
+A "Recent intensification" callout fires when the 20-day correlation exceeds the 252-day by 0.15 or more — a heuristic for "the recent regime is meaningfully different from the trailing-year average." The opposite (20d below 252d) triggers a "Recent normalization" callout.
+
+**Why four bond proxies?**
+Because the bond market isn't monolithic, and different parts have meaningfully different relationships with equities:
+
+- **AGG** (iShares Core US Aggregate Bond) — the broad investment-grade aggregate, ~7-year duration, mostly Treasuries + corporates + MBS. This is what most retail and long-only PMs actually hold as their bond exposure. The cleanest "is the bond portfolio diversifying me?" signal.
+- **TLT** (iShares 20+ Year Treasury) — long-duration. Most rate-sensitive, biggest mover in either direction.
+- **IEF** (iShares 7-10 Year Treasury) — intermediate Treasury. The "typical" duration risk most diversified bond portfolios center around.
+- **LQD** (iShares Investment Grade Corporate) — IG corporate. Carries equity-like credit-spread behavior, so historically shows higher equity correlation than pure Treasuries.
+
+If the regime is real, it should show up across all four. If only one bond proxy shows it, the signal is narrower than implied. The toggle lets you check.
+
+
 **What is the Intraday Stock-Bond Correlation chart?**
 A leading version of the daily-data correlation chart above. Each bar is one trading day's SPY × TLT correlation computed from intraday log returns within that day. Red bars are positive correlation days (rates regime — the dominant news driver moves stocks and bonds the same direction); green bars are negative (growth regime — classic flight-to-safety). The chart shows the last 60 trading days, which is the limit on free intraday data via yfinance.
 

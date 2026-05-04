@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import RiskTable from "./components/RiskTable.jsx";
 import HistoricalChart from "./components/HistoricalChart.jsx";
 import CorrelationChart from "./components/CorrelationChart.jsx";
+import MultiWindowCorrelationChart from "./components/MultiWindowCorrelationChart.jsx";
 import IntradayCorrelationChart from "./components/IntradayCorrelationChart.jsx";
 import PortfolioRiskChart from "./components/PortfolioRiskChart.jsx";
 import BacktestPanel from "./components/BacktestPanel.jsx";
@@ -16,6 +17,7 @@ const NAV_LINKS = [
   { id: "stress-tests",    label: "Stress Tests" },
   { id: "sp500-history",   label: "S&P 500 History" },
   { id: "correlation",     label: "Correlation" },
+  { id: "multi-window-corr", label: "Multi-Window" },
   { id: "intraday-corr",   label: "Intraday Corr" },
 ];
 
@@ -60,6 +62,12 @@ const SECTION_REFERENCES = {
     { label: 'Forbes & Rigobon, "No Contagion, Only Interdependence" (J. Finance, 2002)', url: "https://doi.org/10.1111/0022-1082.00494" },
     { label: 'Longin & Solnik, "Extreme Correlation of International Equity Markets" (J. Finance, 2001)', url: "https://doi.org/10.1111/0022-1082.00340" },
     { label: 'Campbell, Pflueger & Viceira, "Macroeconomic Drivers of Bond and Equity Risks" (JPE, 2020)', url: "https://doi.org/10.1086/710552" },
+  ],
+  "multi-window-corr": [
+    { label: 'Campbell, Sunderam & Viceira, "Inflation Bets or Deflation Hedges?" (Critical Finance Review, 2017)', url: "https://www.nber.org/papers/w14701" },
+    { label: 'Pflueger, Siriwardane & Sunderam, "A Measure of Risk Appetite for the Macroeconomy" (NBER WP 27906, 2020)', url: "https://www.nber.org/papers/w27906" },
+    { label: 'Engle, "Dynamic Conditional Correlation" (J. Bus. & Econ. Stat., 2002)', url: "https://doi.org/10.1198/073500102288618487" },
+    { label: 'Ilmanen, "Expected Returns" (Wiley, 2011) — Ch. 19 on stock-bond correlation regimes' },
   ],
   "intraday-corr": [
     { label: 'Epps, "Comovements in Stock Prices in the Very Short Run" (JASA, 1979)', url: "https://doi.org/10.1080/01621459.1979.10481593" },
@@ -285,6 +293,16 @@ export default function App() {
             </div>
             <CorrelationChart data={data.correlation_history} />
             <SectionReferences sectionId="correlation" />
+          </section>
+        )}
+        {data?.multi_window_corr && Object.keys(data.multi_window_corr).length > 0 && (
+          <section id="multi-window-corr" className="section">
+            <div className="section-header">
+              <span className="section-title">Market Context — Stock-Bond Correlation Across Time Scales</span>
+              <span className="section-desc">SPY × bond correlation at three rolling-window lengths simultaneously, across four bond proxies. Different windows reveal different time scales of regime change. The 20-day line picks up recent shifts; the 252-day line is a slow-moving annual average. When the two diverge sharply, you're seeing a regime change before slower measures register it. Toggle the bond proxy to see how the regime shows up across the bond-market spectrum (broad aggregate AGG, long-duration TLT, intermediate IEF, IG corporate LQD).</span>
+            </div>
+            <MultiWindowCorrelationChart data={data.multi_window_corr} />
+            <SectionReferences sectionId="multi-window-corr" />
           </section>
         )}
         {data?.intraday_corr_history && (
