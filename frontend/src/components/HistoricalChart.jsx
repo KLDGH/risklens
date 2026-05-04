@@ -122,7 +122,6 @@ export default function HistoricalChart({ data }) {
   return (
     <div className="historical-chart-wrapper">
       <div className="chart-header">
-        <span className="chart-title">S&amp;P 500 Risk and Losses</span>
         <span className="chart-subtitle">
           Daily EWMA VaR (1% / $100 portfolio) · min &amp; max per year
         </span>

@@ -114,7 +114,6 @@ export default function IntradayCorrelationChart({ data }) {
   return (
     <div className="historical-chart-wrapper" style={{ marginTop: 0 }}>
       <div className="chart-header">
-        <span className="chart-title">Intraday Stock-Bond Correlation</span>
         <span className="chart-subtitle">
           SPY × TLT correlation from {intervalMeta.label} bars · daily values · {nTotal} trading days · {pctPositive}% positive
         </span>

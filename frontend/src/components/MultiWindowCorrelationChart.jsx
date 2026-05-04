@@ -108,7 +108,6 @@ export default function MultiWindowCorrelationChart({ data }) {
   return (
     <div className="historical-chart-wrapper" style={{ marginTop: 0 }}>
       <div className="chart-header">
-        <span className="chart-title">Stock-Bond Correlation Across Time Scales</span>
         <span className="chart-subtitle">
           SPY × {BOND_SHORT_LABELS[bond] ?? bond} · weekly samples · click windows to toggle
         </span>

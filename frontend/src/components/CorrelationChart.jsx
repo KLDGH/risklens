@@ -95,7 +95,6 @@ export default function CorrelationChart({ data }) {
   return (
     <div className="historical-chart-wrapper" style={{ marginTop: 24 }}>
       <div className="chart-header">
-        <span className="chart-title">Cross-Asset Correlation</span>
         <span className="chart-subtitle">
           60-day rolling avg pairwise correlation · SPY QQQ GLD TLT EEM IWM HYG LQD XLF VNQ · VIX (right axis)
         </span>

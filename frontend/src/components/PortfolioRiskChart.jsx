@@ -100,7 +100,6 @@ export default function PortfolioRiskChart({ data, portfolioLabel }) {
   return (
     <div className="historical-chart-wrapper" style={{ marginTop: 0 }}>
       <div className="chart-header">
-        <span className="chart-title">Portfolio Risk Trajectory</span>
         <span className="chart-subtitle">
           Daily 1% EWMA VaR over time · {portfolioLabel} · weekly samples
         </span>
