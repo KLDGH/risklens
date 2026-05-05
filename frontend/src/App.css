@@ -294,6 +294,17 @@
   letter-spacing: 0.04em;
 }
 
+/* Plain-English question that the section answers — sits next to the title
+   so users immediately know what each section is for. */
+.section-question {
+  font-size: 13px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--text-dim);
+  letter-spacing: 0;
+  line-height: 1.4;
+}
+
 /* Per-section "About this section" toggle — reveals description above
    the chart and references below. Default state is collapsed so the
    page stays clean. */

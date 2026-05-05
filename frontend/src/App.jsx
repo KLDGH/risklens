@@ -98,7 +98,7 @@ function SectionReferences({ sectionId }) {
 // Reusable section wrapper: collapsed-by-default description + literature.
 // Title and chart are always visible; clicking the small button next to the
 // title reveals the description above the chart and the references below.
-function Section({ id, title, description, children }) {
+function Section({ id, title, question, description, children }) {
   const [expanded, setExpanded] = useState(false);
   const hasRefs = SECTION_REFERENCES[id]?.length > 0;
   const hasMeta = description || hasRefs;
@@ -108,6 +108,9 @@ function Section({ id, title, description, children }) {
       <div className="section-header">
         <div className="section-title-row">
           <span className="section-title">{title}</span>
+          {question && (
+            <span className="section-question">({question})</span>
+          )}
           {hasMeta && (
             <button
               className={`section-meta-toggle${expanded ? " open" : ""}`}
@@ -264,6 +267,7 @@ export default function App() {
           <Section
             id="risk-snapshot"
             title="Current Risk Snapshot"
+            question="How risky is each asset today vs. its own recent history?"
             description="How risky is each asset today, relative to its own two-year history? Rows default-sorted by risk level. VaR = the minimum expected loss on the worst 1% of trading days, on a $100 position. Five models are shown because their disagreement is itself a signal — a wide spread means the asset has tail behavior that normal assumptions miss."
           >
             <RiskTable
@@ -277,6 +281,7 @@ export default function App() {
           <Section
             id="risk-trajectory"
             title="Portfolio Risk Trajectory"
+            question="How has the portfolio's daily risk moved over time?"
             description="How has the active portfolio's daily risk evolved over time? This is the same EWMA VaR as the portfolio summary row in the table above, computed every trading day rather than just today's snapshot. Spikes line up with crises; the gradual return to baseline shows how regimes resolve. The history depth depends on which mode is selected — Vanguard reaches back to 2014, American Funds to 2007."
           >
             <PortfolioRiskChart data={portfolio.risk_history} portfolioLabel={portfolio.label} />
@@ -286,6 +291,7 @@ export default function App() {
           <Section
             id="model-validation"
             title="VaR Model Validation"
+            question="Are these risk models actually well-calibrated?"
             description="Out-of-sample backtest of HS, EWMA, and EVT VaR models on the active portfolio. For each of the last 504 trading days, the model is given only the prior 1000 days to forecast that day's 1% VaR; we then compare against actual realized losses. The Kupiec test checks whether the observed exception rate matches the expected 1%; the Christoffersen test checks whether exceptions cluster (a sign of time-varying risk the model misses)."
           >
             <BacktestPanel data={portfolio.backtests} portfolioLabel={portfolio.label} />
@@ -295,6 +301,7 @@ export default function App() {
           <Section
             id="stress-tests"
             title="Historical Stress Tests & Scenarios"
+            question="How would the portfolio handle past crises and plausible shocks?"
             description="How would the active portfolio have performed during major market crises (data-driven), and how might it respond to forward-looking scenarios (assumption-driven)? Each card shows total P&L and which holdings hurt — or helped — the most."
           >
             <ScenarioPanel
@@ -309,6 +316,7 @@ export default function App() {
           <Section
             id="sp500-history"
             title="Market Context — S&P 500 Historical Risk"
+            question="How does today's equity stress compare to history?"
             description="How has U.S. equity market stress evolved year by year? Each bar shows the range of modeled daily loss estimates for that year. Reference data — does not change with portfolio toggle."
           >
             <HistoricalChart data={data.sp500_history} />
@@ -318,6 +326,7 @@ export default function App() {
           <Section
             id="correlation"
             title="Market Context — Cross-Asset Correlation"
+            question="Is diversification still working across asset classes?"
             description="Are markets moving in lockstep? When assets rise together, diversification breaks down and portfolio risk is higher than any single holding suggests. Reference data — does not change with portfolio toggle."
           >
             <CorrelationChart data={data.correlation_history} />
@@ -327,6 +336,7 @@ export default function App() {
           <Section
             id="multi-window-corr"
             title="Market Context — Stock-Bond Correlation Across Time Scales"
+            question="Has the stock-bond relationship shifted recently?"
             description="SPY × bond correlation at three rolling-window lengths simultaneously, across four bond proxies. Different windows reveal different time scales of regime change. The 20-day line picks up recent shifts; the 252-day line is a slow-moving annual average. When the two diverge sharply, you're seeing a regime change before slower measures register it. Toggle the bond proxy to see how the regime shows up across the bond-market spectrum (broad aggregate AGG, long-duration TLT, intermediate IEF, IG corporate LQD)."
           >
             <MultiWindowCorrelationChart data={data.multi_window_corr} />
@@ -340,6 +350,7 @@ export default function App() {
           <Section
             id="intraday-corr"
             title="Market Context — Intraday Stock-Bond Correlation"
+            question="Is the very recent regime different from the daily-data picture?"
             description="A leading version of the chart above. Each bar is one trading day's SPY-TLT correlation computed from intraday bars — so each daily value is statistically meaningful on its own. A run of consecutive same-sign days is a much sharper regime-shift signal than the smoothed 60-day daily-data correlation can produce. Free intraday data via yfinance, limited to the last 60 trading days."
           >
             <IntradayCorrelationChart data={data.intraday_corr_history} />
