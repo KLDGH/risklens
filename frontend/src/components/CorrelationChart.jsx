@@ -130,7 +130,7 @@ export default function CorrelationChart({ data }) {
         </div>
       )}
 
-      <div style={{ width: "100%", height: 300 }}>
+      <div style={{ width: "100%", height: 400 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={data}
@@ -150,7 +150,7 @@ export default function CorrelationChart({ data }) {
               dataKey="date"
               tickFormatter={(v) => v.slice(0, 4)}
               interval={tickInterval}
-              tick={{ fill: "#8896aa", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={{ stroke: "#1e2530" }}
             />
@@ -159,7 +159,7 @@ export default function CorrelationChart({ data }) {
               yAxisId="corr"
               domain={[0, 1]}
               tickFormatter={(v) => v.toFixed(1)}
-              tick={{ fill: "#8896aa", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={false}
               width={38}

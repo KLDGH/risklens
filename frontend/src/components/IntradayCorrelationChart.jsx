@@ -10,10 +10,22 @@ import {
   Cell,
   ResponsiveContainer,
 } from "recharts";
+import CalendarHeatmap from "./CalendarHeatmap.jsx";
 import "./HistoricalChart.css"; // reuse shared chart styles
 
-// Per-day bar color: red if positive corr (rates regime), green if negative
-function barColor(c) {
+// Color scale for correlation cells/bars. Sign drives hue (red = rates regime,
+// green = growth regime). Magnitude drives opacity — strong correlations
+// look more saturated, weak ones look pale.
+function corrColor(c) {
+  if (c == null) return "rgba(255, 255, 255, 0.04)";  // empty cell
+  const intensity = Math.min(1, Math.abs(c));
+  const opacity = 0.18 + intensity * 0.78;  // baseline 0.18 → 0.96
+  return c >= 0
+    ? `rgba(229, 62, 62, ${opacity})`     // red, rates regime
+    : `rgba(0, 201, 122, ${opacity})`;    // green, growth regime
+}
+
+function barFill(c) {
   if (c == null) return "#444";
   return c >= 0 ? "#e53e3e" : "#00c97a";
 }
@@ -23,7 +35,8 @@ const INTERVAL_LABELS = {
   "15m": { label: "15 min", obsPerDay: 26 },
 };
 
-const CustomTooltip = ({ active, payload, label, intervalLabel }) => {
+
+const BarTooltip = ({ active, payload, label, intervalLabel }) => {
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
   const c = d?.corr;
@@ -53,8 +66,8 @@ const CustomTooltip = ({ active, payload, label, intervalLabel }) => {
 
 export default function IntradayCorrelationChart({ data }) {
   // data is now an object: { interval_5m: [...], interval_15m: [...] }
-  // Default to 15m (less microstructure noise, academic-literature standard).
   const [samplingInterval, setSamplingInterval] = useState("15m");
+  const [view, setView] = useState("calendar");  // "calendar" or "bar"
   const [insightOpen, setInsightOpen] = useState(false);
 
   // Backward-compat: if data is still a flat array (old format), wrap it
@@ -83,25 +96,19 @@ export default function IntradayCorrelationChart({ data }) {
   const pctPositive = ((nPositive / nTotal) * 100).toFixed(0);
 
   // Probability of the trailing streak occurring by chance under daily
-  // independence at the observed same-sign rate. If 78% of days are positive
-  // and the streak is positive, baseline p = 0.78 and P(streak ≥ k) = p^k.
-  // This is more informative than the "p = 0.5" null because it tests "is the
-  // regime DEEPER than the average daily rate would predict" rather than
-  // "is correlation different from zero".
+  // independence at the observed same-sign rate.
   const sameSignRate = lastSign > 0 ? (nPositive / nTotal) : ((nTotal - nPositive) / nTotal);
   const streakProbability = Math.pow(sameSignRate, streak);
   const oddsAgainst = streakProbability > 0
     ? Math.max(1, Math.round(1 / streakProbability))
     : null;
-  // Only show the probability if the streak is meaningfully unusual
   const probText = (oddsAgainst != null && oddsAgainst >= 10)
     ? ` · 1 in ${oddsAgainst.toLocaleString()} by chance`
     : "";
 
-  // Streak callout (regime + magnitude qualifier)
   const streakLabel =
     streak === 0 ? null
-  : streak === 1 ? null  // single-day streak isn't a regime signal
+  : streak === 1 ? null
   : lastSign > 0 ? `${streak} consecutive positive days — rates-regime signal${probText}`
                  : `${streak} consecutive negative days — growth-regime / diversification working${probText}`;
 
@@ -117,6 +124,21 @@ export default function IntradayCorrelationChart({ data }) {
         <span className="chart-subtitle">
           SPY × TLT correlation from {intervalMeta.label} bars · daily values · {nTotal} trading days · {pctPositive}% positive
         </span>
+
+        <div className="interval-toggle">
+          <button
+            className={`interval-btn${view === "calendar" ? " active" : ""}`}
+            onClick={() => setView("calendar")}
+          >
+            Calendar
+          </button>
+          <button
+            className={`interval-btn${view === "bar" ? " active" : ""}`}
+            onClick={() => setView("bar")}
+          >
+            Bar
+          </button>
+        </div>
 
         {availableIntervals && availableIntervals.length > 1 && (
           <div className="interval-toggle">
@@ -152,7 +174,7 @@ export default function IntradayCorrelationChart({ data }) {
         <div className="insight-panel">
           <span className="insight-label">💡</span>
           <p>
-            Each bar is one trading day's correlation between SPY and TLT
+            Each cell or bar is one trading day's correlation between SPY and TLT
             <em> within</em> that day, computed from intraday log returns at the
             selected sampling frequency.{" "}
             <strong>Red = positive correlation (rates regime)</strong>: stocks
@@ -174,53 +196,88 @@ export default function IntradayCorrelationChart({ data }) {
             (shorter streaks). The same regime should look directionally
             similar at both frequencies; if it does, the signal is robust.
           </p>
+          <p style={{ marginTop: 8 }}>
+            <strong>Calendar vs bar view.</strong> Calendar makes streak
+            patterns visually obvious — solid blocks of one color tell the
+            regime story at a glance. Bar makes individual-day magnitudes more
+            comparable. Same data, two views.
+          </p>
         </div>
       )}
 
-      <div style={{ width: "100%", height: 260 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={series}
-            margin={{ top: 16, right: 40, left: 4, bottom: 0 }}
-          >
-            <CartesianGrid vertical={false} stroke="#162038" />
+      {view === "calendar" ? (
+        <CalendarHeatmap
+          data={series}
+          valueKey="corr"
+          colorFn={(c) => corrColor(c)}
+          cellSize={44}
+          formatHover={(c) => (
+            <>
+              <strong>{c.date}</strong>
+              {" · "}SPY-TLT correlation:{" "}
+              <strong style={{ color: c.corr >= 0 ? "#fca5a5" : "#86efac" }}>
+                {c.corr >= 0 ? "+" : ""}{c.corr.toFixed(3)}
+              </strong>
+              {" · "}{c.n_obs} {intervalMeta.label} bars
+              {" · "}{Math.abs(c.corr) >= 0.6 ? "strong" : Math.abs(c.corr) >= 0.3 ? "moderate" : "weak"}{" "}
+              {c.corr >= 0 ? "rates regime" : "growth regime"}
+            </>
+          )}
+          legendStops={[
+            [-0.9, "−0.9"],
+            [-0.5, "−0.5"],
+            [-0.2, ""],
+            [+0.2, ""],
+            [+0.5, "+0.5"],
+            [+0.9, "+0.9"],
+          ]}
+        />
+      ) : (
+        <div style={{ width: "100%", height: 380 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={series}
+              margin={{ top: 16, right: 40, left: 4, bottom: 0 }}
+            >
+              <CartesianGrid vertical={false} stroke="#162038" />
 
-            <XAxis
-              dataKey="date"
-              tickFormatter={(v) => {
-                const parts = v.split("-");
-                return `${parts[1]}-${parts[2]}`;
-              }}
-              interval={tickInterval}
-              tick={{ fill: "#8896aa", fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
-              tickLine={false}
-              axisLine={{ stroke: "#1e2530" }}
-            />
+              <XAxis
+                dataKey="date"
+                tickFormatter={(v) => {
+                  const parts = v.split("-");
+                  return `${parts[1]}-${parts[2]}`;
+                }}
+                interval={tickInterval}
+                tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
+                tickLine={false}
+                axisLine={{ stroke: "#1e2530" }}
+              />
 
-            <YAxis
-              domain={[-1, 1]}
-              tickFormatter={(v) => v.toFixed(1)}
-              tick={{ fill: "#8896aa", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}
-              tickLine={false}
-              axisLine={false}
-              width={36}
-            />
+              <YAxis
+                domain={[-1, 1]}
+                tickFormatter={(v) => v.toFixed(1)}
+                tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
+                tickLine={false}
+                axisLine={false}
+                width={36}
+              />
 
-            <Tooltip
-              content={<CustomTooltip intervalLabel={intervalMeta.label} />}
-              cursor={{ fill: "rgba(255,255,255,0.04)" }}
-            />
+              <Tooltip
+                content={<BarTooltip intervalLabel={intervalMeta.label} />}
+                cursor={{ fill: "rgba(255,255,255,0.04)" }}
+              />
 
-            <ReferenceLine y={0} stroke="#2e4460" strokeWidth={1.5} />
+              <ReferenceLine y={0} stroke="#2e4460" strokeWidth={1.5} />
 
-            <Bar dataKey="corr" maxBarSize={12} isAnimationActive={false}>
-              {series.map((d, i) => (
-                <Cell key={i} fill={barColor(d.corr)} fillOpacity={0.85} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+              <Bar dataKey="corr" maxBarSize={18} isAnimationActive={false}>
+                {series.map((d, i) => (
+                  <Cell key={i} fill={barFill(d.corr)} fillOpacity={0.85} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       <div style={{ fontSize: 11, color: "#4a5a6e", marginTop: 8, display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <span>

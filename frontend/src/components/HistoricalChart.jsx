@@ -153,7 +153,7 @@ export default function HistoricalChart({ data }) {
           </p>
         </div>
       )}
-      <div style={{ width: "100%", height: 380 }}>
+      <div style={{ width: "100%", height: 420 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData}
@@ -165,7 +165,7 @@ export default function HistoricalChart({ data }) {
 
             <XAxis
               dataKey="year"
-              tick={{ fill: "#8896aa", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={{ stroke: "#1e2530" }}
               interval={4}
@@ -173,7 +173,7 @@ export default function HistoricalChart({ data }) {
 
             <YAxis
               yAxisId="left"
-              tick={{ fill: "#8896aa", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={false}
               tickFormatter={tickFormatter}

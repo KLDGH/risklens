@@ -1,4 +1,5 @@
 import HoverTip from "./HoverTip.jsx";
+import CalendarHeatmap from "./CalendarHeatmap.jsx";
 import "./BacktestPanel.css";
 
 const TIPS = {
@@ -38,10 +39,22 @@ function rateColor(rate, expected) {
 
 function modelDescription(model) {
   return {
-    HS:   "Historical Simulation — empirical 1% percentile of trailing 1000 returns",
-    EWMA: "Exponentially Weighted Moving Average — λ=0.94, normal-distribution VaR",
-    EVT:  "Extreme Value Theory — Generalized Pareto fit to tail losses",
+    HS:     "Historical Simulation — empirical 1% percentile of trailing 1000 returns",
+    EWMA:   "Exponentially Weighted Moving Average — λ=0.94, normal-distribution VaR",
+    EVT:    "Extreme Value Theory — Generalized Pareto fit to tail losses",
+    GARCH:  "GARCH(1,1) — mean-reverting conditional volatility, normal innovations",
+    tGARCH: "GJR-tGARCH — asymmetric volatility, negative shocks weight more heavily",
   }[model] ?? model;
+}
+
+// Color cell by how many models flagged that day as an exception. More
+// models flagging the same day → stronger red, signals the day was
+// genuinely unusual regardless of model choice.
+function exceptionColor(count, totalModels) {
+  if (!count) return "rgba(255, 255, 255, 0.04)";
+  const intensity = count / Math.max(1, totalModels);
+  const opacity = 0.22 + intensity * 0.7;
+  return `rgba(229, 62, 62, ${opacity})`;
 }
 
 
@@ -162,6 +175,63 @@ export default function BacktestPanel({ data, portfolioLabel }) {
         picking one. Trust EVT for tail sizing in fat-tail regimes; trust
         the parametric models for everyday vol forecasting.
       </div>
+
+      {(() => {
+        // Build the exception calendar from per-model violation date lists.
+        // Each cell: count of models that flagged that day as a VaR breach.
+        // Days flagged by many models indicate genuinely tail events; clusters
+        // visualize the Christoffersen independence test directly.
+        const evalDates = data[0]?.eval_dates;
+        if (!evalDates?.length) return null;
+
+        const flaggedBy = {};
+        for (const row of data) {
+          for (const d of row.violation_dates ?? []) {
+            if (!flaggedBy[d]) flaggedBy[d] = [];
+            flaggedBy[d].push(row.model);
+          }
+        }
+
+        const calData = evalDates.map((date) => ({
+          date,
+          count: flaggedBy[date]?.length ?? 0,
+          models: flaggedBy[date] ?? [],
+        }));
+
+        return (
+          <div className="exception-calendar-section">
+            <div className="exception-calendar-label">
+              VaR exception calendar — each cell is one trading day in the eval
+              window; intensity = how many of the 5 models flagged that day as a
+              VaR breach. Solid clusters of red are the Christoffersen test made
+              visual.
+            </div>
+            <CalendarHeatmap
+              data={calData}
+              valueKey="count"
+              colorFn={(count) => exceptionColor(count, data.length)}
+              cellSize={14}
+              formatHover={(c) =>
+                c.count === 0 ? (
+                  <><strong>{c.date}</strong> · no exceptions</>
+                ) : (
+                  <>
+                    <strong>{c.date}</strong> · flagged by{" "}
+                    <strong style={{ color: "#fca5a5" }}>{c.count}</strong> of{" "}
+                    {data.length} models — {c.models.join(", ")}
+                  </>
+                )
+              }
+              legendStops={[
+                [0, "0"],
+                [1, "1"],
+                [Math.max(2, Math.floor(data.length / 2)), `${Math.max(2, Math.floor(data.length / 2))}`],
+                [data.length, `${data.length}`],
+              ]}
+            />
+          </div>
+        );
+      })()}
 
       <div className="backtest-footnote">
         GARCH(1,1) and GJR-tGARCH are not backtested here because they require

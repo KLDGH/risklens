@@ -202,7 +202,7 @@ export default function MultiWindowCorrelationChart({ data }) {
         </div>
       )}
 
-      <div style={{ width: "100%", height: 320 }}>
+      <div style={{ width: "100%", height: 400 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={merged}
@@ -214,7 +214,7 @@ export default function MultiWindowCorrelationChart({ data }) {
               dataKey="date"
               tickFormatter={(v) => v.slice(0, 4)}
               interval={tickInterval}
-              tick={{ fill: "#8896aa", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={{ stroke: "#1e2530" }}
             />
@@ -222,7 +222,7 @@ export default function MultiWindowCorrelationChart({ data }) {
             <YAxis
               domain={[-0.6, 1]}
               tickFormatter={(v) => v.toFixed(1)}
-              tick={{ fill: "#8896aa", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={false}
               width={36}

@@ -1,0 +1,127 @@
+.cal-container {
+  --cell-size: 30px;
+  --cell-gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  padding: 16px 0;
+  font-family: var(--font);
+}
+
+.cal-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cal-month-row {
+  display: grid;
+  gap: var(--cell-gap);
+  margin-left: calc(34px); /* offset for day labels column */
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  height: 14px;
+  align-items: end;
+}
+
+.cal-month-label {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.cal-body {
+  display: flex;
+  gap: 8px;
+  align-items: start;
+}
+
+.cal-day-labels {
+  display: grid;
+  grid-template-rows: repeat(5, var(--cell-size));
+  gap: var(--cell-gap);
+  font-size: 10px;
+  color: var(--text-dim);
+  width: 26px;
+}
+
+.cal-day-label {
+  display: flex;
+  align-items: center;
+  height: var(--cell-size);
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-rows: repeat(5, var(--cell-size));
+  gap: var(--cell-gap);
+}
+
+.cal-cell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: outline 0.1s, transform 0.1s;
+  outline: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.cal-cell:hover,
+.cal-cell.hovered {
+  outline: 2px solid var(--text-bright);
+  outline-offset: -1px;
+  transform: scale(1.05);
+  z-index: 1;
+}
+
+.cal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.cal-hover-line {
+  flex: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-hover-line strong {
+  color: var(--text-bright);
+}
+
+.cal-hover-empty {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.cal-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cal-legend-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cal-legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.cal-legend-label {
+  white-space: nowrap;
+}

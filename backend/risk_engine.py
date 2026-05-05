@@ -796,12 +796,15 @@ def backtest_portfolio_var(
         return []
 
     ret_df = np.log(sub / sub.shift(1)).dropna()
-    port_rets = ret_df.values @ norm_w
-    if len(port_rets) < eval_window + lookback:
+    port_rets_series = pd.Series(ret_df.values @ norm_w, index=ret_df.index)
+    if len(port_rets_series) < eval_window + lookback:
         return []
 
     # Restrict to last (lookback + eval_window) so the rolling backtest is fast
-    rets_arr = port_rets[-(lookback + eval_window):]
+    eval_series = port_rets_series.iloc[-(lookback + eval_window):]
+    rets_arr   = eval_series.values
+    eval_dates = eval_series.index[-eval_window:]
+    eval_dates_str = [d.strftime("%Y-%m-%d") for d in eval_dates]
 
     hs_var   = np.zeros(eval_window)
     ewma_var = np.zeros(eval_window)
@@ -824,6 +827,7 @@ def backtest_portfolio_var(
         violations = (actual_loss > var_arr).astype(int)
         n_v  = int(violations.sum())
         rate = n_v / eval_window
+        violation_dates = [eval_dates_str[i] for i in range(eval_window) if violations[i]]
 
         kupiec = kupiec_uc_test(n_v, eval_window, p)
         christ = christoffersen_ind_test(violations)
@@ -841,6 +845,8 @@ def backtest_portfolio_var(
             "kupiec_p":         kp,
             "christoffersen_p": cp,
             "verdict":          verdict,
+            "eval_dates":       eval_dates_str,
+            "violation_dates":  violation_dates,
         })
 
     return results
@@ -881,11 +887,14 @@ def backtest_portfolio_garch(
         return None
 
     ret_df = np.log(sub / sub.shift(1)).dropna()
-    port_rets = ret_df.values @ norm_w
-    if len(port_rets) < eval_window + lookback:
+    port_rets_series = pd.Series(ret_df.values @ norm_w, index=ret_df.index)
+    if len(port_rets_series) < eval_window + lookback:
         return None
 
-    rets_arr = port_rets[-(lookback + eval_window):]
+    eval_series = port_rets_series.iloc[-(lookback + eval_window):]
+    rets_arr    = eval_series.values
+    eval_dates  = eval_series.index[-eval_window:]
+    eval_dates_str = [d.strftime("%Y-%m-%d") for d in eval_dates]
     var_arr  = np.zeros(eval_window)
     last_params = None  # warm-start
 
@@ -926,6 +935,7 @@ def backtest_portfolio_garch(
     violations = (actual_loss > var_arr).astype(int)
     n_v  = int(violations.sum())
     rate = n_v / eval_window
+    violation_dates = [eval_dates_str[i] for i in range(eval_window) if violations[i]]
 
     kupiec = kupiec_uc_test(n_v, eval_window, p)
     christ = christoffersen_ind_test(violations)
@@ -943,6 +953,8 @@ def backtest_portfolio_garch(
         "kupiec_p":         kp,
         "christoffersen_p": cp,
         "verdict":          verdict,
+        "eval_dates":       eval_dates_str,
+        "violation_dates":  violation_dates,
     }
 
 

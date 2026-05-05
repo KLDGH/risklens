@@ -129,7 +129,7 @@ export default function PortfolioRiskChart({ data, portfolioLabel }) {
         </div>
       )}
 
-      <div style={{ width: "100%", height: 280 }}>
+      <div style={{ width: "100%", height: 380 }}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}
@@ -149,7 +149,7 @@ export default function PortfolioRiskChart({ data, portfolioLabel }) {
               dataKey="date"
               tickFormatter={(v) => v.slice(0, 4)}
               interval={tickInterval}
-              tick={{ fill: "#8896aa", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={{ stroke: "#1e2530" }}
             />
@@ -157,7 +157,7 @@ export default function PortfolioRiskChart({ data, portfolioLabel }) {
             <YAxis
               domain={yDomain}
               tickFormatter={(v) => `$${v}`}
-              tick={{ fill: "#8896aa", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={false}
               width={36}

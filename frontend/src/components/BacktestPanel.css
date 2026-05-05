@@ -119,6 +119,22 @@
   letter-spacing: 0.04em;
 }
 
+.exception-calendar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+.exception-calendar-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.55;
+}
+
 .backtest-footnote {
   font-size: 10px;
   color: var(--text-dim);
