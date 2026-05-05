@@ -291,7 +291,7 @@ export default function App() {
           <Section
             id="model-validation"
             title="VaR Model Validation"
-            question="Are these risk models actually well-calibrated?"
+            question="Are these risk models well-calibrated?"
             description="Out-of-sample backtest of HS, EWMA, and EVT VaR models on the active portfolio. For each of the last 504 trading days, the model is given only the prior 1000 days to forecast that day's 1% VaR; we then compare against actual realized losses. The Kupiec test checks whether the observed exception rate matches the expected 1%; the Christoffersen test checks whether exceptions cluster (a sign of time-varying risk the model misses)."
           >
             <BacktestPanel data={portfolio.backtests} portfolioLabel={portfolio.label} />
