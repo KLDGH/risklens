@@ -7,11 +7,13 @@ import IntradayCorrelationChart from "./components/IntradayCorrelationChart.jsx"
 import PortfolioRiskChart from "./components/PortfolioRiskChart.jsx";
 import BacktestPanel from "./components/BacktestPanel.jsx";
 import ScenarioPanel from "./components/ScenarioPanel.jsx";
+import FundDisclosurePanel from "./components/FundDisclosurePanel.jsx";
 import InfoTip from "./components/InfoTip.jsx";
 import "./App.css";
 
 const NAV_LINKS = [
   { id: "risk-snapshot",   label: "Risk Snapshot" },
+  { id: "fund-disclosure", label: "Fund Holdings", activeFundOnly: true },
   { id: "risk-trajectory", label: "Risk Trajectory" },
   { id: "model-validation", label: "Model Validation" },
   { id: "stress-tests",    label: "Stress Tests" },
@@ -27,6 +29,8 @@ const PORTFOLIO_SHORT_LABELS = {
   hypothetical: "HYPOTHETICAL PORTFOLIO",
   tdf_2055:     "VANGUARD 2055",
   cg_2055:      "AF TARGET 2055",
+  cggo_active:  "CGGO (CAPITAL GROUP)",
+  dwld_active:  "DWLD (DAVIS)",
 };
 
 // Curated literature references per section. Each entry is the canonical
@@ -207,11 +211,13 @@ export default function App() {
       {data && (
         <nav className="page-nav">
           <span className="nav-label">Sections:</span>
-          {NAV_LINKS.map(({ id, label }) => (
-            <button key={id} className="nav-btn" onClick={() => scrollTo(id)}>
-              {label}
-            </button>
-          ))}
+          {NAV_LINKS
+            .filter(({ activeFundOnly }) => !activeFundOnly || portfolio?.is_active_fund_spotlight)
+            .map(({ id, label }) => (
+              <button key={id} className="nav-btn" onClick={() => scrollTo(id)}>
+                {label}
+              </button>
+            ))}
           <a
             href="https://github.com/KLDGH/risklens/blob/main/FAQ.md"
             target="_blank"
@@ -271,10 +277,27 @@ export default function App() {
             description="How risky is each asset today, relative to its own two-year history? Rows default-sorted by risk level. VaR = the minimum expected loss on the worst 1% of trading days, on a $100 position. Five models are shown because their disagreement is itself a signal — a wide spread means the asset has tail behavior that normal assumptions miss."
           >
             <RiskTable
-              assets={portfolio.assets}
+              assets={
+                // For active-fund spotlight modes, the portfolio summary row
+                // is degenerate (= the fund itself, which is already an asset
+                // row). Suppress it to avoid the visually-confusing duplicate.
+                portfolio.is_active_fund_spotlight
+                  ? portfolio.assets.filter((a) => !a.is_portfolio)
+                  : portfolio.assets
+              }
               portfolioWeights={portfolio.weights}
               portfolioLabel={PORTFOLIO_SHORT_LABELS[mode] ?? "PORTFOLIO"}
             />
+          </Section>
+        )}
+        {portfolio?.is_active_fund_spotlight && portfolio?.fund_disclosure && (
+          <Section
+            id="fund-disclosure"
+            title="Fund Holdings — Disclosed"
+            question="What is this active fund actually holding right now?"
+            description="Reference panel for the spotlighted active ETF: sponsor metadata, concentration stats (top-10 / top-25 weight), and a scrollable list of disclosed holdings sorted by weight. The risk metrics elsewhere on this page are computed on the fund's own NAV — these holdings are display-only context, not inputs to the risk calculation. Useful for seeing how concentration and geographic mix differ between competing active managers (CGGO's diversified-growth vs DWLD's concentrated-value, for example)."
+          >
+            <FundDisclosurePanel disclosure={portfolio.fund_disclosure} />
           </Section>
         )}
         {portfolio?.risk_history?.length > 0 && (

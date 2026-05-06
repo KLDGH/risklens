@@ -1,0 +1,1058 @@
+{
+  "generated_at": "2026-05-06T18:25:59Z",
+  "funds": {
+    "CGGO": {
+      "ticker": "CGGO",
+      "fund_name": "Capital Group Global Growth Equity ETF",
+      "sponsor": "Capital Group",
+      "mandate": "Active global growth equity",
+      "category": "Active ETF",
+      "inception": "2022-02-22",
+      "as_of": "2026-05-05",
+      "source_file": "CGGO_download_report_daily - 2026-05-05.xlsx",
+      "n_holdings": 102,
+      "total_weight_pct": 98.8,
+      "top10_concentration_pct": 33.68,
+      "top25_concentration_pct": 52.35,
+      "holdings": [
+        {
+          "security": "Taiwan Semiconductor",
+          "ticker": "TSM",
+          "weight": 6.72,
+          "yf_ticker": "TSM",
+          "rank": 1
+        },
+        {
+          "security": "Micron Technology",
+          "ticker": "MU",
+          "weight": 5.16,
+          "yf_ticker": "MU",
+          "rank": 2
+        },
+        {
+          "security": "Sk Hynix",
+          "ticker": "A000660",
+          "weight": 4.82,
+          "yf_ticker": "000660.KS",
+          "rank": 3
+        },
+        {
+          "security": "Broadcom",
+          "ticker": "AVGO",
+          "weight": 3.87,
+          "yf_ticker": "AVGO",
+          "rank": 4
+        },
+        {
+          "security": "Alphabet",
+          "ticker": "GOOGL",
+          "weight": 3.0,
+          "yf_ticker": "GOOGL",
+          "rank": 5
+        },
+        {
+          "security": "Asml Holding",
+          "ticker": "ASML",
+          "weight": 2.45,
+          "yf_ticker": "ASML",
+          "rank": 6
+        },
+        {
+          "security": "Microsoft",
+          "ticker": "MSFT",
+          "weight": 2.12,
+          "yf_ticker": "MSFT",
+          "rank": 7
+        },
+        {
+          "security": "Western Digital",
+          "ticker": "WDC",
+          "weight": 2.07,
+          "yf_ticker": "WDC",
+          "rank": 8
+        },
+        {
+          "security": "Samsung Electronics",
+          "ticker": "A005930",
+          "weight": 1.9,
+          "yf_ticker": "005930.KS",
+          "rank": 9
+        },
+        {
+          "security": "Aon",
+          "ticker": "AON",
+          "weight": 1.57,
+          "yf_ticker": "AON",
+          "rank": 10
+        },
+        {
+          "security": "Nvidia",
+          "ticker": "NVDA",
+          "weight": 1.57,
+          "yf_ticker": "NVDA",
+          "rank": 11
+        },
+        {
+          "security": "Citigroup",
+          "ticker": "C",
+          "weight": 1.56,
+          "yf_ticker": "C",
+          "rank": 12
+        },
+        {
+          "security": "Starbucks",
+          "ticker": "SBUX",
+          "weight": 1.5,
+          "yf_ticker": "SBUX",
+          "rank": 13
+        },
+        {
+          "security": "Meta Platforms",
+          "ticker": "META",
+          "weight": 1.41,
+          "yf_ticker": "META",
+          "rank": 14
+        },
+        {
+          "security": "Siemens",
+          "ticker": "SIE",
+          "weight": 1.36,
+          "yf_ticker": "SIEGY",
+          "rank": 15
+        },
+        {
+          "security": "Airbus",
+          "ticker": "AIR",
+          "weight": 1.31,
+          "yf_ticker": "EADSY",
+          "rank": 16
+        },
+        {
+          "security": "3I Group",
+          "ticker": "III",
+          "weight": 1.28,
+          "yf_ticker": "III.L",
+          "rank": 17
+        },
+        {
+          "security": "Prudential",
+          "ticker": "PRU",
+          "weight": 1.17,
+          "yf_ticker": "PRU",
+          "rank": 18
+        },
+        {
+          "security": "Comfort Systems Usa",
+          "ticker": "FIX",
+          "weight": 1.12,
+          "yf_ticker": "FIX",
+          "rank": 19
+        },
+        {
+          "security": "Vertex Pharmaceuticals",
+          "ticker": "VRTX",
+          "weight": 1.11,
+          "yf_ticker": "VRTX",
+          "rank": 20
+        },
+        {
+          "security": "Prosus",
+          "ticker": "PRX",
+          "weight": 1.1,
+          "yf_ticker": "PROSY",
+          "rank": 21
+        },
+        {
+          "security": "Unitedhealth Group",
+          "ticker": "UNH",
+          "weight": 1.07,
+          "yf_ticker": "UNH",
+          "rank": 22
+        },
+        {
+          "security": "Nestle",
+          "ticker": "NESN",
+          "weight": 1.05,
+          "yf_ticker": "NSRGY",
+          "rank": 23
+        },
+        {
+          "security": "Intel",
+          "ticker": "INTC",
+          "weight": 1.04,
+          "yf_ticker": "INTC",
+          "rank": 24
+        },
+        {
+          "security": "Banco Bilbao Vizcaya Argenta",
+          "ticker": "BBVA",
+          "weight": 1.02,
+          "yf_ticker": "BBVA",
+          "rank": 25
+        },
+        {
+          "security": "Publicis Groupe",
+          "ticker": "PUB",
+          "weight": 1.01,
+          "yf_ticker": "PUB",
+          "rank": 26
+        },
+        {
+          "security": "Canadian Natural Resources",
+          "ticker": "CNQ",
+          "weight": 0.99,
+          "yf_ticker": "CNQ",
+          "rank": 27
+        },
+        {
+          "security": "Societe Generale",
+          "ticker": "GLE",
+          "weight": 0.96,
+          "yf_ticker": "GLE",
+          "rank": 28
+        },
+        {
+          "security": "Visa Shares",
+          "ticker": "V",
+          "weight": 0.94,
+          "yf_ticker": "V",
+          "rank": 29
+        },
+        {
+          "security": "Boeing Co/The",
+          "ticker": "BA",
+          "weight": 0.92,
+          "yf_ticker": "BA",
+          "rank": 30
+        },
+        {
+          "security": "Costco Wholesale",
+          "ticker": "COST",
+          "weight": 0.85,
+          "yf_ticker": "COST",
+          "rank": 31
+        },
+        {
+          "security": "Eli Lilly + Co",
+          "ticker": "LLY",
+          "weight": 0.85,
+          "yf_ticker": "LLY",
+          "rank": 32
+        },
+        {
+          "security": "Safran",
+          "ticker": "SAF",
+          "weight": 0.85,
+          "yf_ticker": "SAF",
+          "rank": 33
+        },
+        {
+          "security": "General Electric",
+          "ticker": "GE",
+          "weight": 0.84,
+          "yf_ticker": "GE",
+          "rank": 34
+        },
+        {
+          "security": "Brookfield",
+          "ticker": "BN",
+          "weight": 0.83,
+          "yf_ticker": "BN",
+          "rank": 35
+        },
+        {
+          "security": "Mercadolibre",
+          "ticker": "MELI",
+          "weight": 0.83,
+          "yf_ticker": "MELI",
+          "rank": 36
+        },
+        {
+          "security": "Lkq",
+          "ticker": "LKQ",
+          "weight": 0.82,
+          "yf_ticker": "LKQ",
+          "rank": 37
+        },
+        {
+          "security": "Amazon.Com",
+          "ticker": "AMZN",
+          "weight": 0.8,
+          "yf_ticker": "AMZN",
+          "rank": 38
+        },
+        {
+          "security": "Ati",
+          "ticker": "ATI",
+          "weight": 0.8,
+          "yf_ticker": "ATI",
+          "rank": 39
+        },
+        {
+          "security": "Saab B",
+          "ticker": "SAAB B",
+          "weight": 0.8,
+          "yf_ticker": "SAAB-B.ST",
+          "rank": 40
+        },
+        {
+          "security": "Ge Vernova",
+          "ticker": "GEV",
+          "weight": 0.79,
+          "yf_ticker": "GEV",
+          "rank": 41
+        },
+        {
+          "security": "Fiserv",
+          "ticker": "FISV",
+          "weight": 0.78,
+          "yf_ticker": "FISV",
+          "rank": 42
+        },
+        {
+          "security": "Ciena",
+          "ticker": "CIEN",
+          "weight": 0.76,
+          "yf_ticker": "CIEN",
+          "rank": 43
+        },
+        {
+          "security": "Lynas Rare Earths",
+          "ticker": "LYC",
+          "weight": 0.76,
+          "yf_ticker": "LYC",
+          "rank": 44
+        },
+        {
+          "security": "Argenx",
+          "ticker": "ARGX",
+          "weight": 0.75,
+          "yf_ticker": "ARGX",
+          "rank": 45
+        },
+        {
+          "security": "Linde",
+          "ticker": "LIN",
+          "weight": 0.75,
+          "yf_ticker": "LIN",
+          "rank": 46
+        },
+        {
+          "security": "Totalenergies",
+          "ticker": "TTE",
+          "weight": 0.75,
+          "yf_ticker": "TTE",
+          "rank": 47
+        },
+        {
+          "security": "Agnico Eagle Mines",
+          "ticker": "AEM",
+          "weight": 0.74,
+          "yf_ticker": "AEM",
+          "rank": 48
+        },
+        {
+          "security": "Ryanair Holdings",
+          "ticker": "RYAAY",
+          "weight": 0.74,
+          "yf_ticker": "RYAAY",
+          "rank": 49
+        },
+        {
+          "security": "Hanwha Aerospace",
+          "ticker": "A012450",
+          "weight": 0.72,
+          "yf_ticker": "012450.KS",
+          "rank": 50
+        },
+        {
+          "security": "Regeneron Pharmaceuticals",
+          "ticker": "REGN",
+          "weight": 0.71,
+          "yf_ticker": "REGN",
+          "rank": 51
+        },
+        {
+          "security": "Assa Abloy B",
+          "ticker": "ASSAB",
+          "weight": 0.7,
+          "yf_ticker": "ASSAB",
+          "rank": 52
+        },
+        {
+          "security": "Booking Holdings",
+          "ticker": "BKNG",
+          "weight": 0.7,
+          "yf_ticker": "BKNG",
+          "rank": 53
+        },
+        {
+          "security": "Cloudflare",
+          "ticker": "NET",
+          "weight": 0.69,
+          "yf_ticker": "NET",
+          "rank": 54
+        },
+        {
+          "security": "Transdigm Group",
+          "ticker": "TDG",
+          "weight": 0.68,
+          "yf_ticker": "TDG",
+          "rank": 55
+        },
+        {
+          "security": "Chipotle Mexican Grill",
+          "ticker": "CMG",
+          "weight": 0.67,
+          "yf_ticker": "CMG",
+          "rank": 56
+        },
+        {
+          "security": "Thermo Fisher Scientific",
+          "ticker": "TMO",
+          "weight": 0.67,
+          "yf_ticker": "TMO",
+          "rank": 57
+        },
+        {
+          "security": "Carrefour",
+          "ticker": "CA",
+          "weight": 0.66,
+          "yf_ticker": "CA",
+          "rank": 58
+        },
+        {
+          "security": "Epam Systems",
+          "ticker": "EPAM",
+          "weight": 0.64,
+          "yf_ticker": "EPAM",
+          "rank": 59
+        },
+        {
+          "security": "Core + Main",
+          "ticker": "CNM",
+          "weight": 0.6,
+          "yf_ticker": "CNM",
+          "rank": 60
+        },
+        {
+          "security": "General Motors Co",
+          "ticker": "GM",
+          "weight": 0.6,
+          "yf_ticker": "GM",
+          "rank": 61
+        },
+        {
+          "security": "Sanofi",
+          "ticker": "SAN",
+          "weight": 0.6,
+          "yf_ticker": "SAN",
+          "rank": 62
+        },
+        {
+          "security": "Corning",
+          "ticker": "GLW",
+          "weight": 0.59,
+          "yf_ticker": "GLW",
+          "rank": 63
+        },
+        {
+          "security": "Mgm China Holdings",
+          "ticker": "2282",
+          "weight": 0.59,
+          "yf_ticker": "2282.HK",
+          "rank": 64
+        },
+        {
+          "security": "Aviva",
+          "ticker": "AV/",
+          "weight": 0.58,
+          "yf_ticker": "AV.L",
+          "rank": 65
+        },
+        {
+          "security": "Bharti Airtel Inr5.0",
+          "ticker": "BHARTI",
+          "weight": 0.58,
+          "yf_ticker": "BHARTIARTL.NS",
+          "rank": 66
+        },
+        {
+          "security": "Restaurant Brands Intern",
+          "ticker": "QSR",
+          "weight": 0.58,
+          "yf_ticker": "QSR",
+          "rank": 67
+        },
+        {
+          "security": "Adyen",
+          "ticker": "ADYEN",
+          "weight": 0.57,
+          "yf_ticker": "ADYEN",
+          "rank": 68
+        },
+        {
+          "security": "Pfizer",
+          "ticker": "PFE",
+          "weight": 0.57,
+          "yf_ticker": "PFE",
+          "rank": 69
+        },
+        {
+          "security": "Lvmh Moet Hennessy Louis Vui",
+          "ticker": "MC",
+          "weight": 0.56,
+          "yf_ticker": "MC",
+          "rank": 70
+        },
+        {
+          "security": "Monster Beverage",
+          "ticker": "MNST",
+          "weight": 0.56,
+          "yf_ticker": "MNST",
+          "rank": 71
+        },
+        {
+          "security": "Ubiquiti",
+          "ticker": "UI",
+          "weight": 0.56,
+          "yf_ticker": "UI",
+          "rank": 72
+        },
+        {
+          "security": "Ftai Aviation",
+          "ticker": "FTAI",
+          "weight": 0.52,
+          "yf_ticker": "FTAI",
+          "rank": 73
+        },
+        {
+          "security": "Shopify",
+          "ticker": "SHOP",
+          "weight": 0.52,
+          "yf_ticker": "SHOP",
+          "rank": 74
+        },
+        {
+          "security": "The Cigna Group",
+          "ticker": "CI",
+          "weight": 0.52,
+          "yf_ticker": "CI",
+          "rank": 75
+        },
+        {
+          "security": "Trip.Com Group",
+          "ticker": "TCOM",
+          "weight": 0.52,
+          "yf_ticker": "TCOM",
+          "rank": 76
+        },
+        {
+          "security": "Glencore",
+          "ticker": "GLEN",
+          "weight": 0.51,
+          "yf_ticker": "GLEN",
+          "rank": 77
+        },
+        {
+          "security": "Dsv A/S Dkk1.0",
+          "ticker": "DSV",
+          "weight": 0.5,
+          "yf_ticker": "DSV",
+          "rank": 78
+        },
+        {
+          "security": "Mitsubishi Heavy Industries",
+          "ticker": "7011",
+          "weight": 0.5,
+          "yf_ticker": "7011.T",
+          "rank": 79
+        },
+        {
+          "security": "Philip Morris International",
+          "ticker": "PM",
+          "weight": 0.48,
+          "yf_ticker": "PM",
+          "rank": 80
+        },
+        {
+          "security": "Renault",
+          "ticker": "RNO",
+          "weight": 0.48,
+          "yf_ticker": "RNO",
+          "rank": 81
+        },
+        {
+          "security": "Apple",
+          "ticker": "AAPL",
+          "weight": 0.46,
+          "yf_ticker": "AAPL",
+          "rank": 82
+        },
+        {
+          "security": "Gt Capital Holdings Php10.0",
+          "ticker": "GTCAP",
+          "weight": 0.46,
+          "yf_ticker": "GTCAP",
+          "rank": 83
+        },
+        {
+          "security": "Copart",
+          "ticker": "CPRT",
+          "weight": 0.45,
+          "yf_ticker": "CPRT",
+          "rank": 84
+        },
+        {
+          "security": "Rocket Lab",
+          "ticker": "RKLB",
+          "weight": 0.45,
+          "yf_ticker": "RKLB",
+          "rank": 85
+        },
+        {
+          "security": "Pernod Ricard",
+          "ticker": "RI",
+          "weight": 0.44,
+          "yf_ticker": "RI",
+          "rank": 86
+        },
+        {
+          "security": "Cie Financiere Richemo A",
+          "ticker": "CFR",
+          "weight": 0.43,
+          "yf_ticker": "CFR",
+          "rank": 87
+        },
+        {
+          "security": "Haleon",
+          "ticker": "HLN",
+          "weight": 0.43,
+          "yf_ticker": "HLN",
+          "rank": 88
+        },
+        {
+          "security": "Industria De Diseno Textil",
+          "ticker": "ITX",
+          "weight": 0.43,
+          "yf_ticker": "ITX",
+          "rank": 89
+        },
+        {
+          "security": "Amcor",
+          "ticker": "AMCR",
+          "weight": 0.42,
+          "yf_ticker": "AMCR",
+          "rank": 90
+        },
+        {
+          "security": "Bloom Energy A",
+          "ticker": "BE",
+          "weight": 0.41,
+          "yf_ticker": "BE",
+          "rank": 91
+        },
+        {
+          "security": "Essilorluxottica",
+          "ticker": "EL",
+          "weight": 0.39,
+          "yf_ticker": "EL",
+          "rank": 92
+        },
+        {
+          "security": "Dassault Systemes",
+          "ticker": "DSY",
+          "weight": 0.38,
+          "yf_ticker": "DSY",
+          "rank": 93
+        },
+        {
+          "security": "Capgemini",
+          "ticker": "CAP",
+          "weight": 0.37,
+          "yf_ticker": "CAP",
+          "rank": 94
+        },
+        {
+          "security": "Centene",
+          "ticker": "CNC",
+          "weight": 0.37,
+          "yf_ticker": "CNC",
+          "rank": 95
+        },
+        {
+          "security": "Kla",
+          "ticker": "KLAC",
+          "weight": 0.32,
+          "yf_ticker": "KLAC",
+          "rank": 96
+        },
+        {
+          "security": "Bayer",
+          "ticker": "BAYN",
+          "weight": 0.28,
+          "yf_ticker": "BAYN",
+          "rank": 97
+        },
+        {
+          "security": "First Quantum Minerals",
+          "ticker": "FM",
+          "weight": 0.28,
+          "yf_ticker": "FM",
+          "rank": 98
+        },
+        {
+          "security": "Vale",
+          "ticker": "VALE3",
+          "weight": 0.26,
+          "yf_ticker": "VALE",
+          "rank": 99
+        },
+        {
+          "security": "Hewlett Packard Enterprise",
+          "ticker": "HPE",
+          "weight": 0.24,
+          "yf_ticker": "HPE",
+          "rank": 100
+        },
+        {
+          "security": "Cvc Capital Partners",
+          "ticker": "CVC",
+          "weight": 0.23,
+          "yf_ticker": "CVC",
+          "rank": 101
+        },
+        {
+          "security": "Alliance Global Group Php1.0",
+          "ticker": "AGI",
+          "weight": 0.11,
+          "yf_ticker": "AGI",
+          "rank": 102
+        }
+      ]
+    },
+    "DWLD": {
+      "ticker": "DWLD",
+      "fund_name": "Davis Select Worldwide ETF",
+      "sponsor": "Davis Advisors",
+      "mandate": "Active global concentrated equity (value-leaning)",
+      "category": "Active ETF",
+      "inception": "2017-01-11",
+      "as_of": "2026-05-05",
+      "source_file": "DavisSelectWorldwideETF_Holdings_2026-05-05.csv",
+      "n_holdings": 39,
+      "total_weight_pct": 100.0,
+      "top10_concentration_pct": 43.72,
+      "top25_concentration_pct": 83.22,
+      "holdings": [
+        {
+          "security": "Full Truck Alliance Co",
+          "ticker": "YMM",
+          "weight": 6.01,
+          "yf_ticker": "YMM",
+          "country": "China",
+          "rank": 1
+        },
+        {
+          "security": "Coterra Energy",
+          "ticker": "CTRA",
+          "weight": 5.41,
+          "yf_ticker": "CTRA",
+          "country": "USA",
+          "rank": 2
+        },
+        {
+          "security": "Samsung Electronics Co",
+          "ticker": "005930 KS",
+          "weight": 5.35,
+          "yf_ticker": "005930.KS",
+          "country": "Korea, (South)",
+          "rank": 3
+        },
+        {
+          "security": "Ping An Insurance (Group)",
+          "ticker": "2318 HK",
+          "weight": 4.53,
+          "yf_ticker": "2318.HK",
+          "country": "China",
+          "rank": 4
+        },
+        {
+          "security": "Viatris",
+          "ticker": "VTRS",
+          "weight": 4.13,
+          "yf_ticker": "VTRS",
+          "country": "USA",
+          "rank": 5
+        },
+        {
+          "security": "Trip.Com Group",
+          "ticker": "TCOM",
+          "weight": 3.96,
+          "yf_ticker": "TCOM",
+          "country": "China",
+          "rank": 6
+        },
+        {
+          "security": "Tyson Foods",
+          "ticker": "TSN",
+          "weight": 3.68,
+          "yf_ticker": "TSN",
+          "country": "USA",
+          "rank": 7
+        },
+        {
+          "security": "Jbs N.V",
+          "ticker": "JBS",
+          "weight": 3.63,
+          "yf_ticker": "JBS",
+          "country": "Brazil",
+          "rank": 8
+        },
+        {
+          "security": "Applovin",
+          "ticker": "APP",
+          "weight": 3.53,
+          "yf_ticker": "APP",
+          "country": "USA",
+          "rank": 9
+        },
+        {
+          "security": "Julius Baer Group",
+          "ticker": "BAER SE",
+          "weight": 3.49,
+          "yf_ticker": "BAER.SW",
+          "country": "Switzerland",
+          "rank": 10
+        },
+        {
+          "security": "Cash Component",
+          "ticker": "",
+          "weight": 3.46,
+          "rank": 11
+        },
+        {
+          "security": "Meta Platforms",
+          "ticker": "META",
+          "weight": 3.27,
+          "yf_ticker": "META",
+          "country": "USA",
+          "rank": 12
+        },
+        {
+          "security": "Alphabet",
+          "ticker": "GOOG",
+          "weight": 3.22,
+          "yf_ticker": "GOOG",
+          "country": "USA",
+          "rank": 13
+        },
+        {
+          "security": "Prosus N.V",
+          "ticker": "PRX NA",
+          "weight": 3.16,
+          "yf_ticker": "PRX.AS",
+          "country": "Netherlands",
+          "rank": 14
+        },
+        {
+          "security": "Mgm Resorts International",
+          "ticker": "MGM",
+          "weight": 3.09,
+          "yf_ticker": "MGM",
+          "country": "USA",
+          "rank": 15
+        },
+        {
+          "security": "Sea Limited",
+          "ticker": "SE",
+          "weight": 3.08,
+          "yf_ticker": "SE",
+          "country": "Singapore",
+          "rank": 16
+        },
+        {
+          "security": "Capital One Financial",
+          "ticker": "COF",
+          "weight": 3.05,
+          "yf_ticker": "COF",
+          "country": "USA",
+          "rank": 17
+        },
+        {
+          "security": "Markel Group",
+          "ticker": "MKL",
+          "weight": 2.98,
+          "yf_ticker": "MKL",
+          "country": "USA",
+          "rank": 18
+        },
+        {
+          "security": "Cvs Health",
+          "ticker": "CVS",
+          "weight": 2.23,
+          "yf_ticker": "CVS",
+          "country": "USA",
+          "rank": 19
+        },
+        {
+          "security": "Amazon.Com",
+          "ticker": "AMZN",
+          "weight": 2.07,
+          "yf_ticker": "AMZN",
+          "country": "USA",
+          "rank": 20
+        },
+        {
+          "security": "Didi Global., Ads",
+          "ticker": "DIDIY",
+          "weight": 2.05,
+          "yf_ticker": "DIDIY",
+          "country": "China",
+          "rank": 21
+        },
+        {
+          "security": "Sap",
+          "ticker": "SAP GR",
+          "weight": 2.04,
+          "yf_ticker": "SAP.DE",
+          "country": "Germany",
+          "rank": 22
+        },
+        {
+          "security": "Aia Group",
+          "ticker": "1299 HK",
+          "weight": 1.97,
+          "yf_ticker": "1299.HK",
+          "country": "Hong Kong",
+          "rank": 23
+        },
+        {
+          "security": "Sany Heavy Industry Co.,. - H",
+          "ticker": "6031 HK",
+          "weight": 1.94,
+          "yf_ticker": "6031.HK",
+          "country": "China",
+          "rank": 24
+        },
+        {
+          "security": "Lyondellbasell Industries N.V",
+          "ticker": "LYB",
+          "weight": 1.89,
+          "yf_ticker": "LYB",
+          "country": "USA",
+          "rank": 25
+        },
+        {
+          "security": "Berkshire Hathaway",
+          "ticker": "BRK B",
+          "weight": 1.82,
+          "country": "USA",
+          "rank": 26
+        },
+        {
+          "security": "Meituan",
+          "ticker": "3690 HK",
+          "weight": 1.75,
+          "yf_ticker": "3690.HK",
+          "country": "China",
+          "rank": 27
+        },
+        {
+          "security": "Solventum",
+          "ticker": "SOLV",
+          "weight": 1.57,
+          "yf_ticker": "SOLV",
+          "country": "USA",
+          "rank": 28
+        },
+        {
+          "security": "Silergy",
+          "ticker": "6415 TT",
+          "weight": 1.46,
+          "country": "Taiwan",
+          "rank": 29
+        },
+        {
+          "security": "Cigna Group",
+          "ticker": "CI",
+          "weight": 1.44,
+          "yf_ticker": "CI",
+          "country": "USA",
+          "rank": 30
+        },
+        {
+          "security": "Teck Resources",
+          "ticker": "TECK",
+          "weight": 1.42,
+          "yf_ticker": "TECK",
+          "country": "Canada",
+          "rank": 31
+        },
+        {
+          "security": "U.S. Bancorp",
+          "ticker": "USB",
+          "weight": 1.34,
+          "yf_ticker": "USB",
+          "country": "USA",
+          "rank": 32
+        },
+        {
+          "security": "Aumovio",
+          "ticker": "AMV0 GR",
+          "weight": 1.27,
+          "yf_ticker": "AMV0.DE",
+          "country": "Germany",
+          "rank": 33
+        },
+        {
+          "security": "Unitedhealth Group",
+          "ticker": "UNH",
+          "weight": 1.23,
+          "yf_ticker": "UNH",
+          "country": "USA",
+          "rank": 34
+        },
+        {
+          "security": "Entain",
+          "ticker": "ENT LN",
+          "weight": 0.91,
+          "yf_ticker": "ENT.L",
+          "country": "UK",
+          "rank": 35
+        },
+        {
+          "security": "Itochu",
+          "ticker": "8001 JP",
+          "weight": 0.78,
+          "yf_ticker": "8001.T",
+          "country": "Japan",
+          "rank": 36
+        },
+        {
+          "security": "Pinterest",
+          "ticker": "PINS",
+          "weight": 0.7,
+          "yf_ticker": "PINS",
+          "country": "USA",
+          "rank": 37
+        },
+        {
+          "security": "Netease",
+          "ticker": "NTES",
+          "weight": 0.68,
+          "yf_ticker": "NTES",
+          "country": "China",
+          "rank": 38
+        },
+        {
+          "security": "Naspers. - N",
+          "ticker": "NPN SJ",
+          "weight": 0.41,
+          "country": "South Africa",
+          "rank": 39
+        }
+      ]
+    }
+  }
+}

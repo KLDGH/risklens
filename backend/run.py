@@ -10,6 +10,7 @@ from fetch_data import (
     NAMES, TICKERS,
     TDF_2055_TICKERS, TDF_2055_NAMES,
     CG_2055_TICKERS, CG_2055_NAMES,
+    ACTIVE_FUND_TICKERS, ACTIVE_FUND_NAMES,
     compute_log_returns, fetch_prices, fetch_sp500_history, fetch_vix_history,
     fetch_yield_curve_spread, fetch_intraday_data,
 )
@@ -35,6 +36,13 @@ OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "frontend", "public"
 # Cached GARCH/tGARCH backtests — too slow for the daily run, refreshed on
 # demand via RISKLENS_FULL_BACKTEST=1 python run.py
 GARCH_CACHE_PATH = os.path.join(os.path.dirname(__file__), "cache", "garch_backtests.json")
+
+# Preprocessed disclosed-holdings JSON for the active-fund spotlight modes.
+# Generated locally by `python backend/preprocess_holdings.py` from xlsx/csv
+# disclosures dropped into ext-data/. Committed to the repo so GitHub Actions
+# can read it without needing openpyxl in CI.
+ACTIVE_FUND_HOLDINGS_PATH = os.path.join(
+    os.path.dirname(__file__), "data", "active_fund_holdings.json")
 
 
 # ---------------------------------------------------------------------------
@@ -183,6 +191,14 @@ CG_2055_WEIGHTS = {
     "AMUSX": 0.04,   # US Government Securities — Treasuries
 }
 
+# Active-fund spotlight modes — each is a single-fund "portfolio" (100% in
+# the named active ETF) so the existing risk pipeline (VaR/ES/EVT,
+# scenarios, backtests, risk history) all run on the fund's NAV without
+# any new code paths. Disclosed holdings are surfaced as a reference panel
+# in the frontend, decoupled from the risk calc.
+CGGO_WEIGHTS = {"CGGO": 1.0}
+DWLD_WEIGHTS = {"DWLD": 1.0}
+
 PORTFOLIO_MODES = {
     "hypothetical": {
         "label":       "Hypothetical Portfolio",
@@ -207,6 +223,24 @@ PORTFOLIO_MODES = {
         "names":       CG_2055_NAMES,
         "weights":     CG_2055_WEIGHTS,
         "name":        "American Funds Target 2055",
+    },
+    "cggo_active": {
+        "label":       "CGGO (Capital Group active)",
+        "description": "Capital Group Global Growth Equity ETF (CGGO) — actively managed, ~100 holdings, semis/AI-infra-tilted growth. Risk metrics computed on the fund's NAV; disclosed holdings surfaced as a reference panel.",
+        "tickers":     ["CGGO"],
+        "names":       {"CGGO": ACTIVE_FUND_NAMES["CGGO"]},
+        "weights":     CGGO_WEIGHTS,
+        "name":        "CGGO — Capital Group Global Growth",
+        "is_active_fund_spotlight": True,
+    },
+    "dwld_active": {
+        "label":       "DWLD (Davis active)",
+        "description": "Davis Select Worldwide ETF (DWLD) — actively managed, ~40 holdings, value-leaning concentrated global equity. Risk metrics computed on the fund's NAV; disclosed holdings surfaced as a reference panel.",
+        "tickers":     ["DWLD"],
+        "names":       {"DWLD": ACTIVE_FUND_NAMES["DWLD"]},
+        "weights":     DWLD_WEIGHTS,
+        "name":        "DWLD — Davis Select Worldwide",
+        "is_active_fund_spotlight": True,
     },
 }
 
@@ -305,12 +339,59 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
     }
 
 
+def _augment_active_fund_modes_with_holdings():
+    """
+    Expand each active-fund spotlight mode's `tickers` list to include the
+    top 25 disclosed underlying holdings (mapped to yfinance-friendly
+    tickers by preprocess_holdings.py). Each underlying becomes a per-asset
+    risk row in the table; weights stay {fund_ticker: 1.0} so the portfolio
+    summary remains the fund's own NAV.
+
+    Mutates PORTFOLIO_MODES in place. No-op when the holdings JSON is missing.
+    """
+    if not os.path.exists(ACTIVE_FUND_HOLDINGS_PATH):
+        print(f"  Skipping holdings expansion — {ACTIVE_FUND_HOLDINGS_PATH} missing.")
+        return
+    try:
+        with open(ACTIVE_FUND_HOLDINGS_PATH) as f:
+            holdings_index = json.load(f).get("funds", {})
+    except Exception as e:
+        print(f"  WARNING: failed to load holdings JSON ({e})")
+        return
+
+    TOP_N = 25
+    for mode_key, cfg in PORTFOLIO_MODES.items():
+        if not cfg.get("is_active_fund_spotlight"):
+            continue
+        fund_ticker = cfg["tickers"][0]
+        fund = holdings_index.get(fund_ticker)
+        if not fund:
+            continue
+        underlyings = []
+        for h in fund.get("holdings", [])[:TOP_N]:
+            yf = h.get("yf_ticker")
+            if not yf or yf == fund_ticker:
+                continue
+            underlyings.append(yf)
+            cfg["names"][yf] = h.get("security", yf)
+        cfg["tickers"] = [fund_ticker] + underlyings
+        print(f"  Expanded {mode_key}: fund + {len(underlyings)} mapped top-25 underlyings")
+
+
 def main():
+    # Active-fund spotlight modes get expanded with their disclosed top-25
+    # underlying holdings (mapped to yfinance tickers via the preprocessor).
+    # Each underlying becomes its own per-asset risk row in the table.
+    # Weights remain {fund_ticker: 1.0} — the portfolio is still the fund;
+    # underlyings are read-only context with individual risk metrics.
+    _augment_active_fund_modes_with_holdings()
+
     # Master ticker list — union of everything we need across all modes,
     # plus extra bond proxies for the multi-window correlation chart.
-    all_tickers = list(dict.fromkeys(
-        TICKERS + TDF_2055_TICKERS + CG_2055_TICKERS + EXTRA_BOND_PROXIES
-    ))
+    all_tickers = []
+    for cfg in PORTFOLIO_MODES.values():
+        all_tickers.extend(cfg["tickers"])
+    all_tickers = list(dict.fromkeys(all_tickers + EXTRA_BOND_PROXIES))
 
     print("Fetching 10y price data...")
     prices_10y = fetch_prices(period="10y", tickers=all_tickers)
@@ -325,6 +406,31 @@ def main():
     for key, cfg in PORTFOLIO_MODES.items():
         print(f"\n=== Mode: {cfg['label']} ===")
         portfolios[key] = compute_mode(prices_10y, returns_10y, prices_long, cfg)
+        # Echo flags so the frontend knows which modes need the holdings panel
+        if cfg.get("is_active_fund_spotlight"):
+            portfolios[key]["is_active_fund_spotlight"] = True
+
+    # Attach disclosed-holdings reference data to active-fund spotlight modes.
+    # Loaded from the preprocessed JSON (committed to repo so CI doesn't need
+    # openpyxl). Missing files degrade gracefully.
+    if os.path.exists(ACTIVE_FUND_HOLDINGS_PATH):
+        try:
+            with open(ACTIVE_FUND_HOLDINGS_PATH) as f:
+                holdings_data = json.load(f).get("funds", {})
+            for mode_key, mode in portfolios.items():
+                if not mode.get("is_active_fund_spotlight"):
+                    continue
+                fund_ticker = PORTFOLIO_MODES[mode_key]["tickers"][0]
+                if fund_ticker in holdings_data:
+                    mode["fund_disclosure"] = holdings_data[fund_ticker]
+                    print(f"  Attached {fund_ticker} holdings: "
+                          f"n={mode['fund_disclosure']['n_holdings']}, "
+                          f"as_of={mode['fund_disclosure']['as_of']}")
+        except Exception as e:
+            print(f"  WARNING: failed to load active-fund holdings ({e})")
+    else:
+        print(f"\nNo active-fund holdings JSON at {ACTIVE_FUND_HOLDINGS_PATH}; "
+              f"run preprocess_holdings.py first.")
 
     # Live external probability signals — attached to relevant hypothetical scenarios.
     # NY Fed yield-curve recession probability (Estrella-Trubin 2006).

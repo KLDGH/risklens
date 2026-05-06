@@ -395,6 +395,9 @@ HYPOTHETICAL_SCENARIOS = [
             "VNQ":     -0.10,
             "BTC-USD": -0.28,   # crypto risk-off
             "XLF":     -0.11,   # legacy: kept for any portfolio still holding
+            # Active-fund spotlight ETFs
+            "CGGO":    -0.22,   # heavy semis/AI infra — direct Taiwan/Asia hit
+            "DWLD":    -0.18,   # concentrated global, sizeable Asia exposure
             # TDF underlying holdings
             "VTI":     -0.15,   # US total market
             "VXUS":    -0.20,   # intl total — heavier Asia weight
@@ -435,6 +438,9 @@ HYPOTHETICAL_SCENARIOS = [
             "VNQ":     -0.07,
             "BTC-USD": -0.18,
             "XLF":     -0.08,   # legacy
+            # Active-fund spotlight ETFs
+            "CGGO":    -0.10,   # global growth, modest oil-shock sensitivity
+            "DWLD":    -0.05,   # value-leaning, has Coterra (oil benefits) — softer hit
             # TDF underlying holdings
             "VTI":     -0.09,
             "VXUS":    -0.11,   # intl exposure to oil shock
@@ -475,6 +481,9 @@ HYPOTHETICAL_SCENARIOS = [
             "VNQ":     -0.22,
             "BTC-USD": -0.45,
             "XLF":     -0.30,   # legacy: financials crater
+            # Active-fund spotlight ETFs
+            "CGGO":    -0.26,   # global growth, quality tilt softens vs QQQ
+            "DWLD":    -0.30,   # smaller-cap value-leaning, recession-sensitive
             # TDF underlying holdings
             "VTI":     -0.28,
             "VXUS":    -0.24,   # global recession spillover
@@ -515,6 +524,9 @@ HYPOTHETICAL_SCENARIOS = [
             "VNQ":     -0.08,
             "BTC-USD": -0.30,   # correlated risk-off
             "XLF":     -0.14,   # legacy
+            # Active-fund spotlight ETFs
+            "CGGO":    -0.30,   # heaviest AI/semis concentration — biggest hit
+            "DWLD":    -0.14,   # value-leaning, much less AI exposure
             # TDF underlying holdings
             "VTI":     -0.18,   # broad market, includes AI exposure
             "VXUS":    -0.10,   # less direct AI concentration

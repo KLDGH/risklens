@@ -1,0 +1,231 @@
+.fund-disclosure-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 18px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---------- Fund metadata grid (sponsor, mandate, etc.) ---------- */
+.fund-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px 22px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.fund-meta-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fund-meta-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.fund-meta-value {
+  font-size: 12.5px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.fund-meta-value strong {
+  color: var(--text-bright);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- Concentration stats ---------- */
+.fund-concentration-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  padding: 4px 0 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.conc-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.conc-num {
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-bright);
+  letter-spacing: 0.02em;
+}
+
+.conc-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ---------- Holdings table ---------- */
+.fund-holdings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.02em;
+}
+
+.fund-holdings-source {
+  font-style: italic;
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+/* The scroll container caps vertical footprint so the panel never pushes
+   other dashboard sections downward — even if the fund has 10,000+ rows.
+   The header row is sticky so column labels stay visible while scrolling. */
+.fund-holdings-scroll {
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+}
+
+.fund-holdings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.fund-holdings-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 12px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.fund-holdings-table thead th.num {
+  text-align: right;
+}
+
+.fund-holdings-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.fund-holdings-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.012);
+}
+
+.fund-holdings-table tbody tr:hover {
+  background: var(--bg3);
+}
+
+.fund-holdings-table tbody td {
+  padding: 7px 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fund-holdings-table .num {
+  text-align: right;
+}
+
+.fund-holdings-table .rank-cell {
+  width: 36px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.fund-holdings-table .security-cell {
+  color: var(--text);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 320px;
+}
+
+.fund-holdings-table .ticker-cell {
+  color: var(--text-bright);
+  font-family: var(--font);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.fund-holdings-table .country-cell {
+  color: var(--text-dim);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.fund-holdings-table .weight-cell {
+  color: var(--text-bright);
+  font-weight: 500;
+  width: 80px;
+}
+
+.fund-holdings-table .risk-flag-cell {
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.risk-flag-yes {
+  color: var(--green);
+  font-family: var(--font);
+  letter-spacing: 0.02em;
+}
+
+.risk-flag-no {
+  color: var(--text-dim);
+  opacity: 0.5;
+}
+
+/* On narrow screens the country column eats too much width; hide it. */
+@media (max-width: 720px) {
+  .fund-holdings-table .country-col,
+  .fund-holdings-table .country-cell {
+    display: none;
+  }
+}
+
+/* ---------- Footnote ---------- */
+.fund-disclosure-footnote {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.55;
+  margin: 0;
+  padding-top: 6px;
+}
+
+.fund-disclosure-footnote code {
+  background: var(--bg3);
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-size: 10px;
+  color: var(--accent);
+}
+
+.fund-disclosure-footnote strong {
+  color: var(--text);
+  font-weight: 600;
+}

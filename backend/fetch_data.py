@@ -62,6 +62,17 @@ CG_2055_NAMES = {
     "AMUSX": "U.S. Government Securities Fund",
 }
 
+# Active stock-picker ETFs spotlighted as standalone single-fund modes.
+# Each is an active global equity ETF from a distinct sponsor — selected to
+# let users compare two competing answers to the same active-management
+# mandate, with their disclosed holdings shown alongside the risk metrics.
+ACTIVE_FUND_TICKERS = ["CGGO", "DWLD"]
+
+ACTIVE_FUND_NAMES = {
+    "CGGO": "Capital Group Global Growth Equity ETF",
+    "DWLD": "Davis Select Worldwide ETF",
+}
+
 
 def fetch_prices(period: str = "10y", tickers: list = None) -> pd.DataFrame:
     if tickers is None:
@@ -90,7 +101,12 @@ def fetch_prices(period: str = "10y", tickers: list = None) -> pd.DataFrame:
 
 
 def compute_log_returns(prices: pd.DataFrame) -> pd.DataFrame:
-    return np.log(prices / prices.shift(1)).dropna()
+    # Use dropna(how="all") rather than how="any" so a single ticker with a
+    # short history (e.g. a recently-listed ETF or international holding)
+    # doesn't truncate the entire DataFrame to its intersection date. Each
+    # downstream consumer (compute_asset_risk, compute_portfolio_row, etc.)
+    # is responsible for its own per-asset .dropna() on the columns it uses.
+    return np.log(prices / prices.shift(1)).dropna(how="all")
 
 # TODO: Explore not going back as far given what we want to visualize (70s-80s)
 
