@@ -29,7 +29,10 @@ body {
 }
 
 #root {
-  max-width: 1400px;
+  /* Wider container so the dense risk tables and charts get more horizontal
+     room without users having to zoom. The content stays comfortably readable
+     on 1440px-class displays and uses the full width on 1600px+ monitors. */
+  max-width: 1680px;
   margin: 0 auto;
-  padding: 28px 20px;
+  padding: 28px 28px;
 }

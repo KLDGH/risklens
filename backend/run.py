@@ -191,13 +191,18 @@ CG_2055_WEIGHTS = {
     "AMUSX": 0.04,   # US Government Securities — Treasuries
 }
 
-# Active-fund spotlight modes — each is a single-fund "portfolio" (100% in
-# the named active ETF) so the existing risk pipeline (VaR/ES/EVT,
-# scenarios, backtests, risk history) all run on the fund's NAV without
-# any new code paths. Disclosed holdings are surfaced as a reference panel
-# in the frontend, decoupled from the risk calc.
-CGGO_WEIGHTS = {"CGGO": 1.0}
-DWLD_WEIGHTS = {"DWLD": 1.0}
+# Active-fund spotlight modes — the portfolio is the fund's *look-through
+# basket*: each disclosed top-N underlying is a per-asset row with its own
+# risk metrics, weighted by its disclosed weight (re-normalized over the
+# top-N). The fund's own ticker stays in the tickers list as a final
+# reference row (no weight) so users can compare the look-through basket
+# vs. the fund's own NAV — the difference is the manager's discretionary
+# trading effect since the disclosure date plus expense-ratio drag.
+#
+# Both dicts are placeholders that get fully overwritten by
+# _augment_active_fund_modes_with_holdings() before the pipeline runs.
+CGGO_WEIGHTS = {}
+DWLD_WEIGHTS = {}
 
 PORTFOLIO_MODES = {
     "hypothetical": {
@@ -225,34 +230,66 @@ PORTFOLIO_MODES = {
         "name":        "American Funds Target 2055",
     },
     "cggo_active": {
-        "label":       "CGGO (Capital Group active)",
-        "description": "Capital Group Global Growth Equity ETF (CGGO) — actively managed, ~100 holdings, semis/AI-infra-tilted growth. Risk metrics computed on the fund's NAV; disclosed holdings surfaced as a reference panel.",
-        "tickers":     ["CGGO"],
+        "label":       "CGGO Look-Through",
+        "description": "Capital Group Global Growth Equity ETF (CGGO) modeled as a look-through basket of its top 25 disclosed holdings. Each underlying is a per-asset risk row weighted by its disclosed weight (re-normalized over the top 25). The CGGO ETF row at the bottom shows the fund's own NAV-based risk for comparison vs. the basket.",
+        "tickers":     ["CGGO"],   # overwritten by _augment_active_fund_modes_with_holdings
         "names":       {"CGGO": ACTIVE_FUND_NAMES["CGGO"]},
         "weights":     CGGO_WEIGHTS,
-        "name":        "CGGO — Capital Group Global Growth",
+        "name":        "CGGO Top-25 Basket (Look-Through)",
         "is_active_fund_spotlight": True,
+        "fund_ticker": "CGGO",
     },
     "dwld_active": {
-        "label":       "DWLD (Davis active)",
-        "description": "Davis Select Worldwide ETF (DWLD) — actively managed, ~40 holdings, value-leaning concentrated global equity. Risk metrics computed on the fund's NAV; disclosed holdings surfaced as a reference panel.",
-        "tickers":     ["DWLD"],
+        "label":       "DWLD Look-Through",
+        "description": "Davis Select Worldwide ETF (DWLD) modeled as a look-through basket of its top 25 disclosed holdings. Each underlying is a per-asset risk row weighted by its disclosed weight (re-normalized over the top 25). The DWLD ETF row at the bottom shows the fund's own NAV-based risk for comparison vs. the basket.",
+        "tickers":     ["DWLD"],   # overwritten by _augment_active_fund_modes_with_holdings
         "names":       {"DWLD": ACTIVE_FUND_NAMES["DWLD"]},
         "weights":     DWLD_WEIGHTS,
-        "name":        "DWLD — Davis Select Worldwide",
+        "name":        "DWLD Top-25 Basket (Look-Through)",
         "is_active_fund_spotlight": True,
+        "fund_ticker": "DWLD",
     },
 }
 
 
-def compute_portfolio_row(returns: pd.DataFrame, weights: dict, name: str) -> dict:
+def compute_portfolio_row(returns: pd.DataFrame, weights: dict, name: str,
+                          min_history_days: int = 252) -> dict:
     """
     Build a weighted portfolio return series and run all risk models on it.
     Uses the common date range across all tickers in `weights`.
+
+    Tickers with less than `min_history_days` of return history are dropped
+    from the basket aggregation and the remaining weights re-normalized.
+    This protects the look-through basket portfolios from being truncated
+    to the shortest-history holding (e.g. a recently-listed holding cutting
+    a 5-year basket window down to 100 days). Per-asset risk rows for the
+    dropped tickers are still computed independently.
     """
-    avail = [t for t in weights if t in returns.columns]
+    avail   = []
+    dropped = []
+    for t in weights:
+        if t not in returns.columns:
+            dropped.append((t, "no data fetched"))
+            continue
+        history_len = int(returns[t].dropna().shape[0])
+        if history_len < min_history_days:
+            dropped.append((t, f"only {history_len}d history"))
+            continue
+        avail.append(t)
+
+    if not avail:
+        # Should never hit on real portfolios, but fail safe rather than
+        # divide-by-zero downstream.
+        raise ValueError(
+            f"No tickers in weights have at least {min_history_days} days of history"
+        )
+
+    if dropped:
+        print(f"    Basket excludes {len(dropped)} ticker(s) for insufficient history: "
+              + ", ".join(f"{t} ({why})" for t, why in dropped))
+
     raw_weights = np.array([weights[t] for t in avail])
-    norm_weights = raw_weights / raw_weights.sum()  # re-normalize if any ticker missing
+    norm_weights = raw_weights / raw_weights.sum()  # re-normalize over survivors
 
     ret_df = returns[avail].dropna()
     port_rets = pd.Series(ret_df.values @ norm_weights, index=ret_df.index)
@@ -341,11 +378,22 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
 
 def _augment_active_fund_modes_with_holdings():
     """
-    Expand each active-fund spotlight mode's `tickers` list to include the
-    top 25 disclosed underlying holdings (mapped to yfinance-friendly
-    tickers by preprocess_holdings.py). Each underlying becomes a per-asset
-    risk row in the table; weights stay {fund_ticker: 1.0} so the portfolio
-    summary remains the fund's own NAV.
+    Convert each active-fund spotlight mode into a *look-through basket*:
+
+      tickers = top-N underlyings (mapped to yfinance) + fund ticker (last)
+      weights = each underlying's disclosed weight, re-normalized to sum to 1.0
+                (the fund itself is in tickers but NOT in weights — it's a
+                reference row for comparing basket vs. actual fund NAV)
+      names   = security names for each underlying
+
+    This mirrors the synthetic Hypothetical mode pattern: each holding is
+    its own per-asset risk row, the portfolio summary is the weighted
+    basket aggregate. Compute_component_var, scenarios, backtests, and
+    risk history all auto-derive from the new weights dict.
+
+    Also stamps the mode with `coverage_meta` describing what fraction of
+    the actual fund's weight is captured by the modeled basket — this is
+    the caveat the frontend surfaces in the section header.
 
     Mutates PORTFOLIO_MODES in place. No-op when the holdings JSON is missing.
     """
@@ -363,19 +411,55 @@ def _augment_active_fund_modes_with_holdings():
     for mode_key, cfg in PORTFOLIO_MODES.items():
         if not cfg.get("is_active_fund_spotlight"):
             continue
-        fund_ticker = cfg["tickers"][0]
+        fund_ticker = cfg.get("fund_ticker") or cfg["tickers"][0]
         fund = holdings_index.get(fund_ticker)
         if not fund:
+            print(f"  WARNING: no disclosure data for {fund_ticker}, mode {mode_key} unchanged")
             continue
-        underlyings = []
-        for h in fund.get("holdings", [])[:TOP_N]:
-            yf = h.get("yf_ticker")
-            if not yf or yf == fund_ticker:
-                continue
-            underlyings.append(yf)
-            cfg["names"][yf] = h.get("security", yf)
-        cfg["tickers"] = [fund_ticker] + underlyings
-        print(f"  Expanded {mode_key}: fund + {len(underlyings)} mapped top-25 underlyings")
+
+        # Take top-N holdings that have a yf_ticker. Some sponsors include
+        # cash components or unmappable foreign listings; we drop those and
+        # re-normalize the surviving weights.
+        topn_disclosed = fund.get("holdings", [])[:TOP_N]
+        candidates = [
+            h for h in topn_disclosed
+            if h.get("yf_ticker") and h["yf_ticker"] != fund_ticker
+        ]
+        if not candidates:
+            print(f"  WARNING: no mappable underlyings for {fund_ticker}, mode {mode_key} unchanged")
+            continue
+
+        raw_weight_sum = sum(h["weight"] for h in candidates)
+        new_weights = {}
+        new_names   = {fund_ticker: cfg["names"].get(fund_ticker, fund_ticker)}
+        new_tickers = []
+        for h in candidates:
+            yf = h["yf_ticker"]
+            new_tickers.append(yf)
+            new_weights[yf] = h["weight"] / raw_weight_sum  # re-normalize over modeled subset
+            new_names[yf] = h.get("security", yf)
+
+        # Append fund itself at the END as a reference row (not weighted,
+        # so it doesn't affect portfolio aggregation, but its risk metrics
+        # still get computed and displayed for comparison).
+        new_tickers.append(fund_ticker)
+
+        cfg["tickers"] = new_tickers
+        cfg["weights"] = new_weights
+        cfg["names"]   = new_names
+
+        # Coverage metadata for the frontend caveat
+        actual_top_n_weight = sum(h["weight"] for h in topn_disclosed)
+        total_disclosed     = fund.get("total_weight_pct", 100.0)
+        cfg["coverage_meta"] = {
+            "modeled_n":             len(candidates),
+            "modeled_weight_pct":    round(actual_top_n_weight, 2),  # of the fund as disclosed
+            "total_holdings":        fund.get("n_holdings"),
+            "total_disclosed_pct":   round(total_disclosed, 2),
+            "as_of":                 fund.get("as_of"),
+        }
+        print(f"  Restructured {mode_key}: {len(candidates)} basket underlyings + 1 fund reference; "
+              f"basket covers {actual_top_n_weight:.1f}% of fund's disclosed weight")
 
 
 def main():
@@ -409,6 +493,9 @@ def main():
         # Echo flags so the frontend knows which modes need the holdings panel
         if cfg.get("is_active_fund_spotlight"):
             portfolios[key]["is_active_fund_spotlight"] = True
+            portfolios[key]["fund_ticker"] = cfg.get("fund_ticker")
+            if cfg.get("coverage_meta"):
+                portfolios[key]["coverage_meta"] = cfg["coverage_meta"]
 
     # Attach disclosed-holdings reference data to active-fund spotlight modes.
     # Loaded from the preprocessed JSON (committed to repo so CI doesn't need
@@ -420,8 +507,8 @@ def main():
             for mode_key, mode in portfolios.items():
                 if not mode.get("is_active_fund_spotlight"):
                     continue
-                fund_ticker = PORTFOLIO_MODES[mode_key]["tickers"][0]
-                if fund_ticker in holdings_data:
+                fund_ticker = PORTFOLIO_MODES[mode_key].get("fund_ticker")
+                if fund_ticker and fund_ticker in holdings_data:
                     mode["fund_disclosure"] = holdings_data[fund_ticker]
                     print(f"  Attached {fund_ticker} holdings: "
                           f"n={mode['fund_disclosure']['n_holdings']}, "
