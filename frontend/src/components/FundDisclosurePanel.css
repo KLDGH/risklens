@@ -8,6 +8,26 @@
   gap: 14px;
 }
 
+/* Coverage caveat at the top of the panel — the risk table models a
+   look-through basket of the top-N disclosed holdings, not the entire
+   fund. This callout makes the "what we modeled vs what the fund holds"
+   gap explicit so quants don't get confused by the re-normalized weights. */
+.fund-coverage-callout {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.30);
+  border-left: 3px solid var(--yellow);
+  border-radius: 3px;
+  padding: 10px 14px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.fund-coverage-callout strong {
+  color: var(--text-bright);
+  font-weight: 600;
+}
+
 /* ---------- Fund metadata grid (sponsor, mandate, etc.) ---------- */
 .fund-meta-grid {
   display: grid;

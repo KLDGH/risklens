@@ -29,8 +29,8 @@ const PORTFOLIO_SHORT_LABELS = {
   hypothetical: "HYPOTHETICAL PORTFOLIO",
   tdf_2055:     "VANGUARD 2055",
   cg_2055:      "AF TARGET 2055",
-  cggo_active:  "CGGO (CAPITAL GROUP)",
-  dwld_active:  "DWLD (DAVIS)",
+  cggo_active:  "CGGO TOP-25 BASKET",
+  dwld_active:  "DWLD TOP-25 BASKET",
 };
 
 // Curated literature references per section. Each entry is the canonical
@@ -231,11 +231,6 @@ export default function App() {
 
       {portfolio && (
         <div className="mode-bar">
-          <div className="mode-info">
-            <span className="mode-label">Active portfolio</span>
-            <span className="mode-name">{portfolio.label}</span>
-            <span className="mode-desc">{portfolio.description}</span>
-          </div>
           <div className="mode-toggle">
             {modeKeys.map((k) => (
               <button
@@ -246,6 +241,11 @@ export default function App() {
                 {data.portfolios[k].label}
               </button>
             ))}
+          </div>
+          <div className="mode-info">
+            <span className="mode-label">Active portfolio</span>
+            <span className="mode-name">{portfolio.label}</span>
+            <span className="mode-desc">{portfolio.description}</span>
           </div>
         </div>
       )}
@@ -277,14 +277,7 @@ export default function App() {
             description="How risky is each asset today, relative to its own two-year history? Rows default-sorted by risk level. VaR = the minimum expected loss on the worst 1% of trading days, on a $100 position. Five models are shown because their disagreement is itself a signal — a wide spread means the asset has tail behavior that normal assumptions miss."
           >
             <RiskTable
-              assets={
-                // For active-fund spotlight modes, the portfolio summary row
-                // is degenerate (= the fund itself, which is already an asset
-                // row). Suppress it to avoid the visually-confusing duplicate.
-                portfolio.is_active_fund_spotlight
-                  ? portfolio.assets.filter((a) => !a.is_portfolio)
-                  : portfolio.assets
-              }
+              assets={portfolio.assets}
               portfolioWeights={portfolio.weights}
               portfolioLabel={PORTFOLIO_SHORT_LABELS[mode] ?? "PORTFOLIO"}
             />
@@ -295,9 +288,12 @@ export default function App() {
             id="fund-disclosure"
             title="Fund Holdings — Disclosed"
             question="What is this active fund actually holding right now?"
-            description="Reference panel for the spotlighted active ETF: sponsor metadata, concentration stats (top-10 / top-25 weight), and a scrollable list of disclosed holdings sorted by weight. The risk metrics elsewhere on this page are computed on the fund's own NAV — these holdings are display-only context, not inputs to the risk calculation. Useful for seeing how concentration and geographic mix differ between competing active managers (CGGO's diversified-growth vs DWLD's concentrated-value, for example)."
+            description="Reference panel for the spotlighted active ETF: sponsor metadata, concentration stats, and the full disclosed holdings list. The Risk Snapshot above models a *look-through basket* of the top 25 disclosed holdings (re-normalized to sum to 100%), so each underlying has its own VaR/ES/EVT row. The fund's own ETF appears as a final reference row in that table — its NAV-based risk vs. the basket is itself an interesting comparison (basket is static at disclosure date and ignores expense ratio; fund NAV reflects continuous trading + costs)."
           >
-            <FundDisclosurePanel disclosure={portfolio.fund_disclosure} />
+            <FundDisclosurePanel
+              disclosure={portfolio.fund_disclosure}
+              coverageMeta={portfolio.coverage_meta}
+            />
           </Section>
         )}
         {portfolio?.risk_history?.length > 0 && (

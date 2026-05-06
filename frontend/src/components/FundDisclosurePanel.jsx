@@ -9,7 +9,7 @@ import "./FundDisclosurePanel.css";
  * holdings are display-only. Disclosure cadence is whatever the sponsor
  * publishes (daily for transparent active ETFs, quarterly for mutual funds).
  */
-export default function FundDisclosurePanel({ disclosure }) {
+export default function FundDisclosurePanel({ disclosure, coverageMeta }) {
   if (!disclosure) return null;
 
   const {
@@ -39,6 +39,20 @@ export default function FundDisclosurePanel({ disclosure }) {
 
   return (
     <div className="fund-disclosure-panel">
+      {coverageMeta && (
+        <div className="fund-coverage-callout">
+          <strong>Modeling caveat:</strong> The risk snapshot above models the
+          top {coverageMeta.modeled_n} of {coverageMeta.total_holdings?.toLocaleString()}{" "}
+          disclosed holdings — covering{" "}
+          <strong>{coverageMeta.modeled_weight_pct?.toFixed(1)}%</strong>{" "}
+          of {ticker}'s actual weight as of {coverageMeta.as_of}. The remaining{" "}
+          {(100 - (coverageMeta.modeled_weight_pct ?? 0)).toFixed(1)}% (long-tail
+          positions, foreign listings without ADRs, cash components) is excluded
+          from the basket. Weights in the basket are re-normalized to sum to 100%
+          across the modeled subset, so individual portfolio weights in the risk
+          table are scaled up vs. their actual disclosed weights here.
+        </div>
+      )}
       <div className="fund-meta-grid">
         <div className="fund-meta-cell">
           <span className="fund-meta-label">Fund</span>
