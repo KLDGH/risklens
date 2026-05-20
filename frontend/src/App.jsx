@@ -274,11 +274,13 @@ export default function App() {
             id="risk-snapshot"
             title="Current Risk Snapshot"
             question="How risky is each asset today vs. its own recent history?"
-            description="How risky is each asset today, relative to its own two-year history? Rows default-sorted by risk level. VaR = the minimum expected loss on the worst 1% of trading days, on a $100 position. Five models are shown because their disagreement is itself a signal — a wide spread means the asset has tail behavior that normal assumptions miss."
+            description="How risky is each asset today, relative to its own two-year history? Rows default-sorted by risk level. VaR = the minimum expected loss on the worst 1% of trading days, on a $100 position. Five models are shown spanning Normal-vs-heavy-tailed and constant-vs-conditional-volatility assumptions — disagreement between them is itself the signal. EWMA assumes Normal innovations; GARCH/tGARCH use Student-t (heavy-tailed, fit per asset); EVT explicitly models the tail with a generalized Pareto distribution. The EWMA-vs-GARCH gap is roughly the heavy-tail premium for that asset."
           >
             <RiskTable
               assets={portfolio.assets}
               portfolioWeights={portfolio.weights}
+              disclosedWeights={portfolio.disclosed_weights}
+              fundTicker={portfolio.fund_ticker}
               portfolioLabel={PORTFOLIO_SHORT_LABELS[mode] ?? "PORTFOLIO"}
             />
           </Section>

@@ -151,6 +151,28 @@
   letter-spacing: 0.02em;
 }
 
+/* Secondary half of the weight badge in look-through basket modes:
+   "5.3% basket · 3.7% of CGGO". Slightly dimmer + smaller so the
+   primary basket weight reads first, but the fund-level weight is
+   still visible without hunting. */
+.weight-secondary {
+  color: var(--text-dim);
+  font-weight: 400;
+  font-size: 10.5px;
+  letter-spacing: 0.01em;
+}
+
+/* The fund-itself row in active-fund modes — gets a small italic tag
+   instead of a weight, so users immediately understand it's the fund's
+   own NAV-based metrics for comparison vs. the basket above. */
+.reference-row-tag {
+  color: var(--text-dim);
+  font-style: italic;
+  font-weight: 400;
+  opacity: 0.85;
+  letter-spacing: 0.01em;
+}
+
 .price {
   color: var(--text-bright);
   font-weight: 600;

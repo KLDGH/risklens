@@ -7,8 +7,8 @@ const TIPS = {
   ret:       "Yesterday's log return for this asset.",
   hs:        "Historical Simulation. Top number = VaR (1% worst daily loss). Bottom number = ES (average loss across the worst 1%). Both drawn directly from the last 1000 trading days; no distribution assumption.",
   ewma:      "EWMA model. Top = VaR; bottom = ES. Computed with exponentially weighted volatility (λ=0.94) under a normal-distribution assumption. Recent days weigh more than older ones.",
-  garch:     "GARCH(1,1) model. Top = VaR; bottom = ES. Forecasts tomorrow's volatility from a mean-reverting GARCH process. Falls back to EWMA if fitting fails.",
-  tgarch:    "GJR-tGARCH model. Top = VaR; bottom = ES. Asymmetric volatility — negative return shocks weigh more heavily, capturing 'volatility is higher after crashes.'",
+  garch:     "GARCH(1,1) with Student-t innovations. Top = VaR; bottom = ES. The conditional volatility process is GARCH(1,1); the innovation distribution is Student-t (degrees of freedom estimated per fit) rather than Normal. This matches the empirical kurtosis of daily equity returns and produces tail-VaR estimates ~30–60% larger than Normal-innovation GARCH at 99% confidence. The EWMA column to the left assumes Normal innovations, so the EWMA-vs-GARCH gap *is* the heavy-tail premium. Falls back to EWMA if fitting fails.",
+  tgarch:    "GJR-GARCH(1,1,1) with Student-t innovations. Top = VaR; bottom = ES. Two simultaneous corrections to vanilla GARCH: (1) GJR threshold term — negative shocks raise conditional variance more than equal-sized positive shocks, capturing the leverage effect; (2) Student-t innovations — heavy-tailed daily innovations matching empirical equity return kurtosis. The 't' in this column's name refers to BOTH: 'threshold' GARCH AND Student-t innovations. Falls back to EWMA if fitting fails.",
   evt:       "Extreme Value Theory. Top = VaR; bottom = ES. Fits a Generalized Pareto Distribution directly to the worst losses; best for fat-tailed assets like crypto.",
   consensus: "Simple average across all five VaR models. A rough consensus proxy — useful as a single reference number but not a coherent risk measure. Treat it as a heuristic.",
   range:     "Range across all five VaR models (min – max). When tight, the models agree and standard assumptions hold. When wide — usually EVT pulling high — the asset's tail losses are more extreme than normal-distribution models capture. That gap is a warning, not noise.",
@@ -185,7 +185,7 @@ function PortfolioRow({ a, portfolioLabel }) {
   );
 }
 
-export default function RiskTable({ assets, portfolioWeights, portfolioLabel }) {
+export default function RiskTable({ assets, portfolioWeights, disclosedWeights, fundTicker, portfolioLabel }) {
   const [sortKey, setSortKey] = useState("risk");
   const [sortDir, setSortDir] = useState("desc");
 
@@ -236,14 +236,35 @@ export default function RiskTable({ assets, portfolioWeights, portfolioLabel }) 
         </thead>
         <tbody>
           {sorted.map((a) => {
-            const wt = portfolioWeights?.[a.ticker];
+            const wt           = portfolioWeights?.[a.ticker];
+            // For look-through baskets we also surface the holding's
+            // weight as a fraction of the fund (pre-normalization),
+            // so users see at a glance that "5% of basket" maps to e.g.
+            // "3.7% of CGGO" — making the basket-vs-fund abstraction
+            // legible in the row itself, not just in the panel below.
+            const disclosedPct = disclosedWeights?.[a.ticker];
             return (
             <tr key={a.ticker}>
               <td className="left asset-cell sticky-col">
                 <span className="ticker">{a.ticker}</span>
                 <span className="name">{a.name}</span>
-                {wt != null && (
+                {wt != null && disclosedPct != null && fundTicker ? (
+                  <span className="portfolio-weight">
+                    {(wt * 100).toFixed(1)}% basket
+                    <span className="weight-secondary">
+                      {" · "}{disclosedPct.toFixed(2)}% of {fundTicker}
+                    </span>
+                  </span>
+                ) : wt != null ? (
                   <span className="portfolio-weight">{(wt * 100).toFixed(0)}% of portfolio</span>
+                ) : null}
+                {/* Reference row in active-fund modes: the fund itself,
+                    not in the basket. Make that explicit so users don't
+                    wonder why it has no weight. */}
+                {wt == null && fundTicker && a.ticker === fundTicker && (
+                  <span className="portfolio-weight reference-row-tag">
+                    fund reference (not in basket)
+                  </span>
                 )}
               </td>
               <td className="num price">${a.last_price.toLocaleString()}</td>

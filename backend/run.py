@@ -430,13 +430,15 @@ def _augment_active_fund_modes_with_holdings():
             continue
 
         raw_weight_sum = sum(h["weight"] for h in candidates)
-        new_weights = {}
-        new_names   = {fund_ticker: cfg["names"].get(fund_ticker, fund_ticker)}
-        new_tickers = []
+        new_weights        = {}
+        new_disclosed_pct  = {}   # raw weight as % of *fund* (pre-normalization)
+        new_names          = {fund_ticker: cfg["names"].get(fund_ticker, fund_ticker)}
+        new_tickers        = []
         for h in candidates:
             yf = h["yf_ticker"]
             new_tickers.append(yf)
             new_weights[yf] = h["weight"] / raw_weight_sum  # re-normalize over modeled subset
+            new_disclosed_pct[yf] = h["weight"]              # untouched fund-level weight (%)
             new_names[yf] = h.get("security", yf)
 
         # Append fund itself at the END as a reference row (not weighted,
@@ -444,9 +446,10 @@ def _augment_active_fund_modes_with_holdings():
         # still get computed and displayed for comparison).
         new_tickers.append(fund_ticker)
 
-        cfg["tickers"] = new_tickers
-        cfg["weights"] = new_weights
-        cfg["names"]   = new_names
+        cfg["tickers"]           = new_tickers
+        cfg["weights"]            = new_weights
+        cfg["disclosed_weights"]  = new_disclosed_pct
+        cfg["names"]              = new_names
 
         # Coverage metadata for the frontend caveat
         actual_top_n_weight = sum(h["weight"] for h in topn_disclosed)
@@ -496,6 +499,8 @@ def main():
             portfolios[key]["fund_ticker"] = cfg.get("fund_ticker")
             if cfg.get("coverage_meta"):
                 portfolios[key]["coverage_meta"] = cfg["coverage_meta"]
+            if cfg.get("disclosed_weights"):
+                portfolios[key]["disclosed_weights"] = cfg["disclosed_weights"]
 
     # Attach disclosed-holdings reference data to active-fund spotlight modes.
     # Loaded from the preprocessed JSON (committed to repo so CI doesn't need
