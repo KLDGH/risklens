@@ -75,7 +75,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         <span>${d?.min_var?.toFixed(2)}</span>
       </div>
       <div className="tt-row">
-        <span style={{ color: "#60a5fa" }}>Max VaR</span>
+        <span style={{ color: "#f59e0b" }}>Max VaR</span>
         <span>${d?.max_var?.toFixed(2)}</span>
       </div>
       {d?.annual_return_pct != null && (
@@ -191,7 +191,7 @@ export default function HistoricalChart({ data }) {
               label={{ value: "VIX", angle: 90, position: "insideRight", fill: "#f59e0b", fontSize: 10, fontFamily: "JetBrains Mono, monospace", dx: 12 }}
             />
 
-            <ReferenceLine y={0} yAxisId="left" stroke="#1e3048" strokeWidth={1} />
+            <ReferenceLine y={0} yAxisId="left" stroke="#2a3441" strokeWidth={1} />
 
             <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
 
@@ -227,7 +227,7 @@ export default function HistoricalChart({ data }) {
             ))}
 
             <Bar yAxisId="left" dataKey="min_var" name="Min daily risk" fill="#4ade80" opacity={0.85} maxBarSize={10} isAnimationActive={false} />
-            <Bar yAxisId="left" dataKey="max_var" name="Max daily risk" fill="#60a5fa" opacity={0.75} maxBarSize={10} isAnimationActive={false} />
+            <Bar yAxisId="left" dataKey="max_var" name="Max daily risk" fill="#f59e0b" opacity={0.75} maxBarSize={10} isAnimationActive={false} />
             <Bar yAxisId="left" dataKey="loss"    name="Loss for year"  fill="#e53e3e" opacity={0.9}  maxBarSize={10} isAnimationActive={false} />
             <Line yAxisId="vix" type="monotone" dataKey="vix_avg" name="Avg VIX" stroke="#f59e0b" strokeWidth={1.5} dot={false} opacity={0.8} isAnimationActive={false} />
           </ComposedChart>

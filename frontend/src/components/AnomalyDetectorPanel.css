@@ -1,0 +1,490 @@
+.anomaly-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 16px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.anomaly-empty {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 24px;
+  color: var(--text-dim);
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* ---------- Controls (ticker dropdown + summary stats) ---------- */
+.anomaly-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.anomaly-control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.anomaly-control-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.anomaly-ticker-select {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text-bright);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 28px 6px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  /* Custom caret */
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%239aabc0' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 11.5 3 6.5h10z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 10px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.anomaly-ticker-select:hover { border-color: var(--accent); }
+.anomaly-ticker-select:focus { outline: none; border-color: var(--accent); }
+
+.anomaly-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-left: auto;
+}
+
+.anomaly-stats strong {
+  color: var(--text-bright);
+  font-weight: 600;
+}
+
+.anomaly-stat-sep {
+  color: var(--text-dim);
+  opacity: 0.4;
+}
+
+/* ---------- Risk Profile Card ----------
+   Compact stat row showing the same VaR/ES/EVT/tail metrics from the
+   Portfolio Risk tab, applied to the single selected ETF. */
+.risk-profile-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rp-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rp-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.rp-subtitle {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.rp-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  gap: 4px;
+}
+
+.rp-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+.rp-stat-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.rp-stat-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-bright);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  margin-top: 1px;
+}
+
+.rp-stat-unit {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: 1px;
+}
+
+/* ---------- Factor Regression Panel ----------
+   Fama-French 5 + Momentum loadings + R² + vol decomposition. */
+.factor-regression-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 3px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fr-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.fr-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.fr-subtitle {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.5;
+  margin-top: 2px;
+  max-width: 720px;
+}
+
+.fr-headline-stats {
+  display: flex;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.fr-headline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 14px;
+}
+
+.fr-headline-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-bright);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.fr-headline-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.fr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fr-table thead th {
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 6px 10px;
+}
+
+.fr-table thead th.num,
+.fr-table tbody td.num {
+  text-align: right;
+}
+
+.fr-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.fr-table tbody tr:hover {
+  background: var(--bg3);
+}
+
+.fr-table tbody td {
+  padding: 7px 10px;
+  color: var(--text);
+}
+
+.fr-row-dim {
+  opacity: 0.55;
+}
+
+.fr-sig {
+  color: var(--accent);
+  font-weight: 700;
+  font-family: var(--font);
+}
+
+.fr-alpha-row {
+  border-top: 1px solid var(--border) !important;
+  font-style: italic;
+}
+
+.fr-alpha-row td {
+  color: var(--text-dim);
+}
+
+.fr-vol-decomp {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 8px 0 4px;
+  border-top: 1px dashed var(--border);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.fr-vol-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fr-vol-pair strong {
+  color: var(--text-bright);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.fr-vol-factor strong { color: #86efac; }
+.fr-vol-idio   strong { color: #f97316; }
+
+.fr-vol-formula {
+  margin-left: auto;
+  font-style: italic;
+  font-size: 10.5px;
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+.fr-footnote {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.fr-footnote code {
+  font-family: var(--font);
+  background: var(--bg3);
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 10px;
+  color: var(--accent);
+  font-style: normal;
+}
+
+/* ---------- Stacked chart layout ---------- */
+.anomaly-chart-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.anomaly-chart-title {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  letter-spacing: 0.02em;
+  padding-left: 4px;
+}
+
+.anomaly-price-chart {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 4px 0 0;
+}
+
+.detector-subpanel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 4px 0 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.detector-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text);
+  font-weight: 500;
+  padding: 6px 12px 4px;
+}
+
+.detector-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.detector-threshold {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-left: 4px;
+}
+
+.detector-chart {
+  padding: 0 0 4px;
+}
+
+.shared-date-axis {
+  padding: 0;
+  margin-top: -4px;
+}
+
+/* ---------- Recent-anomaly list ---------- */
+.anomaly-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.anomaly-list-empty {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 8px 0 4px;
+  border-top: 1px solid var(--border);
+}
+
+.anomaly-list-header {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.anomaly-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.anomaly-row {
+  display: grid;
+  grid-template-columns: 110px 80px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+.anomaly-row:hover { background: var(--bg3); }
+
+.anomaly-date {
+  font-family: var(--font);
+  color: var(--text-bright);
+  letter-spacing: 0.02em;
+}
+
+.anomaly-ret {
+  font-family: var(--font);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: right;
+}
+
+.anomaly-detectors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-start;
+}
+
+.anomaly-detector-chip {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 2px 7px;
+  border: 1px solid;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.02);
+  white-space: nowrap;
+}
+
+/* ---------- Footnote ---------- */
+.anomaly-footnote {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.7;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}

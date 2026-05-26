@@ -106,7 +106,7 @@
    tints use rgba so row hover (var(--bg3)) still shows through. */
 .risk-table th.col-models,
 .risk-table td.col-models {
-  background-color: rgba(96, 165, 250, 0.045);
+  background-color: rgba(245, 158, 11, 0.045);
 }
 
 .risk-table th.col-summary,
@@ -118,12 +118,12 @@
    the visual chunking without adding noise inside the groups. */
 .risk-table th.group-start,
 .risk-table td.group-start {
-  border-left: 1px solid rgba(96, 165, 250, 0.18);
+  border-left: 1px solid rgba(245, 158, 11, 0.18);
 }
 
 .risk-table th.group-end,
 .risk-table td.group-end {
-  border-right: 1px solid rgba(96, 165, 250, 0.18);
+  border-right: 1px solid rgba(245, 158, 11, 0.18);
 }
 
 .asset-cell {
@@ -179,7 +179,7 @@
 }
 
 .mean-cell {
-  color: #60a5fa;
+  color: #f59e0b;
   font-weight: 600;
 }
 
@@ -194,7 +194,7 @@
 }
 
 .consensus-cell {
-  color: #60a5fa;
+  color: #f59e0b;
   font-weight: 600;
 }
 
@@ -234,7 +234,7 @@
 }
 
 .model-subheader th {
-  background: #1a2e44;
+  background: #1f2935;
   border-top: 1px solid var(--border);
   font-size: 10px;
   padding-top: 5px;
@@ -251,19 +251,19 @@
 /* ── Portfolio summary row ── */
 .portfolio-row {
   border-top: 2px solid var(--accent);
-  background: #0e1d35;
+  background: #1a2530;
 }
 
 .portfolio-row:hover {
-  background: #132440;
+  background: #222a36;
 }
 
 .portfolio-sticky {
-  background: #0e1d35 !important;
+  background: #1a2530 !important;
 }
 
 .portfolio-row:hover .portfolio-sticky {
-  background: #132440 !important;
+  background: #222a36 !important;
 }
 
 .portfolio-ticker {

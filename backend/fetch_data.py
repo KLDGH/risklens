@@ -73,6 +73,46 @@ ACTIVE_FUND_NAMES = {
     "DWLD": "Davis Select Worldwide ETF",
 }
 
+# Tickers surfaced in the Anomaly Detector tab — sector ETFs that are
+# liquid, well-followed, and clean for univariate single-asset analysis.
+# 11 SPDR sectors + 3 thematic (regional banks, semis, biotech) where
+# anomaly events have historically had clear macro narratives.
+ANOMALY_TICKERS = [
+    # SPDR sector ETFs (S&P 500 sectors)
+    "XLF",  # Financials
+    "XLE",  # Energy
+    "XLK",  # Technology
+    "XLV",  # Health Care
+    "XLI",  # Industrials
+    "XLY",  # Consumer Discretionary
+    "XLP",  # Consumer Staples
+    "XLU",  # Utilities
+    "XLB",  # Materials
+    "XLRE", # Real Estate
+    "XLC",  # Communication Services
+    # Thematic / sub-sector
+    "KRE",  # Regional Banks (SVB blowup, etc.)
+    "SMH",  # Semiconductors
+    "IBB",  # Biotechnology
+]
+
+ANOMALY_NAMES = {
+    "XLF":  "Financials",
+    "XLE":  "Energy",
+    "XLK":  "Technology",
+    "XLV":  "Health Care",
+    "XLI":  "Industrials",
+    "XLY":  "Consumer Discretionary",
+    "XLP":  "Consumer Staples",
+    "XLU":  "Utilities",
+    "XLB":  "Materials",
+    "XLRE": "Real Estate",
+    "XLC":  "Communication Services",
+    "KRE":  "Regional Banks",
+    "SMH":  "Semiconductors",
+    "IBB":  "Biotechnology",
+}
+
 
 def fetch_prices(period: str = "10y", tickers: list = None) -> pd.DataFrame:
     if tickers is None:

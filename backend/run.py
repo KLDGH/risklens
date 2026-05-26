@@ -11,6 +11,7 @@ from fetch_data import (
     TDF_2055_TICKERS, TDF_2055_NAMES,
     CG_2055_TICKERS, CG_2055_NAMES,
     ACTIVE_FUND_TICKERS, ACTIVE_FUND_NAMES,
+    ANOMALY_TICKERS, ANOMALY_NAMES,
     compute_log_returns, fetch_prices, fetch_sp500_history, fetch_vix_history,
     fetch_yield_curve_spread, fetch_intraday_data,
 )
@@ -20,8 +21,11 @@ from risk_engine import (
     compute_portfolio_risk_history, compute_component_var,
     backtest_portfolio_var, backtest_portfolio_garch,
     nyfed_recession_probability, compute_intraday_correlation_daily,
-    compute_multi_window_correlation,
+    compute_multi_window_correlation, compute_anomaly_view,
     CORR_TICKERS,
+)
+from factor_models import (
+    fetch_ff_carhart_daily, fit_ff_carhart, compute_beta,
 )
 
 # Extra tickers fetched beyond the portfolio universe.
@@ -474,11 +478,14 @@ def main():
     _augment_active_fund_modes_with_holdings()
 
     # Master ticker list — union of everything we need across all modes,
-    # plus extra bond proxies for the multi-window correlation chart.
+    # plus extra bond proxies for the multi-window correlation chart and
+    # the sector ETF universe for the Anomaly Detector tab.
     all_tickers = []
     for cfg in PORTFOLIO_MODES.values():
         all_tickers.extend(cfg["tickers"])
-    all_tickers = list(dict.fromkeys(all_tickers + EXTRA_BOND_PROXIES))
+    all_tickers = list(dict.fromkeys(
+        all_tickers + EXTRA_BOND_PROXIES + ANOMALY_TICKERS
+    ))
 
     print("Fetching 10y price data...")
     prices_10y = fetch_prices(period="10y", tickers=all_tickers)
@@ -655,6 +662,90 @@ def main():
             print(f"  WARNING: {interval} intraday correlation fetch failed ({e})")
             intraday_corr[f"interval_{interval}"] = []
 
+    # Anomaly Detector views — for each sector ETF in ANOMALY_TICKERS,
+    # compute the univariate detectors (z-score, CUSUM, GARCH-residual),
+    # a compact "risk profile" with the same VaR/ES/EVT models from the
+    # Portfolio Risk tab, and a Fama-French + Momentum factor regression
+    # (the open-data substitute for a Barra-style attribution).
+    print("\nComputing univariate anomaly views for sector ETFs...")
+
+    # SPY excess-return series for the beta-vs-market calc — reused across
+    # all anomaly tickers.
+    spy_rets = compute_log_returns(prices_long[["SPY"]])["SPY"].dropna()
+
+    # Fetch the Fama-French + Momentum factors once. If the live download
+    # fails we fall back to the cached copy (see factor_models.py).
+    print("  Fetching Fama-French + Momentum daily factors...")
+    try:
+        ff_factors = fetch_ff_carhart_daily()
+        print(f"    {len(ff_factors)} rows, latest {ff_factors.index[-1].date()}")
+    except Exception as e:
+        print(f"  WARNING: factor data unavailable ({e}); factor models will be omitted")
+        ff_factors = None
+
+    anomaly_views = {"tickers": [], "names": {}, "data": {}}
+    for tkr in ANOMALY_TICKERS:
+        if tkr not in prices_long.columns:
+            print(f"  [skip] {tkr} not in price data")
+            continue
+        px = prices_long[tkr].dropna()
+        if len(px) < 252:
+            print(f"  [skip] {tkr} only {len(px)}d history (need 252+)")
+            continue
+        rets = np.log(px / px.shift(1)).dropna()
+        try:
+            view = compute_anomaly_view(tkr, px, rets, lookback_days=504)
+        except Exception as e:
+            print(f"  WARNING: {tkr} anomaly view failed ({e})")
+            continue
+        if not view:
+            continue
+
+        # --- Risk profile card — same VaR/ES/EVT/tail-α used on the
+        #     Portfolio Risk tab, plus annualized 60-day vol and beta vs SPY.
+        try:
+            risk_row = compute_asset_risk(tkr, rets, px)
+            vol_60d  = float(rets.tail(60).std() * np.sqrt(252) * 100)
+            beta_spy = compute_beta(rets, spy_rets, lookback=252)
+            view["risk_profile"] = {
+                "vol_60d_annualized_pct": round(vol_60d, 2),
+                "var_hs":         risk_row["var_hs"],
+                "var_ewma":       risk_row["var_ewma"],
+                "var_garch":      risk_row["var_garch"],
+                "var_tgarch":     risk_row["var_tgarch"],
+                "var_evt":        risk_row["var_evt"],
+                "es_hs":          risk_row["es_hs"],
+                "es_ewma":        risk_row["es_ewma"],
+                "es_garch":       risk_row["es_garch"],
+                "es_tgarch":      risk_row["es_tgarch"],
+                "es_evt":         risk_row["es_evt"],
+                "tail_index":     risk_row["tail_index"],
+                "risk_level":     risk_row["risk_level"],
+                "beta_spy_252d":  beta_spy,
+                "last_price":     risk_row["last_price"],
+                "last_return_pct": risk_row["last_return_pct"],
+            }
+        except Exception as e:
+            print(f"  WARNING: {tkr} risk profile failed ({e})")
+
+        # --- Fama-French + Momentum factor regression (open-data
+        #     substitute for a Barra-style attribution).
+        if ff_factors is not None:
+            try:
+                fmodel = fit_ff_carhart(rets, ff_factors, lookback=252)
+                if fmodel:
+                    view["factor_model"] = fmodel
+            except Exception as e:
+                print(f"  WARNING: {tkr} factor model failed ({e})")
+
+        anomaly_views["data"][tkr]  = view
+        anomaly_views["names"][tkr] = ANOMALY_NAMES.get(tkr, tkr)
+        anomaly_views["tickers"].append(tkr)
+        n_anom = len(view["anomalies"])
+        fm     = view.get("factor_model")
+        rsq    = f", R²={fm['r_squared']*100:.0f}%" if fm else ""
+        print(f"  {tkr}: {len(view['series'])} days, {n_anom} anomaly day(s){rsq}")
+
     # Latest US-equity trading date represented in the data. We walk back from
     # the end of SPY's series until its price actually changes — this strips off
     # any trailing rows that are forward-fill artifacts from 24/7-traded tickers
@@ -674,6 +765,7 @@ def main():
         "correlation_history":    corr_history,
         "multi_window_corr":      multi_window_corr,
         "intraday_corr_history":  intraday_corr,
+        "anomaly_views":          anomaly_views,
     }
 
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)

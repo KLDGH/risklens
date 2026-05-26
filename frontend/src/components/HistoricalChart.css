@@ -58,16 +58,16 @@
 }
 
 @keyframes insight-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(59,130,246,0.55); }
-  60%  { box-shadow: 0 0 0 5px rgba(59,130,246,0); }
-  100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+  0%   { box-shadow: 0 0 0 0 rgba(217, 119, 6,0.55); }
+  60%  { box-shadow: 0 0 0 5px rgba(217, 119, 6,0); }
+  100% { box-shadow: 0 0 0 0 rgba(217, 119, 6,0); }
 }
 
 .insight-panel {
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  background: #0f1e30;
+  background: #1d2530;
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
   border-radius: 4px;
@@ -111,12 +111,12 @@
   font-weight: 600;
 }
 
-.ins-blue { color: #60a5fa; font-weight: 600; }
+.ins-blue { color: #f59e0b; font-weight: 600; }
 .ins-red  { color: #e53e3e; font-weight: 600; }
 
 .chart-tooltip {
-  background: #0d1a2a;
-  border: 1px solid #1e3048;
+  background: #161c25;
+  border: 1px solid #2a3441;
   border-radius: 4px;
   padding: 10px 14px;
   font-family: var(--font);

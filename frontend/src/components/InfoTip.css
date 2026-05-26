@@ -10,15 +10,15 @@
 }
 
 .infotip-icon:hover {
-  color: #60a5fa;
+  color: #f59e0b;
 }
 
 .infotip-bubble {
   position: fixed;
   transform: translateX(-50%) translateY(calc(-100% - 10px));
   width: 220px;
-  background: #1a2b3c;
-  border: 1px solid #2e4460;
+  background: #1d2530;
+  border: 1px solid #3a4554;
   border-radius: 4px;
   padding: 8px 10px;
   font-size: 10px;
@@ -42,5 +42,5 @@
   left: 50%;
   transform: translateX(-50%);
   border: 5px solid transparent;
-  border-top-color: #2e4460;
+  border-top-color: #3a4554;
 }

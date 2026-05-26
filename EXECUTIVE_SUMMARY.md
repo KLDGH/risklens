@@ -1,56 +1,65 @@
 # RiskLens — Executive Summary
 
+## What it is
 
-## What It Is
+RiskLens is a daily-refresh quantitative risk dashboard built as a transparent reference implementation of techniques real risk desks use, with the methodology in the open instead of behind a vendor license. The current build covers five distinct portfolios — a synthetic 60/30/8/2 diversified mix, two target-date funds (Vanguard and American Funds 2055), and two active equity ETFs (CGGO and DWLD) modeled as look-through baskets of their disclosed holdings.
 
-RiskLens is a quantitative market risk dashboard that computes daily Value-at-Risk (VaR) and tail-risk metrics across a portfolio of assets using multiple statistical models. It is modelled on academic risk measurement tools used by institutional researchers, but built to be accessible and visual. In its current form it covers eleven major liquid assets (S&P 500, Nasdaq 100, Gold, Long-dated Treasuries, Emerging Markets, Bitcoin, Russell 2000, High Yield Bonds, Investment Grade Bonds, Financials, and Real Estate) and produces a fresh risk snapshot each time the backend is run.
+Across each portfolio it computes five VaR/ES models, formal out-of-sample backtests, component-VaR risk attribution, historical and hypothetical stress tests, and (for individual sector ETFs) a Fama-French six-factor regression and a univariate anomaly-detector view. Refresh is daily via a scheduled GitHub Actions workflow.
 
+**Live at https://kldgh.github.io/risklens/**
 
-## What the Metrics Mean
+## Three tabs, three questions
 
-**Value at Risk (VaR)** answers one question: *on a bad day, how much can I expect to lose?* Specifically, a 1% VaR of $3.44 on a $100 position means that on the worst 1% of trading days historically, you'd lose at least $3.44. It's a floor, not a ceiling.
+**Portfolio Risk** — *How much risk am I carrying right now, where is it concentrated, would the models survive a real stress event?* Five VaR/ES models per holding (HS, EWMA, GARCH-t, GJR-t, EVT), risk-percentile gauge, component VaR per holding, formal Kupiec + Christoffersen backtesting with directional verdicts, historical (replay-actual-prices) and hypothetical (analyst-shock-vector) stress tests.
 
-RiskLens computes VaR five ways, each with different assumptions:
+**Market Context** — *What regime is the market in right now? Is diversification still working?* S&P 500 risk and VIX back to 1928, cross-asset rolling correlation, multi-window stock-bond correlation across four bond proxies, intraday SPY×TLT correlation with QMLE noise-correction toggle.
 
-- **Historical Simulation (HS)** — no model assumptions. Just ranks the last 1,000 actual trading days and reads off the 1st percentile. Honest but slow to react to regime changes.
-- **EWMA** — uses exponentially weighted volatility, giving more weight to recent days (λ=0.94). Reacts quickly to spikes in volatility. The industry standard for daily risk desks.
-- **GARCH(1,1)** — models volatility as a process that mean-reverts over time. Better at capturing the clustering effect: volatile days tend to follow volatile days.
-- **GJR-GARCH (tGARCH)** — extends GARCH to treat negative shocks differently from positive ones. Empirically, bad news increases volatility more than good news of the same magnitude. This is a more realistic model for equity markets.
-- **EVT (Extreme Value Theory)** — fits a statistical distribution specifically to the *tail* of losses rather than the whole return distribution. The most rigorous approach for rare, extreme events. Often produces meaningfully higher estimates than the others — that gap is important information, not noise.
+**Anomaly Detector** — *Is a sector ETF behaving unusually, and what's driving its risk?* Per-ticker risk profile with same VaR/ES models, Fama-French 5 + Momentum factor regression (open-data substitute for Barra-style attribution), three stacked detectors on the same timeline: standardized z-score, Page CUSUM mean-shift, GARCH-residual outliers.
 
-**Expected Shortfall (ES / CVaR)** goes one step further than VaR: *given that today is a bad day, how bad on average?* ES is the mean loss across all days worse than the VaR threshold. Regulators (Basel III/IV) now prefer ES over VaR precisely because it captures what happens in the tail, not just where the tail begins.
+## Methodology in 60 seconds
 
-**The tail index (α)** from Extreme Value Theory describes how fat the tails are. Lower values mean more extreme events are possible. Equities typically sit around 3–4; assets below 3 (Gold currently ~2.3) have meaningfully fatter tails than standard models assume.
+All VaR/ES is daily 1% loss on a $100 position, computed on a rolling 1,000-day window:
 
-**The Risk Gauge** contextualises today's EWMA VaR against the past two years of daily estimates for that asset. A reading of 85% doesn't mean high absolute risk — it means risk is elevated relative to recent history. This is more actionable than a raw number because it accounts for the asset's own volatility regime.
+- **HS** — empirical 1st percentile of actual returns. No distributional assumption.
+- **EWMA** — Gaussian, λ=0.94 RiskMetrics standard. Fast reaction, known fat-tail miss.
+- **GARCH-t** — GARCH(1,1) with **Student-t innovations** (not Normal). Captures heavy tails.
+- **GJR-t** — GARCH-t plus leverage term (negative shocks raise vol more than positive).
+- **EVT** — Generalized Pareto fit to the loss tail directly.
 
-**The Cross-Asset Correlation Chart** shows the 60-day rolling average pairwise correlation across ten core ETFs. In normal markets this sits around 0.15–0.35 — assets move independently and diversification works. The all-time peak in the dataset is 2022, not the GFC: the Fed's rate hike cycle caused stocks and bonds to sell off simultaneously, breaking the traditional 60/40 hedge. In the GFC, treasuries and gold surged as equities fell (flight to safety), so average correlation stayed moderate. This distinction matters — the correlation breakdown problem is most dangerous in rate and inflation shocks, not just in equity crashes.
+The five-model spread is itself the signal. Tight = models agree, fat tails not a concern. Wide (usually EVT pulling high) = the asset has tail behavior the other models miss. The "Range" and "Consensus" columns surface this.
 
+**Backtesting** runs Kupiec UC and Christoffersen IC tests on 504-day out-of-sample windows for all five models. The verdict column tells you *how* a model is mis-calibrated, not just whether it fails — CALIBRATED, UNDER-EST, OVER-CONSERV, CLUSTERED.
 
-## Current Usefulness — Even as a Pilot
+**Factor attribution** uses Fama-French 5 + Momentum daily factors (Ken French Data Library, public). For each sector ETF: regression on 252-day excess returns, per-factor loadings with t-stats and significance, R² and variance decomposition (factor vol vs idiosyncratic vol). Same output shape as Barra-style attribution; less granular but legitimate and auditable.
 
-In its current form, RiskLens already does something most Bloomberg terminals and risk systems don't do cleanly: **it shows model disagreement at a glance.** When HS says 2.1, EWMA says 1.9, GARCH says 1.7, but EVT says 6.7 — that spread is a signal. It means the asset's tail behaviour is not well-described by a normal distribution and a naive risk number is likely understating true exposure. That's actionable intelligence for a PM today.
+## What it's good for
 
-The historical S&P 500 chart provides instant macro context: where does current volatility sit relative to the Dot-com crash, GFC, and Covid? The correlation chart adds a second dimension: is the current stress broad-based (everything correlated) or idiosyncratic (one asset moving independently)? That framing matters for risk communication to clients and investment committees.
+- **Position sizing reference** — sanity-checking whether your typical position fits the asset's risk profile.
+- **Regime awareness** — multiple holdings at 90%+ risk-percentile simultaneously is a macro stress signal building.
+- **Pre-event diligence** — looking at the stress-test card for the next event you're worried about and seeing how the book is exposed.
+- **Model-disagreement diagnostic** — when EVT diverges from EWMA, you're being told the tail is fatter than the normal assumption — time to weight EVT estimates more heavily.
+- **Sector deep-dive** — anomaly detector reveals which sectors are factor-driven (XLK, 93% R²) vs which are doing their own thing (XLU, 30% R²).
 
+## What it's not
 
-## What It Becomes with Fund-Specific Work
+Not a signal generator, not a trading system, not a vendor replacement. It's a monitoring + research tool that surfaces *how* risk is changing and *which model assumptions are at risk of breaking*. The honest framing: **VaR tells you how bad things are, not how bad they're about to get.**
 
-The real value for a PM comes from pointing this at *the actual portfolio* rather than benchmark indices. Near-term additions that would make this production-ready:
+## Position vs Bloomberg PORT / MSCI Barra / FactSet
 
-**Portfolio-level risk** — aggregate VaR across positions weighted by actual holdings. A $10M book with 40% SPY, 30% GLD, 30% BTC has a very different risk profile than the sum of its parts due to correlation. Portfolio VaR and component VaR (each position's contribution) is the natural next step.
+| | RiskLens | Vendor systems |
+|---|---|---|
+| VaR / ES models | 5 (HS, EWMA, GARCH-t, GJR-t, EVT) | Same families, often with proprietary refinements |
+| Backtesting | Kupiec + Christoffersen on all 5 | Same plus regulatory-format reports |
+| Component VaR | EWMA-covariance based | Same plus factor-decomposed components |
+| Factor model | Fama-French 5 + Momentum (open data) | Barra-class (industry-within-country, daily refit factor loadings) |
+| Asset universe | Liquid public ETFs + mutual funds | Thousands of asset classes incl. private credit, derivatives, structured |
+| Stress tests | Historical + hypothetical | Same plus regulator-prescribed scenario libraries |
+| Methodology transparency | Fully open in source | Vendor-licensed black box |
+| Data sources | Yahoo Finance + Ken French | Bloomberg / Refinitiv / proprietary |
+| Operational maturity | Personal-project, no SLA | Enterprise-grade with audit + compliance |
 
-**Correlation and diversification metrics** — show whether the portfolio is genuinely diversified or just holding assets that move together in a crisis (the correlation breakdown problem). This matters most when it matters most.
+The deliberate trade: methodology fully exposed, source fully auditable, every metric attributable back to a peer-reviewed reference. The cost: smaller asset universe, single-source data dependency, no enterprise reliability.
 
-**Custom ticker list** — swap in the fund's actual holdings: individual equities, sector ETFs, FX pairs, commodity futures. The backend handles any ticker yfinance supports.
+## Bottom line
 
-**Backtesting / VaR exceptions** — count how many days actual losses exceeded the VaR forecast. Regulators call these "exceptions." A well-calibrated model should produce roughly 2–3 per year at 1%. Showing this gives the PM and risk committee confidence in which model to trust.
-
-**Threshold alerts** — flag when any asset's risk gauge crosses 80% or when VaR jumps more than X% day-over-day. Deliverable as email or Slack.
-
-**PDF/scheduled reporting** — daily one-pager auto-generated and distributed to the investment committee. The data is already there; it's a rendering problem.
-
-
-## Bottom Line
-
-RiskLens in its current form is a functioning multi-model risk monitor with 35 years of S&P context, real-time metrics on twelve major assets, and a live cross-asset correlation chart that makes the diversification illusion visible. The infrastructure — Python risk engine, JSON data layer, React dashboard — is designed to scale. Pointing it at a real fund's book, adding portfolio aggregation, and wiring up alerts would take it from a well-built pilot to a daily risk tool a PM would actually rely on.
+RiskLens is a working multi-model risk monitor that goes deeper than most demo dashboards (formal backtesting, look-through baskets for active ETFs, factor attribution, anomaly detection) while keeping the methodology fully open. It's complementary to vendor risk systems — same conceptual output for what's implemented, methodologically transparent in a way licensed products aren't, deliberately scoped to liquid public assets. Best used as a research tool, a teaching reference, or as the inspection layer for a methodology a vendor system handles in production.

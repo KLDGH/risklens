@@ -12,7 +12,7 @@ const fmtSigned = (n, digits = 1) =>
 function ContribTooltip({ ticker, ret, weightPct, contrib }) {
   return (
     <div>
-      <div style={{ fontWeight: 600, color: "#ffffff", marginBottom: 4 }}>
+      <div style={{ fontWeight: 600, color: "#e8ecf2", marginBottom: 4 }}>
         {ticker}
       </div>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -33,7 +33,7 @@ function ContribTooltip({ ticker, ret, weightPct, contrib }) {
           justifyContent: "space-between",
           marginTop: 5,
           paddingTop: 5,
-          borderTop: "1px solid #2e4460",
+          borderTop: "1px solid #3a4554",
           fontWeight: 600,
         }}
       >
@@ -91,7 +91,7 @@ function ComparisonTooltip({ comparisons, currentMode, currentPnl }) {
       <div
         style={{
           fontWeight: 600,
-          color: "#ffffff",
+          color: "#e8ecf2",
           marginBottom: 6,
           textTransform: "uppercase",
           letterSpacing: "0.05em",
