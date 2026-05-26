@@ -8,19 +8,19 @@ import PortfolioRiskChart from "./components/PortfolioRiskChart.jsx";
 import BacktestPanel from "./components/BacktestPanel.jsx";
 import ScenarioPanel from "./components/ScenarioPanel.jsx";
 import FundDisclosurePanel from "./components/FundDisclosurePanel.jsx";
+import AnomalyDetectorPanel from "./components/AnomalyDetectorPanel.jsx";
 import InfoTip from "./components/InfoTip.jsx";
 import "./App.css";
 
-const NAV_LINKS = [
-  { id: "risk-snapshot",   label: "Risk Snapshot" },
-  { id: "fund-disclosure", label: "Fund Holdings", activeFundOnly: true },
-  { id: "risk-trajectory", label: "Risk Trajectory" },
-  { id: "model-validation", label: "Model Validation" },
-  { id: "stress-tests",    label: "Stress Tests" },
-  { id: "sp500-history",   label: "S&P 500 History" },
-  { id: "correlation",     label: "Correlation" },
-  { id: "multi-window-corr", label: "Multi-Window" },
-  { id: "intraday-corr",   label: "Intraday Corr" },
+// Top-level tabs. Each owns a coherent slice of the dashboard so users
+// don't have to scroll across 8+ sections to find what they want.
+//   - portfolio: everything that responds to the active portfolio mode
+//   - market:    portfolio-independent market context
+//   - anomaly:   single-asset deep-dive (sector ETFs), Phase-2 build
+const TABS = [
+  { id: "portfolio", label: "Portfolio Risk" },
+  { id: "market",    label: "Market Context" },
+  { id: "anomaly",   label: "Anomaly Detector" },
 ];
 
 // Short label shown on the portfolio summary row of the risk table.
@@ -141,6 +141,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState("hypothetical");
+  const [activeTab, setActiveTab] = useState("portfolio");
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}data/risk_output.json`)
@@ -170,10 +171,6 @@ export default function App() {
     });
     // All US assets reference the 4:00 PM ET market close — standard data-as-of convention
     return `${dateStr} · 4:00 PM ET`;
-  };
-
-  const scrollTo = (id) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   // Active portfolio bundle (assets + scenarios + weights for selected mode)
@@ -209,53 +206,62 @@ export default function App() {
       </header>
 
       {data && (
-        <nav className="page-nav">
-          <span className="nav-label">Sections:</span>
-          {NAV_LINKS
-            .filter(({ activeFundOnly }) => !activeFundOnly || portfolio?.is_active_fund_spotlight)
-            .map(({ id, label }) => (
-              <button key={id} className="nav-btn" onClick={() => scrollTo(id)}>
-                {label}
-              </button>
-            ))}
+        <nav className="tab-bar">
+          {TABS.map(({ id, label }) => (
+            <button
+              key={id}
+              className={`tab-btn ${activeTab === id ? "active" : ""}`}
+              onClick={() => setActiveTab(id)}
+            >
+              {label}
+            </button>
+          ))}
           <a
             href="https://github.com/KLDGH/risklens/blob/main/FAQ.md"
             target="_blank"
             rel="noopener noreferrer"
-            className="nav-btn nav-external"
+            className="tab-btn tab-external"
           >
             Methodology &amp; FAQ ↗
           </a>
         </nav>
       )}
 
-      {portfolio && (
+      {/* Portfolio mode toggle + legend are scoped to Tab 1 — they don't
+          apply to market-context charts (reference data) or to the
+          anomaly-detector single-asset view. */}
+      {activeTab === "portfolio" && portfolio && (
         <div className="mode-bar">
-          <div className="mode-toggle">
-            {modeKeys.map((k) => (
-              <button
-                key={k}
-                className={`mode-btn ${mode === k ? "active" : ""}`}
-                onClick={() => setMode(k)}
-              >
-                {data.portfolios[k].label}
-              </button>
-            ))}
+          <div className="mode-toggle-row">
+            <span className="mode-toggle-label">
+              Switch portfolio <span className="mode-toggle-arrow">→</span>
+            </span>
+            <div className="mode-toggle">
+              {modeKeys.map((k) => (
+                <button
+                  key={k}
+                  className={`mode-btn ${mode === k ? "active" : ""}`}
+                  onClick={() => setMode(k)}
+                >
+                  {data.portfolios[k].label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="mode-info">
-            <span className="mode-label">Active portfolio</span>
-            <span className="mode-name">{portfolio.label}</span>
             <span className="mode-desc">{portfolio.description}</span>
           </div>
         </div>
       )}
 
-      <div className="legend">
-        <span className="legend-item"><span className="dot green" />Low risk (&lt;2.5)</span>
-        <span className="legend-item"><span className="dot yellow" />Elevated (2.5–5)</span>
-        <span className="legend-item"><span className="dot red" />High (&gt;5)<InfoTip text="These thresholds are pragmatic rules of thumb, not a regulatory standard. Calibrated for daily 1% VaR on liquid ETFs: diversified US equity (SPY) historically sits around 1.5–2.5%; sector ETFs 2–3%; individual stocks 3–5%; crypto and volatile names often 5%+. Different asset classes warrant different thresholds, which is why the per-asset Risk gauge (percentile rank vs 2-year history) is the more rigorous comparison on this page." /></span>
-        <span className="legend-item legend-note">VaR expressed as $ loss on $100 portfolio</span>
-      </div>
+      {activeTab === "portfolio" && (
+        <div className="legend">
+          <span className="legend-item"><span className="dot green" />Low risk (&lt;2.5)</span>
+          <span className="legend-item"><span className="dot yellow" />Elevated (2.5–5)</span>
+          <span className="legend-item"><span className="dot red" />High (&gt;5)<InfoTip text="These thresholds are pragmatic rules of thumb, not a regulatory standard. Calibrated for daily 1% VaR on liquid ETFs: diversified US equity (SPY) historically sits around 1.5–2.5%; sector ETFs 2–3%; individual stocks 3–5%; crypto and volatile names often 5%+. Different asset classes warrant different thresholds, which is why the per-asset Risk gauge (percentile rank vs 2-year history) is the more rigorous comparison on this page." /></span>
+          <span className="legend-item legend-note">VaR expressed as $ loss on $100 portfolio</span>
+        </div>
+      )}
 
       <main className="main">
         {loading && (
@@ -269,7 +275,11 @@ export default function App() {
             <div className="hint">Run <code>python backend/run.py</code> to generate data.</div>
           </div>
         )}
-        {portfolio && (
+        {/* =============================================================
+            TAB 1 — Portfolio Risk
+            All sections that depend on the active portfolio mode.
+            ============================================================= */}
+        {activeTab === "portfolio" && portfolio && (
           <Section
             id="risk-snapshot"
             title="Current Risk Snapshot"
@@ -285,7 +295,7 @@ export default function App() {
             />
           </Section>
         )}
-        {portfolio?.is_active_fund_spotlight && portfolio?.fund_disclosure && (
+        {activeTab === "portfolio" && portfolio?.is_active_fund_spotlight && portfolio?.fund_disclosure && (
           <Section
             id="fund-disclosure"
             title="Fund Holdings — Disclosed"
@@ -298,7 +308,7 @@ export default function App() {
             />
           </Section>
         )}
-        {portfolio?.risk_history?.length > 0 && (
+        {activeTab === "portfolio" && portfolio?.risk_history?.length > 0 && (
           <Section
             id="risk-trajectory"
             title="Portfolio Risk Trajectory"
@@ -308,7 +318,7 @@ export default function App() {
             <PortfolioRiskChart data={portfolio.risk_history} portfolioLabel={portfolio.label} />
           </Section>
         )}
-        {portfolio?.backtests && (
+        {activeTab === "portfolio" && portfolio?.backtests && (
           <Section
             id="model-validation"
             title="VaR Model Validation"
@@ -318,7 +328,7 @@ export default function App() {
             <BacktestPanel data={portfolio.backtests} portfolioLabel={portfolio.label} />
           </Section>
         )}
-        {portfolio?.scenarios && (
+        {activeTab === "portfolio" && portfolio?.scenarios && (
           <Section
             id="stress-tests"
             title="Historical Stress Tests & Scenarios"
@@ -333,7 +343,11 @@ export default function App() {
             />
           </Section>
         )}
-        {data?.sp500_history && (
+        {/* =============================================================
+            TAB 2 — Market Context
+            Portfolio-independent reference charts.
+            ============================================================= */}
+        {activeTab === "market" && data?.sp500_history && (
           <Section
             id="sp500-history"
             title="Market Context — S&P 500 Historical Risk"
@@ -343,7 +357,7 @@ export default function App() {
             <HistoricalChart data={data.sp500_history} />
           </Section>
         )}
-        {data?.correlation_history && (
+        {activeTab === "market" && data?.correlation_history && (
           <Section
             id="correlation"
             title="Market Context — Cross-Asset Correlation"
@@ -353,7 +367,7 @@ export default function App() {
             <CorrelationChart data={data.correlation_history} />
           </Section>
         )}
-        {data?.multi_window_corr && Object.keys(data.multi_window_corr).length > 0 && (
+        {activeTab === "market" && data?.multi_window_corr && Object.keys(data.multi_window_corr).length > 0 && (
           <Section
             id="multi-window-corr"
             title="Market Context — Stock-Bond Correlation Across Time Scales"
@@ -363,7 +377,7 @@ export default function App() {
             <MultiWindowCorrelationChart data={data.multi_window_corr} />
           </Section>
         )}
-        {data?.intraday_corr_history && (
+        {activeTab === "market" && data?.intraday_corr_history && (
           Array.isArray(data.intraday_corr_history)
             ? data.intraday_corr_history.length > 0
             : Object.values(data.intraday_corr_history).some((s) => s?.length > 0)
@@ -375,6 +389,23 @@ export default function App() {
             description="A leading version of the chart above. Each bar is one trading day's SPY-TLT correlation computed from intraday bars — so each daily value is statistically meaningful on its own. A run of consecutive same-sign days is a much sharper regime-shift signal than the smoothed 60-day daily-data correlation can produce. Free intraday data via yfinance, limited to the last 60 trading days."
           >
             <IntradayCorrelationChart data={data.intraday_corr_history} />
+          </Section>
+        )}
+
+        {/* =============================================================
+            TAB 3 — Anomaly Detector (Phase 2)
+            Placeholder for the univariate anomaly-detection view —
+            sector ETF deep-dive with z-score / CUSUM / GARCH-residual /
+            HMM detectors plotted on a shared timeline.
+            ============================================================= */}
+        {activeTab === "anomaly" && data?.anomaly_views && (
+          <Section
+            id="anomaly-detector"
+            title="Univariate Anomaly Detector"
+            question="When does a single sector ETF start behaving unusually?"
+            description="Single-asset deep-dive view. Pick a sector ETF and see multiple anomaly detectors run on the same return series. Each detector answers a slightly different question — standardized z-score flags outsized single days; Page CUSUM catches sustained mean shifts that individual days don't reveal; GARCH-residual outliers flag days the conditional volatility model didn't anticipate. Disagreement between detectors is the signal, same principle as the VaR table on the Portfolio Risk tab. Universe: 11 SPDR sector ETFs + KRE (regional banks), SMH (semis), IBB (biotech). Lookback ~2 years per ticker."
+          >
+            <AnomalyDetectorPanel views={data.anomaly_views} />
           </Section>
         )}
       </main>

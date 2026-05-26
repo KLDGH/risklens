@@ -64,6 +64,125 @@
   flex-wrap: wrap;
 }
 
+/* ---------- Top-level tab bar (Portfolio Risk / Market Context / Anomaly) ----------
+   Replaces the older page-nav section-anchor row. Tabs are the primary
+   way to move around the dashboard now that the page has more sections
+   than fit comfortably on one scroll. */
+.tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+  padding-bottom: 0;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 3px 3px 0 0;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 9px 18px;
+  cursor: pointer;
+  position: relative;
+  bottom: -1px;     /* overlap the bottom border so active tab sits on it */
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  color: var(--text-bright);
+  background: var(--bg2);
+}
+
+.tab-btn.active {
+  color: var(--text-bright);
+  background: var(--bg2);
+  border-color: var(--border);
+  border-bottom-color: var(--bg2);  /* hides the bottom edge so tab connects to content */
+  font-weight: 600;
+}
+
+/* Right-side external link — methodology / FAQ. Floats to the end of
+   the tab bar so it doesn't look like a primary tab. */
+.tab-external {
+  margin-left: auto;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--accent);
+  opacity: 0.85;
+  padding: 6px 12px;
+  position: static;     /* override bottom: -1px from .tab-btn */
+}
+
+.tab-external:hover {
+  background: var(--bg3);
+  color: var(--accent);
+  opacity: 1;
+}
+
+/* ---------- Phase-2 placeholder for the Anomaly Detector tab ---------- */
+.anomaly-stub {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--text-dim);
+}
+
+.anomaly-stub-icon {
+  font-size: 28px;
+  opacity: 0.6;
+}
+
+.anomaly-stub-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.anomaly-stub-body {
+  font-size: 12.5px;
+  line-height: 1.7;
+  max-width: 800px;
+}
+
+.anomaly-stub-body p { margin: 0 0 8px 0; }
+
+.anomaly-stub-body ul {
+  margin: 4px 0 8px 18px;
+  padding: 0;
+}
+
+.anomaly-stub-body li { margin: 4px 0; }
+
+.anomaly-stub-body strong {
+  color: var(--text-bright);
+  font-weight: 600;
+}
+
+.anomaly-stub-body code {
+  background: var(--bg3);
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-size: 11px;
+  color: var(--accent);
+}
+
 .nav-label {
   font-size: 10px;
   font-weight: 700;
@@ -148,13 +267,42 @@
   margin-top: 2px;
 }
 
+/* Row that pairs the "Switch portfolio →" cue label with the actual
+   toggle. The label tells users the pills are a selector — important
+   when the dashboard has five portfolio modes that look similar at a
+   glance. Wraps onto two lines on narrow viewports. */
+.mode-toggle-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.mode-toggle-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode-toggle-arrow {
+  color: var(--accent);
+  font-size: 11px;
+  opacity: 0.85;
+}
+
 .mode-toggle {
   display: flex;
-  gap: 4px;
+  gap: 8px;                     /* more breathing room between pills */
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 3px;
+  padding: 5px;
   flex-wrap: wrap;              /* allow wrap on narrow screens */
   align-self: flex-start;
 }

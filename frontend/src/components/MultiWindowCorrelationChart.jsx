@@ -233,7 +233,7 @@ export default function MultiWindowCorrelationChart({ data }) {
               cursor={{ stroke: "rgba(255,255,255,0.08)", strokeWidth: 1 }}
             />
 
-            <ReferenceLine y={0} stroke="#2e4460" strokeWidth={1.5} />
+            <ReferenceLine y={0} stroke="#3a4554" strokeWidth={1.5} />
 
             {Object.entries(WINDOW_STYLES).map(([w, style]) => (
               showWindows[w] && (

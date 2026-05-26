@@ -1,199 +1,82 @@
 # RiskLens
 
-A quantitative market risk dashboard that computes daily Value-at-Risk (VaR) and Expected Shortfall (ES) across 12 major assets using five statistical models. Displayed in a dark quant-terminal UI with an S&P 500 historical risk chart dating back to 1990.
+A daily-refresh risk dashboard that runs **five VaR models, Fama-French factor attribution, anomaly detection,** and **historical + hypothetical stress tests** across a configurable book — diversified portfolios, target-date funds, or active ETFs (with full look-through to their disclosed holdings).
 
-Live at: **https://kldgh.github.io/risklens/**
+**Live:** https://kldgh.github.io/risklens/
 
+Built as a transparent reference implementation of techniques real risk desks use, with the methodology in the open instead of behind a vendor license.
 
-## What it shows
+## What it answers
 
-RiskLens answers one question every morning: **how much risk am I carrying right now, and is it getting worse?** It pulls yesterday's closing prices for 12 major assets and runs five statistical models to estimate how bad a bad day could get. The results land in a sortable table — click Risk to put the most stressed assets at the top — so you can see at a glance where pressure is building across equities, bonds, gold, crypto, and real estate.
+Three tabs, each answering a distinct question:
 
-- **Risk Gauge** — the most actionable number. Where does today's volatility sit relative to the past 2 years for that asset? 85% means risk is more elevated than 85% of recent history — not just high in absolute terms, but high *for that asset right now*.
-- **VaR (Value at Risk)** — on a genuinely bad day (the worst 1% historically), how many dollars do you lose on a $100 position? Computed five different ways so you can see whether the models agree or disagree — that spread is itself a signal.
-- **Expected Shortfall (ES)** — given it already is a bad day, how bad on average? Goes one step further than VaR by describing the full tail, not just where it starts.
-- **Tail index (α)** — how fat are the tails? Lower = more extreme events possible than standard models assume. Useful for spotting assets where the VaR numbers may be underestimating true exposure.
-- **S&P 500 historical chart** — 35+ years of daily risk estimates and annual returns with major crisis labels, so you can see where current volatility sits relative to the Dot-com crash, GFC, and COVID.
-- **Cross-asset correlation chart** — rolling average pairwise correlation across 10 core ETFs since 2007. Shows when diversification is working and when it isn't.
+| Tab | Question | Key components |
+|---|---|---|
+| **Portfolio Risk** | *How much risk am I carrying right now, where is it concentrated, and would the models survive a real stress event?* | 5 VaR models (HS, EWMA, GARCH-t, GJR-t, EVT) · Risk-percentile gauge · Component VaR per holding · Out-of-sample backtests (Kupiec + Christoffersen) · Historical + hypothetical stress tests |
+| **Market Context** | *What regime is the market in right now? Is diversification still working?* | S&P 500 risk + VIX, 1928→today · Cross-asset rolling correlation · Multi-window stock-bond correlation (20d / 60d / 252d, 4 bond proxies) · Intraday SPY×TLT correlation with QMLE noise-correction |
+| **Anomaly Detector** | *Is a sector ETF behaving unusually, and what's driving its risk?* | Risk profile per ETF · Fama-French 5 + Momentum factor regression (open-data substitute for Barra) · Stacked detectors: z-score, Page CUSUM, GARCH-residual outliers |
 
+## Portfolios supported
 
-## Data sources
+Switch via the top toggle on Tab 1:
 
-### Where the data comes from
+- **Hypothetical** — illustrative diversified mix (60/30/8/2) built from 14 asset-class ETFs
+- **Vanguard Target 2055 (VFFVX)** — passive TDF wrapper, modeled via its 4 underlying ETFs (VTI/VXUS/BND/BNDX)
+- **American Funds Target 2055 (AAFTX)** — active TDF wrapper, modeled via 12 underlying mutual funds
+- **CGGO Look-Through** — Capital Group Global Growth ETF, modeled as a look-through basket of its top-25 disclosed holdings
+- **DWLD Look-Through** — Davis Select Worldwide ETF, same look-through treatment
 
-All price data is fetched via **[yfinance](https://github.com/ranaroussi/yfinance)**, a Python library that wraps the Yahoo Finance public API.
+For the active-fund modes, holdings are read from sponsor-disclosed xlsx/csv files refreshed quarterly. The risk pipeline runs on each underlying individually (not just the fund's NAV) so you see per-name VaR/ES/component-VaR with factor loadings, not just an aggregate.
 
-| Question | Answer |
-|----------|--------|
-| **Cost** | Free — no API key required |
-| **Data type** | Daily adjusted closing prices (OHLCV, auto-adjusted for splits/dividends) |
-| **Frequency** | Daily bars only — not intraday |
-| **Lag** | Typically 1 business day. Running after ~4 PM ET gives you the previous day's close; running before market close gives you the prior day. |
-| **History fetched** | 10 years for the 12 portfolio tickers; maximum available (back to 1927) for the S&P 500 historical chart |
-| **Reliability** | Yahoo Finance is a best-effort free service. Occasional data gaps, ticker changes, or API outages can cause missing data. The backend forward-fills short gaps (e.g. BTC weekends vs equity holidays). |
+## Methodology in 60 seconds
 
-### Tickers covered
+All five VaR/ES columns compute on a rolling 1,000-day window, expressed as **daily 1% loss on a $100 position**.
 
-| Ticker | Name | Notes |
-|--------|------|-------|
-| SPY | S&P 500 ETF | SPDR, most liquid US equity ETF |
-| QQQ | Nasdaq 100 ETF | Invesco, large-cap tech |
-| GLD | Gold ETF | SPDR, physically-backed |
-| TLT | 20yr Treasury ETF | iShares, long-duration rates exposure |
-| EEM | Emerging Markets ETF | iShares, broad EM equities |
-| BTC-USD | Bitcoin / USD | Spot price, trades 24/7 |
-| IWM | Russell 2000 ETF | iShares, US small-cap equities |
-| HYG | High Yield Bond ETF | iShares, US junk bonds |
-| LQD | Investment Grade Bond ETF | iShares, US IG corporate bonds |
-| XLF | Financial Sector ETF | SPDR, US financials |
-| VNQ | Real Estate ETF | Vanguard, US REITs |
+| Model | What it does | When it dominates |
+|---|---|---|
+| **HS** (Historical Simulation) | Empirical 1st percentile of actual returns. No distributional assumption. | When you want a non-parametric baseline immune to model misspecification |
+| **EWMA** | Gaussian VaR with λ=0.94 exponential decay. The RiskMetrics industry standard. | Fast reaction to volatility regime changes. Known to under-estimate fat tails. |
+| **GARCH-t** | GARCH(1,1) conditional vol with Student-t innovations. | Volatility clustering + heavy tails. Generally ~30–60% higher than EWMA at 99%. |
+| **GJR-t** | GARCH-t + asymmetric (leverage) term. Negative shocks raise vol more than positive. | Equity markets, where downside volatility persists longer than upside. |
+| **EVT** | Generalized Pareto fit to the loss tail directly. | Genuine tail behavior. Usually materially higher than the others — that gap *is* a signal. |
 
-### How data is fetched
+**The five-model spread is itself the signal.** Tight = models agree, fat-tails aren't a concern. Wide (usually EVT pulling high) = the asset has tail behavior the other models miss. The "Range" and "Consensus" columns surface this explicitly.
 
-Each ticker is downloaded individually (not in bulk) to avoid SQLite lock issues in yfinance's local cache. Gaps are forward-filled — this means Bitcoin's Sunday prices carry forward into Monday if equity markets are closed, keeping the return series aligned. The S&P 500 index (`^GSPC`) is fetched separately with the full available history for the historical chart.
+Backtested every run via **Kupiec UC** (exception-rate matches 1%?) and **Christoffersen IC** (exceptions independent or clustered?) tests on 504-day out-of-sample windows. Verdicts label *which way* a model is mis-calibrated, not just whether it passes.
 
+## Data
 
-## Risk models
+- **Source:** Yahoo Finance via [yfinance](https://github.com/ranaroussi/yfinance) — free, no API key, daily adjusted closes.
+- **Refresh:** scheduled GitHub Actions workflow runs every weekday at 6:30 AM UTC, after the prior US session has closed and reconciled.
+- **Latency:** roughly one business day. The "Data as of" timestamp in the header shows what's actually loaded.
+- **Holdings data** for active funds: sponsor-disclosed xlsx/csv files in `ext-data/`, preprocessed into a JSON the pipeline reads. Update by dropping a new file in and re-running `python backend/preprocess_holdings.py`.
+- **Fama-French factors:** Ken French Data Library, daily. Fetched fresh each run, cached locally for fallback.
 
-Five models are computed for every ticker on every run, using a **1,000-day rolling window** of log returns.
-
-| Model | Description |
-|-------|-------------|
-| **HS** (Historical Simulation) | Empirical 1st percentile of the last 1,000 daily returns. No assumptions — just ranks actual history. Honest but slow to react to volatility regime changes. |
-| **EWMA** | Exponentially Weighted Moving Average volatility (λ=0.94), assuming normally distributed returns. Weights recent days heavily — reacts quickly to volatility spikes. The industry standard for daily risk desks. |
-| **GARCH(1,1)** | Models volatility as a mean-reverting process. Captures volatility clustering: bad days tend to follow bad days. Fit via the `arch` library. |
-| **tGARCH** (GJR-GARCH) | Extends GARCH to treat negative shocks differently from positive ones. Empirically, bad news raises volatility more than equally-sized good news. More realistic for equity markets. |
-| **EVT** (Extreme Value Theory) | Fits a Generalised Pareto Distribution to the tail of losses only. Most rigorous for rare, extreme events. Often materially higher than the others — that gap is a signal, not noise. |
-
-All figures are **dollar loss on a $100 portfolio** at **1% confidence** (worst 1% of days).
-
-**Risk Gauge** — percentile rank of today's EWMA VaR vs the trailing 2-year daily history of EWMA VaR for that ticker. 0% = historically calm, 100% = historically extreme for that asset.
-
-**Tail index (α)** — Hill estimator on the return series. Equities typically sit around 3–4; values below 3 indicate meaningfully fatter tails than standard normal models assume.
-
-
-## Setup
-
-### Requirements
-
-- Python 3.10+
-- Node.js 18+
-
-### 1. Clone the repo
+## Quick start
 
 ```bash
 git clone https://github.com/kldgh/risklens.git
 cd risklens
-```
-
-### 2. Python environment
-
-```bash
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
+python -m venv .venv && source .venv/bin/activate
 pip install -r backend/requirements.lock.txt
+python backend/run.py                      # ~60s — fetches + computes everything
+cd frontend && npm install && npm run dev  # http://localhost:5173
 ```
 
-> `requirements.lock.txt` has exact version pins for reproducibility.
-> Use `requirements.txt` if you want loose bounds.
-
-### 3. Generate risk data
-
-```bash
-python backend/run.py
-```
-
-Fetches ~10 years of price data and writes `frontend/public/data/risk_output.json`.
-Takes ~30–60 seconds. Requires an internet connection.
-
-### 4. Start the frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173).
-
-
-## GitHub Codespaces
-
-Click **Code → Codespaces → Create codespace** on the repo page. The devcontainer installs all dependencies and auto-runs the backend + dev server on startup. The port 5173 preview opens automatically in your browser.
-
-
-## Deployment (GitHub Pages)
-
-The repo includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that:
-
-1. Runs `python backend/run.py` to fetch fresh data
-2. Builds the React frontend with `npm run build`
-3. Deploys the static output to GitHub Pages
-
-**Triggers:** every push to `main`, plus a daily cron at 6:30 AM UTC on weekdays (after US pre-market).
-
-To enable: go to **Settings → Pages → Source → GitHub Actions** in your repo.
-
-
-## Output schema
-
-`frontend/public/data/risk_output.json` (generated on each run, not committed):
-
-```json
-{
-  "generated_at": "2026-04-22T06:30:00Z",
-  "assets": [
-    {
-      "ticker": "SPY",
-      "name": "S&P 500 ETF",
-      "last_price": 704.08,
-      "last_return_pct": -0.66,
-      "var_hs": 2.08,
-      "es_hs": 2.71,
-      "var_ewma": 1.91,
-      "es_ewma": 2.40,
-      "var_garch": 1.72,
-      "es_garch": 2.16,
-      "var_tgarch": 1.89,
-      "es_tgarch": 2.38,
-      "var_evt": 3.41,
-      "es_evt": 4.92,
-      "tail_index": 3.21,
-      "mean_var": 2.20,
-      "risk_level": 0.59
-    }
-  ],
-  "sp500_history": [
-    {
-      "year": 2023,
-      "min_var": 1.12,
-      "max_var": 2.84,
-      "annual_return_pct": 24.2
-    }
-  ]
-}
-```
-
+Or use **GitHub Codespaces** — the devcontainer auto-installs everything and runs the backend + frontend on startup.
 
 ## Stack
 
-- **Backend:** Python · yfinance · pandas · numpy · scipy · arch
-- **Frontend:** React 18 · Vite · Recharts · plain CSS (no UI framework)
-- **Hosting:** GitHub Pages via GitHub Actions
-- **Data:** Yahoo Finance (free, via yfinance) · No API key required
-
+Backend: Python 3.10+ · pandas · numpy · scipy · arch · yfinance · openpyxl
+Frontend: React 18 · Vite · Recharts · plain CSS
+Hosting: GitHub Pages via GitHub Actions
 
 ## License
 
-Released under the [MIT License](./LICENSE). Free to use, modify, and distribute — including for commercial purposes — provided the original copyright notice and license are preserved.
-
-If you use, fork, or adapt this project, attribution back to this repository is appreciated but not required beyond what the license stipulates.
-
+MIT. Free to use, modify, and distribute. Attribution back to this repo appreciated but not required beyond what the license stipulates.
 
 ## Disclaimer
 
-RiskLens is a **personal project** built for educational and demonstration purposes. It is not affiliated with, endorsed by, or supported by any employer, financial institution, or data vendor.
+Personal project. Not affiliated with, endorsed by, or supported by any employer, financial institution, or data vendor. Nothing here is investment, financial, trading, or risk-management advice. The figures shown should not drive investment, hedging, or position-sizing decisions. The models are publicly-known statistical methods applied to public price data — output is illustrative and methodological, not actionable.
 
-Nothing in this project constitutes **investment advice, financial advice, trading advice, or any other sort of advice**, and the figures shown should not be relied upon for any investment, hedging, or risk-management decision. The models implemented here are publicly-known statistical methods applied to publicly-available price data; their output is provided for illustrative and methodological transparency reasons only.
-
-Past performance and historical risk metrics are not indicative of future results. Use at your own risk.
+Past performance and historical risk metrics are not indicative of future results.

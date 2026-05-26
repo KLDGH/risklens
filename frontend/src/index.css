@@ -5,17 +5,23 @@
 }
 
 :root {
-  --bg: #0d1526;
-  --bg2: #111e30;
-  --bg3: #162438;
-  --border: #1e3048;
-  --text: #dde4ee;
-  --text-dim: #9aabc0;
-  --text-bright: #f0f4fa;
-  --green: #00c97a;
-  --yellow: #f0b429;
-  --red: #e53e3e;
-  --accent: #3b82f6;
+  /* RiskLens palette — "Burnished Gold" (May 2026, softened)
+     Lower-contrast variant of the original Bloomberg-amber theme: lighter
+     dark base, off-white text instead of pure white, desaturated burnished
+     gold accent rather than neon amber. Reads less highlighter-on-dark,
+     more vintage trading terminal. */
+  --bg:          #141821;   /* slightly lighter slate */
+  --bg2:         #1c222c;
+  --bg3:         #232a37;
+  --border:      #2e3744;
+  --text:        #c5cbd4;       /* dimmer than before */
+  --text-dim:    #7e8794;
+  --text-bright: #e8ecf2;       /* off-white, not #fff */
+  --green:       #5fb87b;       /* softer than #4ade80 */
+  --yellow:      #d18548;       /* burnt orange, desaturated */
+  --red:         #d96464;       /* softer than #ef4444 */
+  --accent:      #d97706;       /* burnt orange — trading-floor warm */
+  --accent-soft: #f59e0b;       /* lighter amber-orange for chart highlights */
   --font: "JetBrains Mono", "Courier New", monospace;
 }
 

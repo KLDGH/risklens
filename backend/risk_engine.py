@@ -1273,3 +1273,182 @@ def compute_multi_window_correlation(
             out[bond] = bond_data
 
     return out
+
+
+# ---------------------------------------------------------------------------
+# Univariate anomaly detection (Anomaly Detector tab)
+#
+# Four detectors run on a single ticker's return series, each answering a
+# slightly different question — disagreement between them is the signal:
+#
+#   1. Standardized z-score (rolling 60d mean/std).
+#      Catches outsized single-day moves. Flag |z| >= 3.
+#      Baseline detector — every quant text discusses it.
+#
+#   2. Two-sided Page CUSUM (Page 1954, Roberts 1959).
+#      Catches sustained mean shifts that the z-score misses because each
+#      individual day looks normal. Flag when |S| exceeds h_factor * sigma.
+#
+#   3. GARCH-residual outliers.
+#      Standardize each return by its CONDITIONAL std (from a fitted
+#      GJR-t-GARCH); a day with |r_t / sigma_t| >= 3 is one the volatility
+#      model failed to anticipate — a genuine surprise after accounting
+#      for the current vol regime.
+#
+#   4. Rolling tail-index (Hill) shift.
+#      The Hill estimator's value changing materially across a rolling
+#      window indicates a structural shift in tail behavior. (Optional v2.)
+# ---------------------------------------------------------------------------
+
+# Detector thresholds — kept as module constants so the frontend can
+# read them from the JSON and draw the threshold lines correctly.
+ZSCORE_THRESHOLD = 3.0
+CUSUM_K          = 0.5     # allowance term in standard-deviation units
+CUSUM_H          = 5.0     # threshold in standard-deviation units
+GARCH_RESID_THRESHOLD = 3.0
+
+
+def _rolling_zscore(returns: pd.Series, window: int = 60) -> pd.Series:
+    """Standardize each return against its trailing window mean/std."""
+    mu    = returns.rolling(window, min_periods=20).mean()
+    sigma = returns.rolling(window, min_periods=20).std()
+    return (returns - mu) / sigma
+
+
+def _page_cusum(z: pd.Series, k: float = CUSUM_K) -> tuple[pd.Series, pd.Series]:
+    """
+    Two-sided Page CUSUM on already-standardized returns.
+
+    Returns (S_pos, S_neg) — running accumulations that reset to zero
+    when they cross the wrong side. Flag a positive (resp negative) mean
+    shift when S_pos > h (resp S_neg < -h), where h is typically 4-6 in
+    standard-deviation units.
+
+    The k parameter is the 'allowance' — how much drift to tolerate before
+    accumulating. k=0.5 is a textbook default; smaller k flags faster
+    but with more false positives.
+    """
+    s_pos = np.zeros(len(z))
+    s_neg = np.zeros(len(z))
+    z_arr = z.to_numpy()
+    for i in range(1, len(z_arr)):
+        if not np.isfinite(z_arr[i]):
+            s_pos[i] = s_pos[i - 1]
+            s_neg[i] = s_neg[i - 1]
+            continue
+        s_pos[i] = max(0.0, s_pos[i - 1] + z_arr[i] - k)
+        s_neg[i] = min(0.0, s_neg[i - 1] + z_arr[i] + k)
+    return (pd.Series(s_pos, index=z.index),
+            pd.Series(s_neg, index=z.index))
+
+
+def _garch_residuals(returns: pd.Series) -> pd.Series:
+    """
+    Fit a GJR-GARCH(1,1,1) with Student-t innovations to the full return
+    series and return its standardized residuals as a date-indexed Series.
+
+    Standardized residuals z_t = r_t / sigma_t have ~mean 0, ~unit
+    variance, and any |z| >= 3 is a day the conditional vol model
+    materially under-forecast. These are residual surprises after
+    explicitly accounting for the time-varying volatility regime.
+
+    Falls back to NaN-filled series if the fit fails (rare but possible
+    for very short or pathological series).
+    """
+    try:
+        scaled = returns.values * 100
+        am  = arch_model(scaled, vol="GARCH", p=1, o=1, q=1,
+                         dist="t", rescale=False)
+        res = am.fit(disp="off", show_warning=False)
+        std_resid = pd.Series(np.asarray(res.std_resid), index=returns.index)
+        return std_resid
+    except Exception:
+        return pd.Series(np.nan, index=returns.index)
+
+
+def compute_anomaly_view(ticker: str, prices: pd.Series, returns: pd.Series,
+                          lookback_days: int = 504) -> dict | None:
+    """
+    Build the complete anomaly-detector payload for a single ticker.
+
+    Returns one frontend-ready dict containing the price series, four
+    detector time-series, the list of dates flagged by each detector
+    (with the magnitudes), and the threshold constants used so the
+    frontend can draw matching horizontal reference lines.
+
+    `lookback_days` caps the visible window (default ~2 years) so we
+    don't ship a 20-year time series for every sector ETF — the recent
+    behavior is what users will scrutinize.
+    """
+    # We compute on the FULL history so the rolling z-score / CUSUM /
+    # GARCH residuals reach steady state; then we slice the tail.
+    if len(returns) < 100:
+        return None
+
+    z          = _rolling_zscore(returns, window=60)
+    cusum_pos, cusum_neg = _page_cusum(z, k=CUSUM_K)
+    garch_resid = _garch_residuals(returns)
+
+    # Align all on the last `lookback_days` and the dates where the
+    # rolling stats are defined.
+    df = pd.DataFrame({
+        "price":       prices,
+        "ret":         returns,
+        "zscore":      z,
+        "cusum_pos":   cusum_pos,
+        "cusum_neg":   cusum_neg,
+        "garch_resid": garch_resid,
+    }).dropna(subset=["price", "ret"])
+    df = df.tail(lookback_days)
+    if df.empty:
+        return None
+
+    # Build the time-series payload — one row per trading day with all
+    # detector values + price/return for the chart.
+    series = []
+    for ts, row in df.iterrows():
+        series.append({
+            "date":        ts.strftime("%Y-%m-%d"),
+            "price":       round(float(row["price"]), 4),
+            "ret_pct":     round(float(row["ret"]) * 100, 4),
+            "zscore":      None if pd.isna(row["zscore"])      else round(float(row["zscore"]), 3),
+            "cusum_pos":   None if pd.isna(row["cusum_pos"])   else round(float(row["cusum_pos"]), 3),
+            "cusum_neg":   None if pd.isna(row["cusum_neg"])   else round(float(row["cusum_neg"]), 3),
+            "garch_resid": None if pd.isna(row["garch_resid"]) else round(float(row["garch_resid"]), 3),
+        })
+
+    # Anomaly index — which detectors fired on which dates, with
+    # magnitudes. Used by the frontend to render the marker list.
+    anomalies = []
+    for r in series:
+        flags = []
+        if r["zscore"]      is not None and abs(r["zscore"])      >= ZSCORE_THRESHOLD:        flags.append("zscore")
+        if r["cusum_pos"]   is not None and r["cusum_pos"]        >=  CUSUM_H:                 flags.append("cusum_pos")
+        if r["cusum_neg"]   is not None and r["cusum_neg"]        <= -CUSUM_H:                 flags.append("cusum_neg")
+        if r["garch_resid"] is not None and abs(r["garch_resid"]) >= GARCH_RESID_THRESHOLD:   flags.append("garch_resid")
+        if flags:
+            anomalies.append({
+                "date":        r["date"],
+                "detectors":   flags,
+                "ret_pct":     r["ret_pct"],
+                "zscore":      r["zscore"],
+                "garch_resid": r["garch_resid"],
+                "cusum_pos":   r["cusum_pos"],
+                "cusum_neg":   r["cusum_neg"],
+            })
+
+    return {
+        "ticker":     ticker,
+        "series":     series,
+        "anomalies":  anomalies,
+        "thresholds": {
+            "zscore":      ZSCORE_THRESHOLD,
+            "cusum":       CUSUM_H,
+            "garch_resid": GARCH_RESID_THRESHOLD,
+        },
+        "params": {
+            "zscore_window":  60,
+            "cusum_k":        CUSUM_K,
+            "lookback_days":  lookback_days,
+        },
+    }

@@ -64,7 +64,7 @@ const CustomTooltip = ({ active, payload }) => {
     <div className="chart-tooltip">
       <div className="tt-year">{d?.date}</div>
       <div className="tt-row">
-        <span style={{ color: "#60a5fa" }}>Avg corr</span>
+        <span style={{ color: "#f59e0b" }}>Avg corr</span>
         <span>{corrVal}</span>
       </div>
       {vix != null && (
@@ -139,7 +139,7 @@ export default function CorrelationChart({ data }) {
             <defs>
               <linearGradient id="corrFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%"   stopColor="#ef4444" stopOpacity={0.55} />
-                <stop offset="45%"  stopColor="#3b82f6" stopOpacity={0.25} />
+                <stop offset="45%"  stopColor="#d97706" stopOpacity={0.25} />
                 <stop offset="100%" stopColor="#0d1526" stopOpacity={0.05} />
               </linearGradient>
             </defs>
@@ -213,7 +213,7 @@ export default function CorrelationChart({ data }) {
               yAxisId="corr"
               type="monotone"
               dataKey="avg_corr"
-              stroke="#60a5fa"
+              stroke="#f59e0b"
               strokeWidth={1.5}
               fill="url(#corrFill)"
               dot={false}

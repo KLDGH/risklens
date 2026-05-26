@@ -268,7 +268,7 @@ export default function IntradayCorrelationChart({ data }) {
             </p>
           )}
           {hasQmle && (
-            <p style={{ marginTop: 8, paddingLeft: 12, borderLeft: "2px solid #2e4460" }}>
+            <p style={{ marginTop: 8, paddingLeft: 12, borderLeft: "2px solid #3a4554" }}>
               <strong>Caveat at this granularity.</strong> QMLE earns its keep
               when noise variance is non-trivial relative to per-observation
               signal variance — typically 1-minute or tick data, or pairs with
@@ -366,7 +366,7 @@ export default function IntradayCorrelationChart({ data }) {
                 cursor={{ fill: "rgba(255,255,255,0.04)" }}
               />
 
-              <ReferenceLine y={0} stroke="#2e4460" strokeWidth={1.5} />
+              <ReferenceLine y={0} stroke="#3a4554" strokeWidth={1.5} />
 
               <Bar dataKey="corr" maxBarSize={18} isAnimationActive={false}>
                 {series.map((d, i) => (

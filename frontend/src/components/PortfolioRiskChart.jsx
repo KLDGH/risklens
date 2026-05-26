@@ -67,7 +67,7 @@ const CustomTooltip = ({ active, payload }) => {
     <div className="chart-tooltip">
       <div className="tt-year">{d?.date}</div>
       <div className="tt-row">
-        <span style={{ color: "#60a5fa" }}>Daily VaR (1%)</span>
+        <span style={{ color: "#f59e0b" }}>Daily VaR (1%)</span>
         <span>${v?.toFixed(2)} / {v?.toFixed(2)}%</span>
       </div>
       <div style={{ marginTop: 6, fontSize: 11, color: "#8896aa", lineHeight: 1.4 }}>
@@ -138,7 +138,7 @@ export default function PortfolioRiskChart({ data, portfolioLabel }) {
             <defs>
               <linearGradient id="riskFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%"   stopColor="#ef4444" stopOpacity={0.45} />
-                <stop offset="50%"  stopColor="#3b82f6" stopOpacity={0.22} />
+                <stop offset="50%"  stopColor="#d97706" stopOpacity={0.22} />
                 <stop offset="100%" stopColor="#0d1526" stopOpacity={0.04} />
               </linearGradient>
             </defs>
@@ -197,7 +197,7 @@ export default function PortfolioRiskChart({ data, portfolioLabel }) {
             <Area
               type="monotone"
               dataKey="var"
-              stroke="#60a5fa"
+              stroke="#f59e0b"
               strokeWidth={1.5}
               fill="url(#riskFill)"
               dot={false}
