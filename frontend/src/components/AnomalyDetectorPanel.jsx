@@ -140,6 +140,26 @@ function RiskProfileCard({ profile, ticker }) {
    Lit refs cited in the section description elsewhere. The choice of
    factor set follows Carhart (1997) plus the Fama-French (2015) RMW
    and CMA additions — the de-facto institutional baseline. */
+
+// Plain-English explainer for each Fama-French / Carhart factor. These
+// appear as hover-overs on each row in the loadings table so users who
+// haven't read the FF literature can read the panel without external
+// reference. Keys match the `factor` field in each loading record.
+const FF_FACTOR_DESCRIPTIONS = {
+  "Mkt-RF":
+    "Market excess return. The broad US stock market's return MINUS the risk-free rate (T-bill yield). Captures the classic 'market beta' — how much the asset moves with the overall market. A β of 1.2 means a 1% market gain typically corresponds to a 1.2% gain in this asset.",
+  "SMB":
+    "Small Minus Big — the size factor. Daily return of a portfolio that's long small-cap stocks and short large-cap stocks (sorted by market cap each June). Positive loading = your asset behaves like small-caps (after controlling for market beta); negative = large-cap tilt. Historically small-caps earn higher returns than large-caps, which is the 'size premium' this factor isolates.",
+  "HML":
+    "High Minus Low — the value factor. Daily return of a portfolio that's long high book-to-market (value) stocks and short low book-to-market (growth) stocks. Positive loading = value tilt (cheap stocks); negative = growth tilt (expensive / fast-growing stocks). Famously the single most studied risk factor in finance — Fama & French won the Nobel Prize partly for documenting it.",
+  "RMW":
+    "Robust Minus Weak — the profitability factor (added by Fama-French 2015). Daily return of a portfolio that's long high-profitability ('robust') firms and short low-profitability ('weak') ones. Profitability measured by operating-profit-to-equity. Positive loading = quality tilt; negative = junk tilt. Captures the idea that profitable firms earn higher returns than unprofitable ones after controlling for market, size, and value.",
+  "CMA":
+    "Conservative Minus Aggressive — the investment factor (also Fama-French 2015). Daily return of a portfolio that's long firms with conservative investment policies (slow capex / asset growth) and short firms with aggressive investment (fast-growing assets). Positive loading = exposure to capital-disciplined firms; negative = exposure to growth-by-acquisition / heavy-capex firms.",
+  "MOM":
+    "Momentum — Carhart (1997) extension. Daily return of a portfolio that's long recent winners and short recent losers, ranked on trailing 12-month return excluding the most recent month. Positive loading = chases winners (momentum-following); negative = mean-reversion (buys losers, sells winners). Momentum has been a robust factor across markets and decades.",
+};
+
 function FactorRegressionPanel({ model }) {
   if (!model) return null;
   const sig = (p) =>
@@ -147,11 +167,31 @@ function FactorRegressionPanel({ model }) {
     : p < 0.01  ? "**"
     : p < 0.05  ? "*"
     : "";
+
+  // Shared tooltip text — mirrors the Thematic panel so users see the
+  // same explanations of β, t-stat, p-value, etc. across both panels.
+  const TIPS = {
+    title: "Fama-French + Carhart factor regression. Decomposes the asset's daily returns into exposures to six widely-published risk factors (Market, Size, Value, Profitability, Investment, Momentum), each constructed as a long-short portfolio by Ken French. Output mirrors what a Barra-style commercial factor model produces: per-factor loadings, R², alpha, and vol decomposition.",
+    rsquared: "Fraction of this asset's daily-return variance explained by the six factors. Higher = the asset's behavior is heavily driven by these well-known systematic factors. Lower = more asset-specific (idiosyncratic) variance.",
+    varianceShare: "Same idea as R² expressed as % of variance (R² × 100). 'Variance from factors' = how much of the total daily-return variance the factor model explains.",
+    factor: "The risk factor being measured. Each is a published long-short portfolio constructed by Ken French (Dartmouth). Hover the row label below for a plain-English description of what each factor actually measures.",
+    loading: "OLS regression coefficient β. Interpretation: a 1% return in this factor's portfolio corresponds to a β·1% return in the asset, holding the other factors constant. Positive = moves with the factor; negative = moves opposite.",
+    tstat: "t-statistic = β / standard-error(β). Measures how confident we are that the true loading isn't zero. Rule of thumb: |t| > 2 means the coefficient is statistically meaningful (about 95% confidence). |t| > 3 is strongly meaningful.",
+    pvalue: "Probability of seeing this t-statistic by chance if the true loading were actually zero. Lower = stronger evidence the asset has real exposure to this factor. Convention: p < 0.05 is 'significant', p < 0.001 is 'very significant'.",
+    sig: "Significance stars: *** = p<0.001 (very strong), ** = p<0.01 (strong), * = p<0.05 (significant). No star = the loading is statistically indistinguishable from zero — don't read too much into the β value. Non-significant rows are dimmed.",
+    alpha: "Intercept of the regression. The average daily excess return (after subtracting risk-free rate) left over once all six factor exposures are accounted for. A statistically significant alpha (with stars) means the asset is earning a return that no combination of these factors can explain — historically a rare and noteworthy outcome.",
+    totalVol: "Sample standard deviation of this asset's daily returns over the 252-day window, annualized via √252, expressed in percent.",
+    factorVol: "Volatility explained by the six factors. Computed as σ_total × √R². Tells you how much of the asset's day-to-day risk comes from systematic factor exposures.",
+    idioVol: "Idiosyncratic / asset-specific volatility — the part of risk that's NOT explained by the factor model. Computed as σ_total × √(1 − R²). For an individual stock this captures company-specific news, earnings surprises, etc.",
+  };
+
   return (
     <div className="factor-regression-panel">
       <div className="fr-header">
         <div>
-          <div className="fr-title">Factor risk model</div>
+          <div className="fr-title">
+            Factor risk model <InfoTip text={TIPS.title} />
+          </div>
           <div className="fr-subtitle">
             {model.model} · OLS regression on excess returns, last {model.lookback_days} trading days
             ({model.first_date} → {model.last_date}).
@@ -161,11 +201,15 @@ function FactorRegressionPanel({ model }) {
         <div className="fr-headline-stats">
           <div className="fr-headline">
             <span className="fr-headline-value">{(model.r_squared * 100).toFixed(1)}%</span>
-            <span className="fr-headline-label">R²</span>
+            <span className="fr-headline-label">
+              R² <InfoTip text={TIPS.rsquared} />
+            </span>
           </div>
           <div className="fr-headline">
             <span className="fr-headline-value">{model.factor_variance_share_pct.toFixed(0)}%</span>
-            <span className="fr-headline-label">variance from factors</span>
+            <span className="fr-headline-label">
+              variance from factors <InfoTip text={TIPS.varianceShare} />
+            </span>
           </div>
         </div>
       </div>
@@ -173,19 +217,24 @@ function FactorRegressionPanel({ model }) {
       <table className="fr-table">
         <thead>
           <tr>
-            <th>Factor</th>
-            <th className="num">Loading (β)</th>
-            <th className="num">t-stat</th>
-            <th className="num">p-value</th>
-            <th>Sig.</th>
+            <th>Factor <InfoTip text={TIPS.factor} /></th>
+            <th className="num">Loading (β) <InfoTip text={TIPS.loading} /></th>
+            <th className="num">t-stat <InfoTip text={TIPS.tstat} /></th>
+            <th className="num">p-value <InfoTip text={TIPS.pvalue} /></th>
+            <th>Sig. <InfoTip text={TIPS.sig} /></th>
           </tr>
         </thead>
         <tbody>
           {model.loadings.map((l) => (
             <tr key={l.factor} className={l.significant ? "" : "fr-row-dim"}>
-              <td>{l.label}</td>
+              <td>
+                {l.label}
+                {FF_FACTOR_DESCRIPTIONS[l.factor] && (
+                  <InfoTip text={FF_FACTOR_DESCRIPTIONS[l.factor]} />
+                )}
+              </td>
               <td className="num">
-                <span style={{ color: l.beta >= 0 ? "#86efac" : "#fca5a5" }}>
+                <span style={{ color: l.beta >= 0 ? "var(--green)" : "var(--red)" }}>
                   {l.beta >= 0 ? "+" : ""}{l.beta.toFixed(3)}
                 </span>
               </td>
@@ -195,7 +244,9 @@ function FactorRegressionPanel({ model }) {
             </tr>
           ))}
           <tr className="fr-alpha-row">
-            <td>α (intercept)</td>
+            <td>
+              α (intercept) <InfoTip text={TIPS.alpha} />
+            </td>
             <td className="num">
               {model.alpha_daily_pct >= 0 ? "+" : ""}{model.alpha_daily_pct.toFixed(3)}%/day
             </td>
@@ -210,12 +261,15 @@ function FactorRegressionPanel({ model }) {
         <span className="fr-vol-label">Annualized vol decomposition:</span>
         <span className="fr-vol-pair">
           total <strong>{model.total_vol_annualized_pct.toFixed(1)}%</strong>
+          <InfoTip text={TIPS.totalVol} />
         </span>
         <span className="fr-vol-pair fr-vol-factor">
           factor <strong>{model.factor_vol_annualized_pct.toFixed(1)}%</strong>
+          <InfoTip text={TIPS.factorVol} />
         </span>
         <span className="fr-vol-pair fr-vol-idio">
           idiosyncratic <strong>{model.idio_vol_annualized_pct.toFixed(1)}%</strong>
+          <InfoTip text={TIPS.idioVol} />
         </span>
         <span className="fr-vol-formula">
           σ²<sub>idio</sub> = σ²<sub>total</sub> × (1 − R²)
