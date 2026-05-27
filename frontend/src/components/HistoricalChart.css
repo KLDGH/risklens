@@ -67,7 +67,7 @@
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  background: #1d2530;
+  background: var(--bg3);
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
   border-radius: 4px;
@@ -111,18 +111,19 @@
   font-weight: 600;
 }
 
-.ins-blue { color: #f59e0b; font-weight: 600; }
-.ins-red  { color: #e53e3e; font-weight: 600; }
+.ins-blue { color: var(--accent-soft); font-weight: 600; }
+.ins-red  { color: var(--red); font-weight: 600; }
 
 .chart-tooltip {
-  background: #161c25;
-  border: 1px solid #2a3441;
+  background: var(--bg2);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 10px 14px;
   font-family: var(--font);
   font-size: 12px;
   min-width: 160px;
-  color: #c8d8e8;
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .tt-year {
@@ -164,13 +165,13 @@
 .intraday-streak-callout.rates {
   background: rgba(229, 62, 62, 0.10);
   border: 1px solid rgba(229, 62, 62, 0.35);
-  color: #f08080;
+  color: var(--streak-rates-color);
 }
 
 .intraday-streak-callout.growth {
   background: rgba(0, 201, 122, 0.10);
   border: 1px solid rgba(0, 201, 122, 0.35);
-  color: #6ddba2;
+  color: var(--streak-growth-color);
 }
 
 .streak-bullet {

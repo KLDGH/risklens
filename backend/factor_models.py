@@ -227,6 +227,123 @@ def fit_ff_carhart(
     }
 
 
+def compute_rolling_ff_loadings(
+    returns: pd.Series,
+    factors: pd.DataFrame,
+    window: int = 252,
+    step: int = 21,
+    lookback_years: int = 5,
+) -> dict | None:
+    """
+    Roll the FF/Carhart regression across time to capture factor-loading
+    drift — the medium-horizon analog of `fit_ff_carhart`.
+
+    For each step (default monthly, ~21 trading days), fit the six-factor
+    regression on the trailing `window` days of returns. Return the time
+    series of loadings + R² over the last `lookback_years`.
+
+    Why this matters for a PM/PIO at a long-horizon shop:
+      A single FF regression tells you the *current* factor exposure
+      profile of an asset. Whether the asset is still doing what it was
+      bought to do depends on whether those exposures have shifted over
+      months-to-years — the cycle horizon at which sector rotations,
+      style regimes, and thesis drift actually play out.
+
+    A "style drift" alert is computed per factor: if the most recent
+    loading is more than 1 standard deviation from its mean across the
+    rolling history, the factor is flagged as having shifted.
+
+    Returns None if there isn't enough overlap between the asset returns
+    and the factor data for the requested lookback.
+    """
+    df = factors[FACTOR_COLS + ["RF"]].copy()
+    aligned = returns.to_frame("R").join(df, how="inner").dropna()
+    needed = window + step * 4  # bare minimum to get a few rolling fits
+    if len(aligned) < needed:
+        return None
+
+    lookback_days = lookback_years * 252
+    aligned = aligned.tail(lookback_days + window)
+    n = len(aligned)
+    if n < window + step:
+        return None
+
+    # Rolling fits: anchor at the END of each window, step backward by
+    # `step` days, walk forward in time so the output is chronological.
+    anchor_positions = list(range(window, n, step))
+    if not anchor_positions:
+        return None
+
+    snapshots = []
+    for end_idx in anchor_positions:
+        start_idx = end_idx - window
+        slab = aligned.iloc[start_idx:end_idx]
+        y = slab["R"].to_numpy() - slab["RF"].to_numpy()
+        X = np.column_stack([np.ones(len(slab)), slab[FACTOR_COLS].to_numpy()])
+        try:
+            beta_hat, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
+        except np.linalg.LinAlgError:
+            continue
+        eps = y - X @ beta_hat
+        tss = float(((y - y.mean()) ** 2).sum())
+        rss = float((eps ** 2).sum())
+        r_squared = 1.0 - rss / tss if tss > 0 else None
+
+        snapshot = {
+            "date":            slab.index[-1].strftime("%Y-%m-%d"),
+            "alpha_daily_pct": round(float(beta_hat[0]) * 100, 4),
+            "r_squared":       round(float(r_squared), 4) if r_squared is not None else None,
+        }
+        for i, f in enumerate(FACTOR_COLS):
+            snapshot[f] = round(float(beta_hat[i + 1]), 4)
+        snapshots.append(snapshot)
+
+    if len(snapshots) < 4:
+        return None
+
+    # Long-run summary stats per factor: mean + std across the rolling
+    # series. The frontend uses these to draw reference lines and to
+    # surface "style drift" alerts when the latest loading is unusually
+    # far from its own long-run mean.
+    factor_arrays = {f: np.array([s[f] for s in snapshots]) for f in FACTOR_COLS}
+    long_run_means = {f: float(np.mean(arr)) for f, arr in factor_arrays.items()}
+    long_run_stds  = {f: float(np.std(arr, ddof=1)) for f, arr in factor_arrays.items()}
+
+    latest = snapshots[-1]
+    drift_alerts = []
+    for f in FACTOR_COLS:
+        mu  = long_run_means[f]
+        sd  = long_run_stds[f]
+        cur = latest[f]
+        if sd <= 1e-6:
+            continue
+        n_sd = (cur - mu) / sd
+        if abs(n_sd) >= 1.0:
+            drift_alerts.append({
+                "factor":         f,
+                "label":          FACTOR_LABELS[f],
+                "current":        round(cur, 4),
+                "long_run_mean":  round(mu, 4),
+                "std_devs_off":   round(float(n_sd), 2),
+                "direction":      "increased" if n_sd > 0 else "decreased",
+            })
+
+    return {
+        "model":           "Fama-French 5 + Momentum (rolling)",
+        "window_days":     int(window),
+        "step_days":       int(step),
+        "lookback_years":  int(lookback_years),
+        "first_date":      snapshots[0]["date"],
+        "last_date":       snapshots[-1]["date"],
+        "n_snapshots":     len(snapshots),
+        "snapshots":       snapshots,
+        "long_run_means":  {f: round(v, 4) for f, v in long_run_means.items()},
+        "long_run_stds":   {f: round(v, 4) for f, v in long_run_stds.items()},
+        "factor_labels":   FACTOR_LABELS,
+        "drift_alerts":    drift_alerts,
+    }
+
+
 def compute_beta(returns: pd.Series, mkt_returns: pd.Series, lookback: int = 252) -> float | None:
     """Simple OLS beta of `returns` on `mkt_returns`, trailing `lookback` days."""
     aligned = pd.concat([returns, mkt_returns], axis=1, join="inner").dropna().tail(lookback)

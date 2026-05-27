@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import "./HistoricalChart.css"; // reuse shared chart styles
+import { useThemeColors } from "./useThemeColors";
 
 const BOND_LABELS = {
   AGG: "AGG · iShares Core US Aggregate Bond",
@@ -77,6 +78,7 @@ export default function MultiWindowCorrelationChart({ data }) {
   const bonds = Object.keys(data || {});
   const [bond, setBond] = useState(bonds.includes("AGG") ? "AGG" : bonds[0]);
   const [insightOpen, setInsightOpen] = useState(false);
+  const c = useThemeColors();
   const [showWindows, setShowWindows] = useState({
     "20d":  true,
     "60d":  true,
@@ -208,21 +210,21 @@ export default function MultiWindowCorrelationChart({ data }) {
             data={merged}
             margin={{ top: 16, right: 40, left: 4, bottom: 16 }}
           >
-            <CartesianGrid vertical={false} stroke="#162038" />
+            <CartesianGrid vertical={false} stroke={c.grid} />
 
             <XAxis
               dataKey="date"
               tickFormatter={(v) => v.slice(0, 4)}
               interval={tickInterval}
-              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: c.axisTick, fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
-              axisLine={{ stroke: "#1e2530" }}
+              axisLine={{ stroke: c.axisLine }}
             />
 
             <YAxis
               domain={[-0.6, 1]}
               tickFormatter={(v) => v.toFixed(1)}
-              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: c.axisTick, fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={false}
               width={36}

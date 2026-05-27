@@ -142,6 +142,30 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState("hypothetical");
   const [activeTab, setActiveTab] = useState("portfolio");
+  // Theme preference persisted across sessions. Defaults to "dark"; the
+  // toggle in the tab bar flips and stores the chosen value in localStorage.
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem("risklens-theme") || "dark";
+    } catch {
+      return "dark";
+    }
+  });
+
+  // Sync theme to <html data-theme=...> so the CSS variables under
+  // :root[data-theme="light"] (in index.css) get picked up.
+  useEffect(() => {
+    if (theme === "light") {
+      document.documentElement.setAttribute("data-theme", "light");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
+    try {
+      localStorage.setItem("risklens-theme", theme);
+    } catch {
+      // localStorage blocked — no big deal, theme just won't persist
+    }
+  }, [theme]);
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}data/risk_output.json`)
@@ -216,6 +240,14 @@ export default function App() {
               {label}
             </button>
           ))}
+          <button
+            className="tab-btn tab-theme-toggle"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          >
+            {theme === "dark" ? "☀ Light" : "☾ Dark"}
+          </button>
           <a
             href="https://github.com/KLDGH/risklens/blob/main/FAQ.md"
             target="_blank"
@@ -411,8 +443,18 @@ export default function App() {
       </main>
 
       <footer className="footer">
-        <span>VaR models: Historical Simulation · EWMA (λ=0.94) · GARCH(1,1)</span>
-        <span>Data via yfinance · Not financial advice</span>
+        <span>VaR models: Historical Simulation · EWMA (λ=0.94) · GARCH-t / GJR-t · EVT</span>
+        <span>
+          Data via yfinance + Ken French Library ·{" "}
+          <a
+            href="https://github.com/KLDGH/risklens/blob/main/LEGAL.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-link"
+          >
+            Legal &amp; disclaimers
+          </a>
+        </span>
       </footer>
     </div>
   );

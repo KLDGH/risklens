@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import "./HistoricalChart.css";
+import { useThemeColors } from "./useThemeColors";
 
 // row: 0 = tallest (furthest from chart), 1 = mid, 2 = closest
 const EVENTS = [
@@ -88,7 +89,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       )}
       {d?.vix_avg != null && (
         <div className="tt-row">
-          <span style={{ color: "#f59e0b" }}>Avg VIX</span>
+          <span style={{ color: "#a78bfa" }}>Avg VIX</span>
           <span>{d.vix_avg?.toFixed(1)}</span>
         </div>
       )}
@@ -104,6 +105,7 @@ const tickFormatter = (v) => {
 
 export default function HistoricalChart({ data }) {
   const [insightOpen, setInsightOpen] = useState(false);
+  const c = useThemeColors();
   if (!data?.length) return null;
 
   const chartData = data
@@ -137,7 +139,7 @@ export default function HistoricalChart({ data }) {
         <div className="insight-panel">
           <span className="insight-label">💡</span>
           <p>
-            The <span className="ins-blue">blue bars</span> show peak daily VaR each
+            The <span className="ins-blue">amber bars</span> show peak daily VaR each
             year — the worst single-day loss the model expected, at the 1% confidence
             level. The <span className="ins-red">red bars</span> show full-year returns
             for years that ended negative. (Both are scaled to a $100 position, so dollar
@@ -147,7 +149,7 @@ export default function HistoricalChart({ data }) {
             <strong>38%</strong> loss had been booked. In March <strong>2020</strong>,
             it spiked above <strong>10%</strong> within weeks and fell back under{" "}
             <strong>3%</strong> by September. The model captures regime shifts in real
-            time; annual returns only confirm what has already happened. The amber VIX
+            time; annual returns only confirm what has already happened. The VIX
             line — the market's own forward-looking volatility estimate — tends to lead
             realized risk at major turning points.
           </p>
@@ -161,19 +163,19 @@ export default function HistoricalChart({ data }) {
             barCategoryGap="15%"
             barGap={1}
           >
-            <CartesianGrid vertical={false} stroke="#162038" />
+            <CartesianGrid vertical={false} stroke={c.grid} />
 
             <XAxis
               dataKey="year"
-              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: c.axisTick, fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
-              axisLine={{ stroke: "#1e2530" }}
+              axisLine={{ stroke: c.axisLine }}
               interval={4}
             />
 
             <YAxis
               yAxisId="left"
-              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: c.axisTick, fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={false}
               tickFormatter={tickFormatter}
@@ -183,15 +185,15 @@ export default function HistoricalChart({ data }) {
               yAxisId="vix"
               orientation="right"
               domain={[0, 90]}
-              tick={{ fill: "#f59e0b", fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: "#a78bfa", fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v) => v === 0 ? "" : `${v}`}
               width={28}
-              label={{ value: "VIX", angle: 90, position: "insideRight", fill: "#f59e0b", fontSize: 10, fontFamily: "JetBrains Mono, monospace", dx: 12 }}
+              label={{ value: "VIX", angle: 90, position: "insideRight", fill: "#a78bfa", fontSize: 10, fontFamily: "JetBrains Mono, monospace", dx: 12 }}
             />
 
-            <ReferenceLine y={0} yAxisId="left" stroke="#2a3441" strokeWidth={1} />
+            <ReferenceLine y={0} yAxisId="left" stroke={c.axisLine} strokeWidth={1} />
 
             <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
 
@@ -208,7 +210,7 @@ export default function HistoricalChart({ data }) {
                 return (
                   <span
                     title={tips[value] ?? ""}
-                    style={{ color: "#8896aa", fontSize: 11, fontFamily: "JetBrains Mono, monospace", cursor: "help" }}
+                    style={{ color: c.textDim, fontSize: 11, fontFamily: "JetBrains Mono, monospace", cursor: "help" }}
                   >
                     {value}
                   </span>
@@ -229,7 +231,7 @@ export default function HistoricalChart({ data }) {
             <Bar yAxisId="left" dataKey="min_var" name="Min daily risk" fill="#4ade80" opacity={0.85} maxBarSize={10} isAnimationActive={false} />
             <Bar yAxisId="left" dataKey="max_var" name="Max daily risk" fill="#f59e0b" opacity={0.75} maxBarSize={10} isAnimationActive={false} />
             <Bar yAxisId="left" dataKey="loss"    name="Loss for year"  fill="#e53e3e" opacity={0.9}  maxBarSize={10} isAnimationActive={false} />
-            <Line yAxisId="vix" type="monotone" dataKey="vix_avg" name="Avg VIX" stroke="#f59e0b" strokeWidth={1.5} dot={false} opacity={0.8} isAnimationActive={false} />
+            <Line yAxisId="vix" type="monotone" dataKey="vix_avg" name="Avg VIX" stroke="#a78bfa" strokeWidth={1.5} dot={false} opacity={0.9} isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

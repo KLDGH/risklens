@@ -80,3 +80,5 @@ MIT. Free to use, modify, and distribute. Attribution back to this repo apprecia
 Personal project. Not affiliated with, endorsed by, or supported by any employer, financial institution, or data vendor. Nothing here is investment, financial, trading, or risk-management advice. The figures shown should not drive investment, hedging, or position-sizing decisions. The models are publicly-known statistical methods applied to public price data — output is illustrative and methodological, not actionable.
 
 Past performance and historical risk metrics are not indicative of future results.
+
+**Full legal disclaimers** — including data-source caveats, third-party trademark references, limitation of liability, privacy, and jurisdiction — are in [`LEGAL.md`](./LEGAL.md). The MIT license covers the software code; LEGAL.md covers the output and methodology presentation.

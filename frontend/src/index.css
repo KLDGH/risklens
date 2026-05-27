@@ -5,31 +5,97 @@
 }
 
 :root {
-  /* RiskLens palette — "Burnished Gold" (May 2026, softened)
-     Lower-contrast variant of the original Bloomberg-amber theme: lighter
-     dark base, off-white text instead of pure white, desaturated burnished
-     gold accent rather than neon amber. Reads less highlighter-on-dark,
-     more vintage trading terminal. */
-  --bg:          #141821;   /* slightly lighter slate */
+  /* RiskLens default palette — "Burnt Orange Dark"
+     Slate background, burnt orange accent. Distinct from electric-blue
+     dashboards in the same space. Pairs intentionally with JetBrains Mono
+     for a vintage trading-terminal aesthetic. */
+  --bg:          #141821;
   --bg2:         #1c222c;
   --bg3:         #232a37;
   --border:      #2e3744;
-  --text:        #c5cbd4;       /* dimmer than before */
+  --text:        #c5cbd4;
   --text-dim:    #7e8794;
-  --text-bright: #e8ecf2;       /* off-white, not #fff */
-  --green:       #5fb87b;       /* softer than #4ade80 */
-  --yellow:      #d18548;       /* burnt orange, desaturated */
-  --red:         #d96464;       /* softer than #ef4444 */
-  --accent:      #d97706;       /* burnt orange — trading-floor warm */
-  --accent-soft: #f59e0b;       /* lighter amber-orange for chart highlights */
+  --text-bright: #e8ecf2;
+  --green:       #5fb87b;
+  --yellow:      #d18548;
+  --red:         #d96464;
+  --accent:      #d97706;
+  --accent-soft: #f59e0b;
+  /* Hypothetical-scenario card palette — used to differentiate the
+     "analyst-shock-vector" scenario cards from the data-driven historical
+     ones. Warm amber-tinted variant of the panel chrome. */
+  --hypo-bg:            #16120a;
+  --hypo-bg3:           #1e1808;
+  --hypo-border:        #3a2e10;
+  --hypo-border-bright: #4a3510;
+  --hypo-accent:        #b07d2a;
+  --hypo-accent-bright: #d4941a;
+  --hypo-text-dim:      #7a6030;
+  --hypo-badge-bg:      #2a1f00;
+  /* Portfolio-summary row in the risk table — needs a subtle visual
+     distinction from the regular asset rows. Slightly different from bg2. */
+  --portfolio-row-bg:        #1a2530;
+  --portfolio-row-hover:     #222a36;
+  /* Misc semantic colors used in a few places */
+  --infotip-icon:            #6a7f96;
+  --streak-rates-bg:         rgba(229, 62, 62, 0.10);
+  --streak-rates-border:     rgba(229, 62, 62, 0.35);
+  --streak-rates-color:      #f08080;
+  --streak-growth-bg:        rgba(0, 201, 122, 0.10);
+  --streak-growth-border:    rgba(0, 201, 122, 0.35);
+  --streak-growth-color:     #6ddba2;
+  /* Shared chart-tooltip overlay — semitransparent dark used to dim
+     the chart underneath when a tooltip is active. */
+  --tooltip-shadow:     rgba(0, 0, 0, 0.15);
   --font: "JetBrains Mono", "Courier New", monospace;
+}
+
+/* Light theme — "Warm Paper" (Solarized-inspired, terminal-vibe).
+   Warm cream background, deep ink text, the same burnt orange accent
+   so the brand identity carries across. Semantic colors deepened so
+   they read on a light background. */
+:root[data-theme="light"] {
+  --bg:          #f5efe0;   /* warm cream */
+  --bg2:         #ede5d0;   /* slightly darker for panels */
+  --bg3:         #e0d6bc;   /* deeper for hover / sticky headers */
+  --border:      #c9bd9f;   /* muted parchment edge */
+  --text:        #3a2f24;   /* deep ink */
+  --text-dim:    #7a6b58;
+  --text-bright: #1a140c;   /* near-black with brown tint */
+  --green:       #4b8a5a;   /* deeper than dark mode's */
+  --yellow:      #b86a30;
+  --red:         #b53e3e;
+  --accent:      #b85a1f;   /* slightly darker burnt orange for legibility on cream */
+  --accent-soft: #d97706;   /* lighter sibling for highlights */
+  /* Hypothetical-scenario light-theme equivalents — warm amber tint on
+     cream rather than dark amber on near-black. */
+  --hypo-bg:            #faecc6;
+  --hypo-bg3:           #f0dfa8;
+  --hypo-border:        #d9bf7f;
+  --hypo-border-bright: #b8995c;
+  --hypo-accent:        #a8731a;
+  --hypo-accent-bright: #8a5a14;
+  --hypo-text-dim:      #8c6a30;
+  --hypo-badge-bg:      #ead9a0;
+  --portfolio-row-bg:        #e5d8b0;
+  --portfolio-row-hover:     #d8c898;
+  --infotip-icon:            #98856a;
+  --streak-rates-bg:         rgba(181, 62, 62, 0.10);
+  --streak-rates-border:     rgba(181, 62, 62, 0.35);
+  --streak-rates-color:      #a83838;
+  --streak-growth-bg:        rgba(75, 138, 90, 0.10);
+  --streak-growth-border:    rgba(75, 138, 90, 0.35);
+  --streak-growth-color:     #2f6e3f;
+  --tooltip-shadow:          rgba(0, 0, 0, 0.08);
 }
 
 body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
-  font-size: 15px;
+  /* 16px base — more legible on a 13" MBP at typical viewing distance.
+     Was 15px; the +1px bump propagates through em-relative children too. */
+  font-size: 16px;
   line-height: 1.6;
   min-height: 100vh;
 }

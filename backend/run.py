@@ -26,6 +26,7 @@ from risk_engine import (
 )
 from factor_models import (
     fetch_ff_carhart_daily, fit_ff_carhart, compute_beta,
+    compute_rolling_ff_loadings,
 )
 
 # Extra tickers fetched beyond the portfolio universe.
@@ -737,6 +738,20 @@ def main():
                     view["factor_model"] = fmodel
             except Exception as e:
                 print(f"  WARNING: {tkr} factor model failed ({e})")
+
+            # --- Rolling factor loadings over time — the medium-horizon
+            #     analog of the single-snapshot regression. Catches style
+            #     drift on the 1-2 year cycle that long-horizon PMs
+            #     actually care about (vs the daily detectors above).
+            try:
+                rolling = compute_rolling_ff_loadings(
+                    rets, ff_factors,
+                    window=252, step=21, lookback_years=5,
+                )
+                if rolling:
+                    view["factor_model_rolling"] = rolling
+            except Exception as e:
+                print(f"  WARNING: {tkr} rolling factor loadings failed ({e})")
 
         anomaly_views["data"][tkr]  = view
         anomaly_views["names"][tkr] = ANOMALY_NAMES.get(tkr, tkr)

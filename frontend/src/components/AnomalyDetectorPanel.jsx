@@ -14,6 +14,7 @@ import {
   Cell,
 } from "recharts";
 import "./AnomalyDetectorPanel.css";
+import { useThemeColors } from "./useThemeColors";
 
 // Color palette per detector — chosen so none collide with the amber
 // accent (which is reserved for primary UI). Each detector keeps a
@@ -183,6 +184,190 @@ function FactorRegressionPanel({ model }) {
 }
 
 
+/* ---------- Rolling Factor Loadings Panel ----------
+   Medium-horizon companion to the single-snapshot FF regression above.
+   For each of the six factors, shows how the asset's loading on that
+   factor has drifted over the last 5 years (monthly rolling 252-day
+   regressions).
+
+   The "is this asset still doing what I bought it to do?" view. Style
+   drift alerts at the top: a factor moves more than 1 std-dev from
+   its long-run rolling mean.
+
+   Each mini-chart shows: rolling loading line + dashed reference line
+   at the long-run mean. Latest value rendered as the rightmost data
+   point and highlighted in the chip below.
+
+   Time horizon — 1-2 year cycles for sector rotations, style regime
+   shifts, thesis drift in held names. The horizon a long-horizon PM
+   actually decides on, vs the daily detectors below which fire at
+   single-event frequency. */
+
+const FACTOR_AXIS_COLOR = "#7e8794";
+
+function MiniFactorChart({ factor, snapshots, longRunMean, longRunStd, color, label, latest }) {
+  const c = useThemeColors();
+  // Latest snapshot value
+  const cur = latest[factor];
+
+  // Compute y-axis domain to comfortably fit data + reference lines
+  const values = snapshots.map((s) => s[factor]);
+  const minV = Math.min(...values, longRunMean - longRunStd);
+  const maxV = Math.max(...values, longRunMean + longRunStd);
+  const pad = (maxV - minV) * 0.15 || 0.1;
+  const domain = [minV - pad, maxV + pad];
+
+  // Drift magnitude in std-dev units
+  const sdOff = longRunStd > 1e-6 ? (cur - longRunMean) / longRunStd : 0;
+  const isDrifting = Math.abs(sdOff) >= 1.0;
+
+  return (
+    <div className="mini-factor-chart">
+      <div className="mini-factor-header">
+        <span className="mini-factor-label" style={{ color }}>{label}</span>
+        <span className="mini-factor-current">
+          {cur >= 0 ? "+" : ""}{cur.toFixed(2)}
+          <span className="mini-factor-mu">
+            {" / μ="}
+            {longRunMean >= 0 ? "+" : ""}{longRunMean.toFixed(2)}
+          </span>
+        </span>
+      </div>
+      <div className="mini-factor-chart-area">
+        <ResponsiveContainer width="100%" height={100}>
+          <LineChart
+            data={snapshots}
+            margin={{ top: 4, right: 8, left: 4, bottom: 0 }}
+          >
+            <CartesianGrid vertical={false} stroke={c.grid} />
+            <XAxis
+              dataKey="date"
+              tick={false}
+              tickLine={false}
+              axisLine={{ stroke: c.axisLine }}
+            />
+            <YAxis
+              domain={domain}
+              tick={{ fill: c.axisTick, fontSize: 9, fontFamily: "JetBrains Mono, monospace" }}
+              tickLine={false}
+              axisLine={false}
+              width={32}
+              tickFormatter={(v) => (v >= 0 ? "+" : "") + v.toFixed(1)}
+            />
+            <Tooltip
+              labelFormatter={(d) => d}
+              formatter={(v) => [Number(v).toFixed(3), label]}
+              contentStyle={{
+                background: c.bg2, border: `1px solid ${c.border}`,
+                fontFamily: "JetBrains Mono, monospace", fontSize: 11,
+                color: c.text,
+              }}
+            />
+            <ReferenceLine y={longRunMean} stroke={color} strokeDasharray="3 3" strokeOpacity={0.55} />
+            <ReferenceLine y={0} stroke={c.refLine} strokeWidth={0.7} />
+            <Line
+              type="monotone"
+              dataKey={factor}
+              stroke={color}
+              strokeWidth={1.5}
+              dot={false}
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      {isDrifting && (
+        <div className="mini-factor-drift">
+          {sdOff > 0 ? "▲" : "▼"} {Math.abs(sdOff).toFixed(1)}σ from long-run
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// Per-factor color palette — distinct from the accent and from the
+// detector colors used below. These line colors don't carry semantic
+// meaning beyond "tell the six factors apart visually."
+const FACTOR_COLORS = {
+  "Mkt-RF": "#f59e0b",   // amber (the market — most prominent)
+  "SMB":    "#06b6d4",   // cyan
+  "HML":    "#a78bfa",   // violet
+  "RMW":    "#84cc16",   // lime
+  "CMA":    "#fb7185",   // rose
+  "MOM":    "#22d3ee",   // light cyan
+};
+
+
+function RollingFactorLoadingsPanel({ rolling }) {
+  if (!rolling || !rolling.snapshots?.length) return null;
+  const latest = rolling.snapshots[rolling.snapshots.length - 1];
+  const drift = rolling.drift_alerts ?? [];
+  const factors = ["Mkt-RF", "SMB", "HML", "RMW", "CMA", "MOM"];
+
+  return (
+    <div className="rolling-factor-panel">
+      <div className="rolling-factor-header">
+        <div>
+          <div className="rfp-title">Factor loadings over time</div>
+          <div className="rfp-subtitle">
+            How each factor exposure has drifted across rolling 252-day
+            windows over the last {rolling.lookback_years} years (stepped
+            monthly). The dashed line in each chart is the long-run mean.
+            A loading moving &gt; 1σ from its own long-run mean is flagged
+            as style drift — the medium-cycle (months-to-years) horizon at
+            which sector rotations, style regimes, and thesis drift play out.
+          </div>
+        </div>
+        <div className="rfp-window-stat">
+          <span className="rfp-window-value">{rolling.n_snapshots}</span>
+          <span className="rfp-window-label">rolling windows</span>
+        </div>
+      </div>
+
+      {drift.length > 0 && (
+        <div className="rfp-drift-banner">
+          <span className="rfp-drift-title">⚠ Style drift detected:</span>
+          <div className="rfp-drift-list">
+            {drift.map((a) => (
+              <span key={a.factor} className="rfp-drift-chip">
+                <strong>{a.factor}</strong> {a.direction} to{" "}
+                {a.current >= 0 ? "+" : ""}{a.current.toFixed(2)}{" "}
+                <em>(μ = {a.long_run_mean >= 0 ? "+" : ""}{a.long_run_mean.toFixed(2)}, {a.std_devs_off >= 0 ? "+" : ""}{a.std_devs_off.toFixed(1)}σ)</em>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="rfp-chart-grid">
+        {factors.map((f) => (
+          <MiniFactorChart
+            key={f}
+            factor={f}
+            snapshots={rolling.snapshots}
+            longRunMean={rolling.long_run_means[f]}
+            longRunStd={rolling.long_run_stds[f]}
+            color={FACTOR_COLORS[f]}
+            label={rolling.factor_labels[f]}
+            latest={latest}
+          />
+        ))}
+      </div>
+
+      <div className="rfp-footnote">
+        Window: 252 trading days, stepped every 21 days (~monthly).
+        Lookback: {rolling.lookback_years} years.
+        Time range: {rolling.first_date} → {rolling.last_date}.
+        A drift flag does not imply something is wrong — it identifies factors
+        worth investigating, e.g., a fund that bought as quality-growth might
+        be drifting toward value or losing its profitability tilt.
+      </div>
+    </div>
+  );
+}
+
+
 /* ---------- Stacked detector subpanel ----------
    One chart per detector, sharing a common X-axis with the price chart
    above. The line is the detector value over time, with ±threshold
@@ -191,6 +376,7 @@ function FactorRegressionPanel({ model }) {
 function DetectorSubpanel({
   data, field, label, color, threshold, twoSided = true, secondField = null, secondColor = null,
 }) {
+  const c = useThemeColors();
   return (
     <div className="detector-subpanel">
       <div className="detector-label">
@@ -204,15 +390,15 @@ function DetectorSubpanel({
             data={data}
             margin={{ top: 6, right: 18, left: 4, bottom: 0 }}
           >
-            <CartesianGrid vertical={false} stroke="#162038" />
+            <CartesianGrid vertical={false} stroke={c.grid} />
             <XAxis
               dataKey="date"
               tick={false}      // shared x-axis label rendered only on the last chart
               tickLine={false}
-              axisLine={{ stroke: "#2a3441" }}
+              axisLine={{ stroke: c.axisLine }}
             />
             <YAxis
-              tick={{ fill: "#8896aa", fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: c.axisTick, fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={false}
               width={36}
@@ -220,9 +406,9 @@ function DetectorSubpanel({
             <Tooltip
               labelFormatter={(d) => fmtDate(d)}
               contentStyle={{
-                background: "#161c25", border: "1px solid #2a3441",
+                background: c.bg2, border: `1px solid ${c.border}`,
                 fontFamily: "JetBrains Mono, monospace", fontSize: 11,
-                color: "#c8d8e8",
+                color: c.text,
               }}
               formatter={(v, key) =>
                 v == null ? "—" : [Number(v).toFixed(3), DETECTOR_LABELS[key] ?? key]
@@ -233,7 +419,7 @@ function DetectorSubpanel({
             {twoSided && (
               <ReferenceLine y={-threshold} stroke={color} strokeDasharray="4 3" strokeOpacity={0.45} />
             )}
-            <ReferenceLine y={0} stroke="#3a4554" strokeWidth={1} />
+            <ReferenceLine y={0} stroke={c.refLine} strokeWidth={1} />
 
             <Line
               type="monotone"
@@ -269,6 +455,7 @@ function DetectorSubpanel({
    matches the first-firing detector for that date (multi-detector
    days appear as a richer-colored / outlined dot). */
 function PriceChartWithAnomalies({ series, anomalies, ticker }) {
+  const c = useThemeColors();
   // Build a quick lookup so the ScatterChart layer can render markers
   // at the right (date, price) coordinates.
   const anomalyByDate = useMemo(() => {
@@ -297,15 +484,15 @@ function PriceChartWithAnomalies({ series, anomalies, ticker }) {
     <div className="anomaly-price-chart">
       <ResponsiveContainer width="100%" height={220}>
         <ComposedChart data={data} margin={{ top: 8, right: 18, left: 4, bottom: 0 }}>
-          <CartesianGrid vertical={false} stroke="#162038" />
+          <CartesianGrid vertical={false} stroke={c.grid} />
           <XAxis
             dataKey="date"
             tick={false}
             tickLine={false}
-            axisLine={{ stroke: "#2a3441" }}
+            axisLine={{ stroke: c.axisLine }}
           />
           <YAxis
-            tick={{ fill: "#8896aa", fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
+            tick={{ fill: c.axisTick, fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
             tickLine={false}
             axisLine={false}
             width={48}
@@ -314,9 +501,9 @@ function PriceChartWithAnomalies({ series, anomalies, ticker }) {
           <Tooltip
             labelFormatter={(d) => fmtDate(d)}
             contentStyle={{
-              background: "#161c25", border: "1px solid #2a3441",
+              background: c.bg2, border: `1px solid ${c.border}`,
               fontFamily: "JetBrains Mono, monospace", fontSize: 11,
-              color: "#c8d8e8",
+              color: c.text,
             }}
             formatter={(v, key, p) => {
               if (v == null) return "—";
@@ -370,16 +557,17 @@ function PriceChartWithAnomalies({ series, anomalies, ticker }) {
    so we just render the last chart's axis below and hide it everywhere
    else. */
 function SharedDateAxis({ data }) {
+  const c = useThemeColors();
   return (
     <div className="shared-date-axis">
       <ResponsiveContainer width="100%" height={28}>
         <LineChart data={data} margin={{ top: 0, right: 18, left: 4, bottom: 0 }}>
           <XAxis
             dataKey="date"
-            tick={{ fill: "#8896aa", fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
+            tick={{ fill: c.axisTick, fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
             tickFormatter={(v) => fmtDate(v)}
             tickLine={false}
-            axisLine={{ stroke: "#2a3441" }}
+            axisLine={{ stroke: c.axisLine }}
             interval={Math.max(0, Math.floor(data.length / 10))}
           />
           <YAxis hide width={36} />
@@ -487,6 +675,8 @@ export default function AnomalyDetectorPanel({ views }) {
       <RiskProfileCard profile={view.risk_profile} ticker={ticker} />
 
       <FactorRegressionPanel model={view.factor_model} />
+
+      <RollingFactorLoadingsPanel rolling={view.factor_model_rolling} />
 
       <div className="anomaly-chart-stack">
         <div className="anomaly-chart-title">

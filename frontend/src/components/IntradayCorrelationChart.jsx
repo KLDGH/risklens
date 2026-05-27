@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import CalendarHeatmap from "./CalendarHeatmap.jsx";
 import "./HistoricalChart.css"; // reuse shared chart styles
+import { useThemeColors } from "./useThemeColors";
 
 // Color scale for correlation cells/bars. Sign drives hue (red = rates regime,
 // green = growth regime). Magnitude drives opacity — strong correlations
@@ -53,10 +54,10 @@ const BarTooltip = ({ active, payload, label, intervalLabel }) => {
         <span>{c >= 0 ? "+" : ""}{c?.toFixed(3)}</span>
       </div>
       <div className="tt-row">
-        <span style={{ color: "#8896aa" }}>{intervalLabel} bars</span>
+        <span style={{ color: "var(--text-dim)" }}>{intervalLabel} bars</span>
         <span>{d?.n_obs}</span>
       </div>
-      <div style={{ marginTop: 6, fontSize: 11, color: "#8896aa", lineHeight: 1.4 }}>
+      <div style={{ marginTop: 6, fontSize: 11, color: "var(--text-dim)", lineHeight: 1.4 }}>
         {strength} {sign}
       </div>
     </div>
@@ -70,6 +71,7 @@ export default function IntradayCorrelationChart({ data }) {
   const [view, setView] = useState("calendar");  // "calendar" or "bar"
   const [estimator, setEstimator] = useState("naive");  // "naive" or "qmle"
   const [insightOpen, setInsightOpen] = useState(false);
+  const c = useThemeColors();
 
   // Backward-compat: if data is still a flat array (old format), wrap it
   const rawSeries =
@@ -285,17 +287,17 @@ export default function IntradayCorrelationChart({ data }) {
             </p>
           )}
           {hasQmle && (
-            <p style={{ marginTop: 8, fontSize: 11, color: "#8896aa" }}>
+            <p style={{ marginTop: 8, fontSize: 11, color: c.textDim }}>
               References:{" "}
-              <a href="https://www.jstor.org/stable/2286348" target="_blank" rel="noopener noreferrer" style={{ color: "#8896aa" }}>
+              <a href="https://www.jstor.org/stable/2286348" target="_blank" rel="noopener noreferrer" style={{ color: c.textDim }}>
                 Epps (1979)
               </a>
               {" · "}
-              <a href="https://www.sciencedirect.com/science/article/abs/pii/S0304407610000242" target="_blank" rel="noopener noreferrer" style={{ color: "#8896aa" }}>
+              <a href="https://www.sciencedirect.com/science/article/abs/pii/S0304407610000242" target="_blank" rel="noopener noreferrer" style={{ color: c.textDim }}>
                 Xiu (2010)
               </a>
               {" · "}
-              <a href="https://www.tandfonline.com/doi/abs/10.1198/jasa.2010.tm10163" target="_blank" rel="noopener noreferrer" style={{ color: "#8896aa" }}>
+              <a href="https://www.tandfonline.com/doi/abs/10.1198/jasa.2010.tm10163" target="_blank" rel="noopener noreferrer" style={{ color: c.textDim }}>
                 Aït-Sahalia, Fan & Xiu (2010)
               </a>
             </p>
@@ -338,7 +340,7 @@ export default function IntradayCorrelationChart({ data }) {
               data={series}
               margin={{ top: 16, right: 40, left: 4, bottom: 0 }}
             >
-              <CartesianGrid vertical={false} stroke="#162038" />
+              <CartesianGrid vertical={false} stroke={c.grid} />
 
               <XAxis
                 dataKey="date"
@@ -347,15 +349,15 @@ export default function IntradayCorrelationChart({ data }) {
                   return `${parts[1]}-${parts[2]}`;
                 }}
                 interval={tickInterval}
-                tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
+                tick={{ fill: c.axisTick, fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
                 tickLine={false}
-                axisLine={{ stroke: "#1e2530" }}
+                axisLine={{ stroke: c.axisLine }}
               />
 
               <YAxis
                 domain={[-1, 1]}
                 tickFormatter={(v) => v.toFixed(1)}
-                tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
+                tick={{ fill: c.axisTick, fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
                 tickLine={false}
                 axisLine={false}
                 width={36}

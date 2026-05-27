@@ -1,5 +1,5 @@
 .infotip-icon {
-  color: #6a7f96;
+  color: var(--infotip-icon);
   font-size: 10px;
   cursor: help;
   line-height: 1;
@@ -10,20 +10,20 @@
 }
 
 .infotip-icon:hover {
-  color: #f59e0b;
+  color: var(--accent-soft);
 }
 
 .infotip-bubble {
   position: fixed;
   transform: translateX(-50%) translateY(calc(-100% - 10px));
   width: 220px;
-  background: #1d2530;
-  border: 1px solid #3a4554;
+  background: var(--bg3);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 8px 10px;
   font-size: 10px;
   line-height: 1.6;
-  color: #c8d8e8;
+  color: var(--text);
   font-family: "JetBrains Mono", monospace;
   font-weight: 400;
   text-transform: none;
@@ -42,5 +42,5 @@
   left: 50%;
   transform: translateX(-50%);
   border: 5px solid transparent;
-  border-top-color: #3a4554;
+  border-top-color: var(--border);
 }

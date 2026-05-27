@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import "./HistoricalChart.css"; // reuse shared chart styles
+import { useThemeColors } from "./useThemeColors";
 
 // Crisis events — we'll find the nearest data point for each
 const CRISES = [
@@ -69,11 +70,11 @@ const CustomTooltip = ({ active, payload }) => {
       </div>
       {vix != null && (
         <div className="tt-row">
-          <span style={{ color: "#f59e0b" }}>VIX (60d avg)</span>
+          <span style={{ color: "#a78bfa" }}>VIX (60d avg)</span>
           <span>{vix.toFixed(1)}</span>
         </div>
       )}
-      <div style={{ marginTop: 6, fontSize: 11, color: "#8896aa", lineHeight: 1.4 }}>
+      <div style={{ marginTop: 6, fontSize: 11, color: "var(--text-dim)", lineHeight: 1.4 }}>
         {level}
       </div>
     </div>
@@ -82,6 +83,7 @@ const CustomTooltip = ({ active, payload }) => {
 
 export default function CorrelationChart({ data }) {
   const [insightOpen, setInsightOpen] = useState(false);
+  const c = useThemeColors();
   if (!data?.length) return null;
 
   const tickInterval = Math.max(1, Math.floor(data.length / 14));
@@ -113,7 +115,7 @@ export default function CorrelationChart({ data }) {
           <p>
             <strong>The GFC was a volatility crisis. 2022 was a correlation
             crisis.</strong> In <strong>2008</strong> and <strong>2020</strong>{" "}
-            (COVID), the amber VIX line and the blue correlation area moved
+            (COVID), the VIX line and the correlation area moved
             together — equity vol exploded and assets piled into the same
             direction. Classic risk-off. But <strong>2022</strong> broke the
             pattern: cross-asset correlation hit <strong>0.70</strong> — the
@@ -140,26 +142,26 @@ export default function CorrelationChart({ data }) {
               <linearGradient id="corrFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%"   stopColor="#ef4444" stopOpacity={0.55} />
                 <stop offset="45%"  stopColor="#d97706" stopOpacity={0.25} />
-                <stop offset="100%" stopColor="#0d1526" stopOpacity={0.05} />
+                <stop offset="100%" stopColor={c.bg} stopOpacity={0.05} />
               </linearGradient>
             </defs>
 
-            <CartesianGrid vertical={false} stroke="#162038" />
+            <CartesianGrid vertical={false} stroke={c.grid} />
 
             <XAxis
               dataKey="date"
               tickFormatter={(v) => v.slice(0, 4)}
               interval={tickInterval}
-              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: c.axisTick, fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
-              axisLine={{ stroke: "#1e2530" }}
+              axisLine={{ stroke: c.axisLine }}
             />
 
             <YAxis
               yAxisId="corr"
               domain={[0, 1]}
               tickFormatter={(v) => v.toFixed(1)}
-              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: c.axisTick, fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={false}
               width={38}
@@ -169,11 +171,11 @@ export default function CorrelationChart({ data }) {
               orientation="right"
               domain={[0, 90]}
               tickFormatter={(v) => v === 0 ? "" : `${v}`}
-              tick={{ fill: "#f59e0b", fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: "#a78bfa", fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={false}
               width={28}
-              label={{ value: "VIX", angle: 90, position: "insideRight", fill: "#f59e0b", fontSize: 10, fontFamily: "JetBrains Mono, monospace", dx: 12 }}
+              label={{ value: "VIX", angle: 90, position: "insideRight", fill: "#a78bfa", fontSize: 10, fontFamily: "JetBrains Mono, monospace", dx: 12 }}
             />
 
             <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(255,255,255,0.08)", strokeWidth: 1 }} />
@@ -195,14 +197,14 @@ export default function CorrelationChart({ data }) {
               }}
             />
 
-            {/* Crisis event lines */}
+            {/* Crisis event lines — dimmed slate so they don't fight the data series */}
             {crisisLines.map((c) => (
               <ReferenceLine
                 key={c.label}
                 x={c.date}
                 yAxisId="corr"
-                stroke="#f59e0b"
-                strokeOpacity={0.45}
+                stroke="#a78bfa"
+                strokeOpacity={0.40}
                 strokeWidth={1}
                 strokeDasharray="3 3"
                 label={<CrisisLabel label={c.label} />}
@@ -223,18 +225,18 @@ export default function CorrelationChart({ data }) {
               yAxisId="vix"
               type="monotone"
               dataKey="vix"
-              stroke="#f59e0b"
-              strokeWidth={1.25}
+              stroke="#a78bfa"
+              strokeWidth={1.4}
               dot={false}
-              opacity={0.85}
+              opacity={0.9}
               isAnimationActive={false}
             />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
 
-      <div style={{ fontSize: 11, color: "#4a5a6e", marginTop: 8, textAlign: "right" }}>
-        Blue area = correlation (left axis, 0–1) · Amber line = VIX 60-day average (right axis, 0–90) · Crisis labels = 60-day window centered near peak stress
+      <div style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 8, textAlign: "right" }}>
+        Orange area = correlation (left axis, 0–1) · Violet line = VIX 60-day average (right axis, 0–90) · Crisis labels = 60-day window centered near peak stress
       </div>
     </div>
   );
