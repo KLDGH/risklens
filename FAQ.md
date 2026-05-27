@@ -21,7 +21,7 @@ Not a signal generator, not a trading system, not a vendor replacement. It's a m
 - **Model-disagreement diagnostic** — when EVT diverges sharply from EWMA, you're being told the tail is fatter than your normal-distribution intuition assumes. Time to weight EVT-style estimates more heavily.
 
 **What would have helped historically?**
-Mixed. Risk-percentile would have been elevated going into late 2007 and Feb 2020 — vol was building before the crashes. But VaR is procyclical: it spikes during the crash, not weeks ahead. The correlation chart and Anomaly Detector are the more genuinely leading indicators. The honest answer: VaR tells you *how bad things are*, not how bad they're about to get.
+Mixed. Risk-percentile would have been elevated going into late 2007 and Feb 2020 — vol was building before the crashes. But VaR is procyclical: it spikes during the crash, not weeks ahead. The correlation chart and Sector Spotlight detectors are the more genuinely leading indicators. The honest answer: VaR tells you *how bad things are*, not how bad they're about to get.
 
 ---
 
@@ -142,7 +142,7 @@ A noise-robust correlation estimator (Aït-Sahalia, Fan & Xiu 2010 polarization 
 
 ---
 
-## Anomaly Detector tab
+## Sector Spotlight tab
 
 **What's the elevator pitch for this tab?**
 Pick a sector ETF, see four runs at "is this asset behaving unusually right now?" alongside its standalone risk profile and a Fama-French factor regression. Single-asset deep-dive, complementary to the portfolio view.

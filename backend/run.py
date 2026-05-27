@@ -26,7 +26,8 @@ from risk_engine import (
 )
 from factor_models import (
     fetch_ff_carhart_daily, fit_ff_carhart, compute_beta,
-    compute_rolling_ff_loadings,
+    compute_rolling_ff_loadings, compute_thematic_exposures,
+    THEMATIC_BASKETS,
 )
 
 # Extra tickers fetched beyond the portfolio universe.
@@ -715,6 +716,9 @@ def main():
                 "var_garch":      risk_row["var_garch"],
                 "var_tgarch":     risk_row["var_tgarch"],
                 "var_evt":        risk_row["var_evt"],
+                "var_yr_10pct":   risk_row.get("var_yr_10pct"),
+                "es_yr_10pct":    risk_row.get("es_yr_10pct"),
+                "yr_nu":          risk_row.get("yr_nu"),
                 "es_hs":          risk_row["es_hs"],
                 "es_ewma":        risk_row["es_ewma"],
                 "es_garch":       risk_row["es_garch"],
@@ -752,6 +756,25 @@ def main():
                     view["factor_model_rolling"] = rolling
             except Exception as e:
                 print(f"  WARNING: {tkr} rolling factor loadings failed ({e})")
+
+        # --- Thematic basket exposure regression.
+        #     Regress this ticker against orthogonalized sector-ETF
+        #     "themed baskets" (oil, semis, regional banks, duration,
+        #     etc.) for interpretable risk-driver exposures that map to
+        #     narrative scenarios rather than to abstract academic factors.
+        try:
+            basket_tickers = [b[0] for b in THEMATIC_BASKETS]
+            basket_returns = {
+                t: np.log(prices_long[t] / prices_long[t].shift(1)).dropna()
+                for t in basket_tickers if t in prices_long.columns
+            }
+            thematic = compute_thematic_exposures(
+                rets, basket_returns, lookback=252, exclude_self=tkr,
+            )
+            if thematic:
+                view["thematic_exposures"] = thematic
+        except Exception as e:
+            print(f"  WARNING: {tkr} thematic exposures failed ({e})")
 
         anomaly_views["data"][tkr]  = view
         anomaly_views["names"][tkr] = ANOMALY_NAMES.get(tkr, tkr)

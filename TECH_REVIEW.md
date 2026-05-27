@@ -14,7 +14,7 @@ The user-facing surface is organized into **three top-level tabs**:
 
 1. **Portfolio Risk** — per-asset and per-portfolio risk metrics, model validation, stress tests. Responds to the portfolio-mode toggle.
 2. **Market Context** — portfolio-independent reference charts (S&P 500 history, cross-asset and stock-bond correlation, intraday SPY-TLT correlation).
-3. **Anomaly Detector** — single-asset deep-dive for sector ETFs (risk profile, Fama-French factor regression, three stacked anomaly detectors).
+3. **Sector Spotlight** — single-asset deep-dive for sector ETFs (risk profile, Fama-French factor regression, three stacked anomaly detectors).
 
 The computational core lives in `backend/risk_engine.py` (per-asset risk, portfolio aggregation, scenarios, backtesting, intraday correlation, QMLE polarization, anomaly detectors) and `backend/factor_models.py` (Fama-French + Momentum regression, OLS beta computation, Ken French data fetcher). A separate `backend/preprocess_holdings.py` module reads sponsor-disclosed xlsx/csv holdings files and emits a clean JSON for active-fund look-through.
 
@@ -64,7 +64,7 @@ The Python batch is a single sequential pipeline that runs through these logical
 6. **Backtesting** — Kupiec UC + Christoffersen IC on 504-day eval windows × 5 models × 5 portfolios. GARCH/tGARCH results read from cache by default; regenerated via `RISKLENS_FULL_BACKTEST=1`.
 7. **Market context** — S&P 500 per-year aggregate stats, cross-asset rolling correlation (10 ETFs since 2007), multi-window stock-bond correlation across 4 bond proxies, intraday SPY-TLT correlation at 5m and 15m (last 60 days, with QMLE polarization estimator alongside naive realized correlation).
 8. **Live signals** — Estrella-Trubin recession probability from the current 10Y-3M Treasury spread.
-9. **Anomaly Detector views** — for each of 14 sector ETFs: full risk profile (same VaR/ES models from phase 3), beta vs SPY, Fama-French + Momentum regression, three detector time series (z-score, Page CUSUM, GARCH-residual) with flagged-date index.
+9. **Sector Spotlight views** — for each of 14 sector ETFs: full risk profile (same VaR/ES models from phase 3), beta vs SPY, Fama-French + Momentum regression, three detector time series (z-score, Page CUSUM, GARCH-residual) with flagged-date index.
 
 Wall-clock breakdown: phases 1–5 ~30s; phase 6 ~5s (cached) or ~3 minutes (full GARCH regen); phase 7 ~10s; phase 8 ~5s; phase 9 ~30-45s.
 
@@ -115,7 +115,7 @@ The system's most important interface. Both the producer and the UI consumer tre
 
 **Per-asset row:** unchanged — ticker, name, last_price, last_return_pct, var_hs/ewma/garch/tgarch/evt + es_*, tail_index, mean_var, risk_level, var_trend, exception_count, exception_rate, component_var.
 
-**Anomaly view (per ticker on the Anomaly Detector tab):**
+**Anomaly view (per ticker on the Sector Spotlight tab):**
 
 ```
 {
@@ -181,9 +181,9 @@ The methodology section is the longest and most consequential — every other ar
 - **Naive realized correlation** — standard sum of cross-products / sqrt of variance products.
 - **QMLE polarization** — Aït-Sahalia, Fan & Xiu (2010) polarization identity `Cov(X,Y) = [IV(X+Y) − IV(X−Y)]/4`, with each leg's integrated variance estimated via Xiu (2010) univariate quasi-MLE on the MA(1) representation of noisy log returns. Recovers latent integrated correlation under microstructure noise. For SPY-TLT at 5–15m bars the difference is small (~0.05) because both are extremely liquid; the option exists as a robustness check.
 
-**Fama-French + Momentum factor regression** (Anomaly Detector tab) — OLS on excess returns over the trailing 252 trading days. Six factors: Mkt-Rf, SMB, HML, RMW, CMA, Mom — Carhart (1997) extension of the Fama-French (2015) five-factor model. Outputs per-factor β with HC-naive t-stats and p-values, R², alpha (intercept) with t-stat and p-value, and vol decomposition (total, factor-attributable, idiosyncratic). Daily factor data from Ken French Data Library, fetched live with disk cache fallback at `backend/cache/ff_carhart_daily.csv`.
+**Fama-French + Momentum factor regression** (Sector Spotlight tab) — OLS on excess returns over the trailing 252 trading days. Six factors: Mkt-Rf, SMB, HML, RMW, CMA, Mom — Carhart (1997) extension of the Fama-French (2015) five-factor model. Outputs per-factor β with HC-naive t-stats and p-values, R², alpha (intercept) with t-stat and p-value, and vol decomposition (total, factor-attributable, idiosyncratic). Daily factor data from Ken French Data Library, fetched live with disk cache fallback at `backend/cache/ff_carhart_daily.csv`.
 
-**Univariate anomaly detectors** (Anomaly Detector tab) — three detectors run on each sector ETF's return series:
+**Anomaly detectors** (Sector Spotlight tab) — three detectors run on each sector ETF's return series:
 
 - **Standardized z-score** — `z_t = (r_t − μ_{60d}) / σ_{60d}`, flag |z| ≥ 3. Baseline outlier detection.
 - **Two-sided Page CUSUM** — on standardized returns. `S^+_t = max(0, S^+_{t-1} + z_t − k)`, `S^-_t = min(0, S^-_{t-1} + z_t + k)`, allowance k=0.5, threshold h=5 in standard-deviation units. Catches sustained mean shifts the z-score misses.
@@ -216,7 +216,7 @@ The frontend is structured around three top-level tabs. Each tab owns a set of a
 
 **Tab 2 (Market Context):** `HistoricalChart` (S&P 500 + VIX), `CorrelationChart`, `MultiWindowCorrelationChart`, `IntradayCorrelationChart`.
 
-**Tab 3 (Anomaly Detector):** `AnomalyDetectorPanel` (composite — renders the ticker dropdown, risk-profile card, factor-regression panel, stacked detector charts, and recent-anomalies list).
+**Tab 3 (Sector Spotlight):** `AnomalyDetectorPanel` (composite — renders the ticker dropdown, risk-profile card, factor-regression panel, stacked detector charts, and recent-anomalies list).
 
 A reusable `Section` wrapper renders each section's title, plain-English question, and a collapsible "About this section" toggle that reveals the description and curated literature references.
 
@@ -257,7 +257,7 @@ No application server, no live database, no cache layer beyond GitHub Pages's de
 
 **Per-portfolio computation** is O(P) in distinct portfolios. Dominant per-portfolio cost is the rolling backtest at ~1-2 minutes (GARCH cached) or ~5-8 minutes (full GARCH refit). At P = 5 (current) this fits in a daily window; at P = 100 it dominates and benefits from parallelization.
 
-**Anomaly Detector views** are O(M) in number of sector ETFs (currently M = 14). Per-ticker cost is dominated by the GARCH-residual fit (~1-2s) and the FF regression (~50ms). Full anomaly phase runs in ~30-45s.
+**Sector Spotlight views** are O(M) in number of sector ETFs (currently M = 14). Per-ticker cost is dominated by the GARCH-residual fit (~1-2s) and the FF regression (~50ms). Full anomaly phase runs in ~30-45s.
 
 **JSON document size** is O(N·P + M·D) where D is the lookback days per anomaly view. Current 80 tickers × 5 portfolios + 14 ETFs × 504 days = ~1.2 MB uncompressed. At 10× scale the document would benefit from splitting into per-portfolio + per-ticker JSONs with frontend lazy-loading on mode/ticker selection; the mode-toggle and ticker-dropdown patterns already map cleanly to lazy fetching.
 
@@ -273,7 +273,7 @@ No application server, no live database, no cache layer beyond GitHub Pages's de
 
 The five-VaR-model approach is unusual; most risk dashboards pick one. The model-disagreement-as-signal philosophy is intentional but produces a denser visual surface than single-model dashboards.
 
-Hypothetical scenario shocks are per-asset rather than per-factor. A factor-shock-propagation approach (Barra-style) would be more methodologically rigorous and more reusable across portfolios — the same "Taiwan invasion" factor shock would apply identically to any portfolio with the right factor loadings. The FF regression in the Anomaly Detector tab is a step in this direction but isn't wired into the scenario engine. Implementing scenario-via-factor-propagation requires bridging the FF loadings into the scenario aggregation code — non-trivial but well-scoped.
+Hypothetical scenario shocks are per-asset rather than per-factor. A factor-shock-propagation approach (Barra-style) would be more methodologically rigorous and more reusable across portfolios — the same "Taiwan invasion" factor shock would apply identically to any portfolio with the right factor loadings. The FF regression in the Sector Spotlight tab is a step in this direction but isn't wired into the scenario engine. Implementing scenario-via-factor-propagation requires bridging the FF loadings into the scenario aggregation code — non-trivial but well-scoped.
 
 Backtesting is 1-day VaR only. Multi-period VaR (10-day, 1-month) is not implemented. Time-scaling under √N assumes Normal returns and breaks for fat tails; a rigorous multi-period implementation would either fit models to multi-day overlapping returns directly or use Monte Carlo path simulation. Either is a meaningful add.
 

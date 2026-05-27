@@ -5,6 +5,7 @@ import "./RiskTable.css";
 
 const TIPS = {
   ret:       "Yesterday's log return for this asset.",
+  yrVar:     "1-year VaR at 10% confidence. The 10th-percentile worst loss expected over a 1-year horizon, on a $100 position. Computed via Student-t parametric scaling: fit Student-t degrees of freedom (ν) to daily returns, scale daily volatility by √252, then take the standardized t-quantile at q=0.10. Interpretation: '10% chance of losing more than $X over the next year.' The consumer / long-horizon-PM complement to the 1-day 1% VaR columns (which are pro / trading-floor framing). Bottom number is the expected shortfall — average loss conditional on the loss exceeding VaR.",
   hs:        "Historical Simulation. Top number = VaR (1% worst daily loss). Bottom number = ES (average loss across the worst 1%). Both drawn directly from the last 1000 trading days; no distribution assumption.",
   ewma:      "EWMA model. Top = VaR; bottom = ES. Computed with exponentially weighted volatility (λ=0.94) under a normal-distribution assumption. Recent days weigh more than older ones.",
   garch:     "GARCH(1,1) with Student-t innovations. Top = VaR; bottom = ES. The conditional volatility process is GARCH(1,1); the innovation distribution is Student-t (degrees of freedom estimated per fit) rather than Normal. This matches the empirical kurtosis of daily equity returns and produces tail-VaR estimates ~30–60% larger than Normal-innovation GARCH at 99% confidence. The EWMA column to the left assumes Normal innovations, so the EWMA-vs-GARCH gap *is* the heavy-tail premium. Falls back to EWMA if fitting fails.",
@@ -28,6 +29,7 @@ const SORT_FNS = {
   varGarch:  (a) => a.var_garch,
   varTgarch: (a) => a.var_tgarch,
   varEvt:    (a) => a.var_evt,
+  varYr:     (a) => a.var_yr_10pct ?? 0,
   consensus: (a) => a.mean_var,
   range:     (a) => (Math.max(a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt) - Math.min(a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt)),
   alpha:     (a) => a.tail_index,
@@ -102,6 +104,9 @@ function VarCell({ value, className }) {
 // Paired cell — shows VaR (top, color-coded) and ES (bottom, smaller and dim).
 // Used for the 5 model columns so each forecast carries both summary stats.
 function VarEsCell({ varValue, esValue, className }) {
+  if (varValue == null) {
+    return <td className={`num model-cell ${className ?? ""}`}>—</td>;
+  }
   let color = "var(--green)";
   if (varValue > 5) color = "var(--red)";
   else if (varValue > 2.5) color = "var(--yellow)";
@@ -150,7 +155,7 @@ function WeightsTooltip({ weights }) {
   return lines;
 }
 
-function PortfolioRow({ a, portfolioLabel }) {
+function PortfolioRow({ a, portfolioLabel, showAllModels }) {
   const weightTip = WeightsTooltip({ weights: a.weights });
   return (
     <tr className="portfolio-row">
@@ -162,11 +167,16 @@ function PortfolioRow({ a, portfolioLabel }) {
         <span className="portfolio-nav" title="Synthetic NAV starting at $100">NAV ${a.nav?.toFixed(2) ?? a.last_price.toFixed(2)}</span>
       </td>
       <ReturnCell value={a.last_return_pct} className="portfolio-cell" />
-      <VarEsCell varValue={a.var_hs}      esValue={a.es_hs}      className="portfolio-cell col-models group-start" />
-      <VarEsCell varValue={a.var_ewma}    esValue={a.es_ewma}    className="portfolio-cell col-models" />
-      <VarEsCell varValue={a.var_garch}   esValue={a.es_garch}   className="portfolio-cell col-models" />
-      <VarEsCell varValue={a.var_tgarch}  esValue={a.es_tgarch}  className="portfolio-cell col-models" />
+      {showAllModels && (
+        <>
+          <VarEsCell varValue={a.var_hs}      esValue={a.es_hs}      className="portfolio-cell col-models group-start" />
+          <VarEsCell varValue={a.var_ewma}    esValue={a.es_ewma}    className="portfolio-cell col-models" />
+          <VarEsCell varValue={a.var_garch}   esValue={a.es_garch}   className="portfolio-cell col-models" />
+        </>
+      )}
+      <VarEsCell varValue={a.var_tgarch}  esValue={a.es_tgarch}  className={`portfolio-cell col-models ${showAllModels ? "" : "group-start"}`} />
       <VarEsCell varValue={a.var_evt}     esValue={a.es_evt}     className="portfolio-cell col-models group-end" />
+      <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="portfolio-cell col-yr group-start group-end" />
       <td className="num alpha-cell portfolio-cell">{a.tail_index?.toFixed(2)}</td>
       <td className="left gauge-cell portfolio-cell">
         <RiskBar
@@ -176,9 +186,13 @@ function PortfolioRow({ a, portfolioLabel }) {
           exceptionCount={a.exception_count}
         />
       </td>
-      <td className="num consensus-cell portfolio-cell col-summary group-start">{a.mean_var?.toFixed(2)}</td>
-      <RangeCell values={[a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt]} className="portfolio-cell col-summary" />
-      <td className="num portfolio-cell col-summary group-end" title="Sum of component VaRs across all holdings — equals portfolio EWMA VaR by construction">
+      {showAllModels && (
+        <>
+          <td className="num consensus-cell portfolio-cell col-summary group-start">{a.mean_var?.toFixed(2)}</td>
+          <RangeCell values={[a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt]} className="portfolio-cell col-summary" />
+        </>
+      )}
+      <td className={`num portfolio-cell col-summary ${showAllModels ? "group-end" : "group-start group-end"}`} title="Sum of component VaRs across all holdings — equals portfolio EWMA VaR by construction">
         {a.component_var_total != null ? `Σ ${a.component_var_total.toFixed(2)}` : "—"}
       </td>
     </tr>
@@ -188,6 +202,12 @@ function PortfolioRow({ a, portfolioLabel }) {
 export default function RiskTable({ assets, portfolioWeights, disclosedWeights, fundTicker, portfolioLabel }) {
   const [sortKey, setSortKey] = useState("risk");
   const [sortDir, setSortDir] = useState("desc");
+  // Default to the compact view (tGARCH + EVT + yrVaR + Comp VaR).
+  // Showing all five VaR models in the snapshot is quant-flavored
+  // clutter for a non-quant audience. The Model Validation backtests
+  // still run on all five; this toggle just controls what's surfaced
+  // in the snapshot table.
+  const [showAllModels, setShowAllModels] = useState(false);
 
   const handleSort = useCallback((col) => {
     setSortKey((prev) => {
@@ -216,22 +236,42 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
 
   return (
     <div className="table-wrapper">
+      <div className="table-controls">
+        <button
+          className="model-toggle-btn"
+          onClick={() => setShowAllModels((v) => !v)}
+          aria-pressed={showAllModels}
+        >
+          {showAllModels
+            ? "▾ Hide HS / EWMA / GARCH (show only tGARCH + EVT)"
+            : "▸ Show all 5 VaR models (add HS, EWMA, GARCH)"}
+        </button>
+      </div>
       <table className="risk-table">
         <thead>
           <tr>
             <Th col="name"  label="Asset"   className="left sticky-col" {...sp} />
             <Th col="price" label="Price"   className="num" {...sp} />
             <ThWithTip col="ret"       label="1d Ret%"    tip={TIPS.ret}       className="num" {...sp} />
-            <ThWithTip col="varHs"     label="HS"     tip={TIPS.hs}     className="num col-models group-start" {...sp} />
-            <ThWithTip col="varEwma"   label="EWMA"   tip={TIPS.ewma}   className="num col-models" {...sp} />
-            <ThWithTip col="varGarch"  label="GARCH"  tip={TIPS.garch}  className="num col-models" {...sp} />
-            <ThWithTip col="varTgarch" label="tGARCH" tip={TIPS.tgarch} className="num col-models" {...sp} />
+            {showAllModels && (
+              <>
+                <ThWithTip col="varHs"     label="HS"     tip={TIPS.hs}     className="num col-models group-start" {...sp} />
+                <ThWithTip col="varEwma"   label="EWMA"   tip={TIPS.ewma}   className="num col-models" {...sp} />
+                <ThWithTip col="varGarch"  label="GARCH"  tip={TIPS.garch}  className="num col-models" {...sp} />
+              </>
+            )}
+            <ThWithTip col="varTgarch" label="tGARCH" tip={TIPS.tgarch} className={`num col-models ${showAllModels ? "" : "group-start"}`} {...sp} />
             <ThWithTip col="varEvt"    label="EVT"    tip={TIPS.evt}    className="num col-models group-end" {...sp} />
+            <ThWithTip col="varYr"     label="yrVaR (10%)" tip={TIPS.yrVar} className="num col-yr group-start group-end" {...sp} />
             <ThWithTip col="alpha"     label={<span style={{textTransform:"none"}}>Tail α</span>} tip={TIPS.alpha} className="num" {...sp} />
             <ThWithTip col="risk"      label="Risk"       tip={TIPS.risk}      className="left" {...sp} />
-            <ThWithTip col="consensus" label="Consensus"  tip={TIPS.consensus} className="num col-summary group-start" {...sp} />
-            <ThWithTip col="range"     label="Range"      tip={TIPS.range}     className="num col-summary" {...sp} />
-            <ThWithTip col="compVar"   label="Comp VaR"   tip={TIPS.compVar}   className="num col-summary group-end" {...sp} />
+            {showAllModels && (
+              <>
+                <ThWithTip col="consensus" label="Consensus"  tip={TIPS.consensus} className="num col-summary group-start" {...sp} />
+                <ThWithTip col="range"     label="Range"      tip={TIPS.range}     className="num col-summary" {...sp} />
+              </>
+            )}
+            <ThWithTip col="compVar"   label="Comp VaR"   tip={TIPS.compVar}   className={`num col-summary ${showAllModels ? "group-end" : "group-start group-end"}`} {...sp} />
           </tr>
         </thead>
         <tbody>
@@ -269,11 +309,16 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
               </td>
               <td className="num price">${a.last_price.toLocaleString()}</td>
               <ReturnCell value={a.last_return_pct} />
-              <VarEsCell varValue={a.var_hs}      esValue={a.es_hs}      className="col-models group-start" />
-              <VarEsCell varValue={a.var_ewma}    esValue={a.es_ewma}    className="col-models" />
-              <VarEsCell varValue={a.var_garch}   esValue={a.es_garch}   className="col-models" />
-              <VarEsCell varValue={a.var_tgarch}  esValue={a.es_tgarch}  className="col-models" />
+              {showAllModels && (
+                <>
+                  <VarEsCell varValue={a.var_hs}      esValue={a.es_hs}      className="col-models group-start" />
+                  <VarEsCell varValue={a.var_ewma}    esValue={a.es_ewma}    className="col-models" />
+                  <VarEsCell varValue={a.var_garch}   esValue={a.es_garch}   className="col-models" />
+                </>
+              )}
+              <VarEsCell varValue={a.var_tgarch}  esValue={a.es_tgarch}  className={`col-models ${showAllModels ? "" : "group-start"}`} />
               <VarEsCell varValue={a.var_evt}     esValue={a.es_evt}     className="col-models group-end" />
+              <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="col-yr group-start group-end" />
               <td className="num alpha-cell">{a.tail_index?.toFixed(2)}</td>
               <td className="left gauge-cell">
                 <RiskBar
@@ -283,16 +328,20 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
                   exceptionCount={a.exception_count}
                 />
               </td>
-              <td className="num consensus-cell col-summary group-start">{a.mean_var?.toFixed(2)}</td>
-              <RangeCell values={[a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt]} className="col-summary" />
-              <CompVarCell value={a.component_var} className="col-summary group-end" />
+              {showAllModels && (
+                <>
+                  <td className="num consensus-cell col-summary group-start">{a.mean_var?.toFixed(2)}</td>
+                  <RangeCell values={[a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt]} className="col-summary" />
+                </>
+              )}
+              <CompVarCell value={a.component_var} className={`col-summary ${showAllModels ? "group-end" : "group-start group-end"}`} />
             </tr>
             );
           })}
         </tbody>
         {portfolio && (
           <tfoot>
-            <PortfolioRow a={portfolio} portfolioLabel={portfolioLabel} />
+            <PortfolioRow a={portfolio} portfolioLabel={portfolioLabel} showAllModels={showAllModels} />
           </tfoot>
         )}
       </table>

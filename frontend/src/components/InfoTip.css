@@ -16,7 +16,7 @@
 .infotip-bubble {
   position: fixed;
   transform: translateX(-50%) translateY(calc(-100% - 10px));
-  width: 220px;
+  width: 280px;
   background: var(--bg3);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -31,7 +31,11 @@
   text-align: left;
   z-index: 9999;
   pointer-events: none;
-  white-space: normal;
+  /* pre-line preserves embedded \n characters as line breaks while still
+     allowing the rest of the text to word-wrap normally. Used so multi-
+     line tooltips (e.g. "main model X, hover for HS=...  EWMA=...") render
+     properly. */
+  white-space: pre-line;
 }
 
 /* Arrow pointing down */

@@ -127,6 +127,78 @@ def tail_index_hill(returns: np.ndarray) -> float:
     return round(float(alpha), 2)
 
 
+def var_year_t(returns: np.ndarray, q: float = 0.10) -> tuple[float, float] | None:
+    """
+    One-year VaR at confidence (1-q) under a Student-t distribution.
+
+    Methodology (parametric, square-root-of-time scaling on a fat-tail
+    distribution):
+      1. Fit a Student-t to the daily log-return distribution; estimate
+         the degrees-of-freedom ν via MLE.
+      2. Scale daily volatility to a 1-year horizon: σ_1y = σ_1d × √252.
+         Note: √n scaling assumes returns are iid. Under volatility
+         clustering this is approximate; for a richer estimate use a
+         Monte Carlo path simulation from a fitted GARCH-t (future
+         work). For a first-cut "what's a plausible 1-year drawdown"
+         number it's the textbook approach.
+      3. Compute the standardized-Student-t quantile at q (typically
+         0.10 for a "10% worst case over 1 year" reading) and apply to
+         σ_1y to produce loss in % of position value.
+
+    Returns (var_loss_pct, expected_shortfall_pct) for the q-th lower
+    tail, both as positive numbers representing % of $100 portfolio
+    lost (e.g. 23.5 = "10% chance of losing more than $23.50 over
+    1 year on a $100 position").
+
+    Default q=0.10 is the consumer-friendly framing: "10% chance of
+    losing more than X% over the next year." For comparison, q=0.05
+    would give the "1-in-20 year" loss; q=0.01 the "1-in-100 year."
+    All three are legitimate; 10% is the most-asked-by-PMs.
+    """
+    rets = returns[~np.isnan(returns)]
+    # Strip exact-zero returns. These are forward-fill artifacts produced
+    # when the master prices DataFrame ffill's across weekends/holidays
+    # for assets that don't trade those days. Genuine zero log returns on
+    # liquid daily equity data are essentially nonexistent; if a real
+    # zero-return day shows up it's almost certainly a stale-price fill.
+    # Without this filter, student_t.fit collapses to ν ≈ 0 (degenerate
+    # heavy-tail) because the distribution is dominated by point mass at 0.
+    rets = rets[np.abs(rets) > 1e-12]
+    if len(rets) < 252:
+        return None
+    try:
+        # Fit Student-t to daily returns. scipy returns (df, location, scale).
+        from scipy.stats import t as student_t
+        nu, loc, scale = student_t.fit(rets)
+        # Standardize: x = (r - μ) / σ where σ is the empirical sample
+        # std (we use sample std rather than t-implied scale so the
+        # √n scaling stays comparable across distributions).
+        sigma_daily = float(np.std(rets, ddof=1))
+        if sigma_daily <= 0 or not np.isfinite(nu) or nu <= 2:
+            return None
+
+        # √n scaling daily-to-annual
+        sigma_annual = sigma_daily * np.sqrt(252)
+
+        # Standardized-Student-t quantile at lower tail q.
+        # arch's standardized t convention: variance = 1, so the
+        # quantile of the variance-1 t is t.ppf(q, df=ν) × √((ν-2)/ν).
+        c = np.sqrt((nu - 2.0) / nu)
+        q_p = float(student_t.ppf(q, df=nu))   # negative
+        var_loss_pct = -sigma_annual * q_p * c * 100  # positive %
+
+        # ES (expected shortfall) below quantile, in standardized-t units:
+        #   ES = -E[X | X <= q_p] under standardized t
+        # Closed form from Embrechts-McNeil-Frey 2015 §2.3, scaled by c:
+        es_factor = c * float(student_t.pdf(q_p, df=nu)) \
+                    * (nu + q_p ** 2) / (q * (nu - 1.0))
+        es_loss_pct = sigma_annual * es_factor * 100
+
+        return round(var_loss_pct, 2), round(es_loss_pct, 2), round(nu, 1)
+    except Exception:
+        return None
+
+
 def var_es_garch(returns: np.ndarray, p: float = P) -> tuple[float, float]:
     """
     GARCH(1,1) with Student-t innovations.
@@ -331,6 +403,16 @@ def compute_asset_risk(ticker: str, returns: pd.Series, prices: pd.Series) -> di
     var_evt, es_evt = var_es_evt(window_rets)
     alpha = tail_index_hill(window_rets)
 
+    # 1-year 10% VaR — Student-t parametric scaling. Consumer- and
+    # long-horizon-PM-friendly multi-year-horizon risk number. Pros want
+    # 1-day VaR; PMs and individuals reading the dashboard tend to think
+    # in 1-year terms ("10% chance of losing more than X% next year").
+    yr_result = var_year_t(returns.values, q=0.10)
+    if yr_result is not None:
+        var_yr, es_yr, yr_nu = yr_result
+    else:
+        var_yr, es_yr, yr_nu = None, None, None
+
     mean_var = round(float(np.mean([var_hs, var_ewma, var_garch, var_tgarch, var_evt])), 4)
 
     risk_level = compute_risk_level(returns)
@@ -362,6 +444,10 @@ def compute_asset_risk(ticker: str, returns: pd.Series, prices: pd.Series) -> di
         "es_tgarch": round(es_tgarch, 4),
         "var_evt": round(var_evt, 4),
         "es_evt": round(es_evt, 4),
+        # 1-year 10% VaR/ES — consumer-friendly multi-year horizon framing
+        "var_yr_10pct": var_yr,
+        "es_yr_10pct":  es_yr,
+        "yr_nu":        yr_nu,    # Student-t degrees of freedom estimated
         "tail_index": alpha,
         "mean_var": mean_var,
         "risk_level": round(risk_level, 4),

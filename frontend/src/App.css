@@ -109,25 +109,74 @@
   font-weight: 600;
 }
 
-/* Theme toggle — sits at the right end of the tab bar with the FAQ link.
-   margin-left: auto on the toggle pushes both rightward as a unit. */
-.tab-theme-toggle {
+/* Theme toggle — a horizontal slider with sun and moon icons inside the
+   track, and a circular thumb that slides over the active icon. Inspired
+   by the classic "iOS toggle with icons inside" pattern. Sits at the
+   right end of the tab bar; margin-left: auto pushes both this and the
+   FAQ link rightward as a unit. */
+.theme-toggle {
   margin-left: auto;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-dim);
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  padding: 6px 12px;
-  position: static;     /* override bottom: -1px from .tab-btn */
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  align-self: center;
+  display: inline-flex;
+  position: static;
+  bottom: auto;
 }
 
-.tab-theme-toggle:hover {
+.theme-toggle-track {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 58px;
+  height: 26px;
   background: var(--bg3);
-  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 0 6px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.theme-toggle:hover .theme-toggle-track {
   border-color: var(--accent);
 }
+
+.theme-toggle-icon {
+  font-size: 13px;
+  line-height: 1;
+  z-index: 0;
+  color: var(--text-dim);
+  transition: color 0.2s;
+}
+
+/* In dark mode the moon is the "active" icon (thumb covers it) — keep
+   the moon visually muted under the thumb and highlight the sun in
+   dim text. In light mode it's reversed. */
+.theme-toggle--dark .theme-toggle-icon--sun  { color: var(--text-dim); }
+.theme-toggle--dark .theme-toggle-icon--moon { color: var(--accent); }
+.theme-toggle--light .theme-toggle-icon--sun  { color: var(--accent); }
+.theme-toggle--light .theme-toggle-icon--moon { color: var(--text-dim); }
+
+.theme-toggle-thumb {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: left 0.22s ease, background 0.22s;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+/* Thumb position — covers the moon icon in dark mode (right side),
+   covers the sun in light mode (left side). */
+.theme-toggle--dark  .theme-toggle-thumb { left: calc(100% - 24px); }
+.theme-toggle--light .theme-toggle-thumb { left: 4px; }
 
 /* Right-side external link — methodology / FAQ. Sits to the right of
    the theme toggle (which already has margin-left: auto). */

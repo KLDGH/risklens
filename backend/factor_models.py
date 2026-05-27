@@ -344,6 +344,195 @@ def compute_rolling_ff_loadings(
     }
 
 
+# ---------------------------------------------------------------------------
+# Thematic-basket exposure regression.
+#
+# Why this exists alongside the Fama-French regression:
+#   FF/Carhart factors (Mkt-Rf, SMB, HML, RMW, CMA, MOM) are academically
+#   rigorous but interpretively abstract. Telling a PM "your stock has
+#   +0.4 HML loading" is less actionable than "your stock has +0.6
+#   oil-shock exposure." Banks (Goldman, Morgan Stanley, JPM) publish
+#   thematic "factor baskets" (oil exposure, China exposure, regional-
+#   banking-stress) that map directly to narrative risk drivers. Those
+#   baskets are mostly proprietary but their character can be approximated
+#   from public sector-ETF returns:
+#
+#     XLE  → oil-price shock
+#     XLF  → financials beta / bank-sector stress
+#     KRE  → regional-banking-specific (SVB-style) stress
+#     SMH  → semiconductor cycle / Taiwan-supply exposure
+#     XLK  → broad tech / mega-cap-growth
+#     XLU  → duration / rates-sensitive defensive
+#     XLP  → consumer-staples defensive
+#     XLRE → real-estate / rates-sensitive long-duration
+#     TLT  → long-duration Treasuries / safe-haven
+#     EFA  → international developed equity
+#     EEM  → emerging-markets / China-sensitive
+#     HYG  → high-yield credit spread
+#
+# Methodology:
+#   The sector ETFs are highly correlated with the market (β ~ 0.85-1.2).
+#   A naive multi-regression has multicollinearity problems. So we
+#   orthogonalize each themed basket against the broad market first
+#   (regress XLE on SPY, take residual = "the XLE-specific component
+#   not explained by general US equity moves"). Then regress the target
+#   asset's returns on SPY + the orthogonalized residuals. Loadings on
+#   the orthogonalized baskets read as "exposure beyond what broad
+#   market alone explains" — the marginal risk that's actually about
+#   the theme.
+#
+# Output mirrors FF regression shape: per-theme loading, t-stat, p-value,
+# R², and a vol-share decomposition.
+# ---------------------------------------------------------------------------
+
+THEMATIC_BASKETS = [
+    ("SPY",  "US broad equity (market)"),
+    ("XLE",  "Energy / oil shock"),
+    ("XLF",  "Financials / bank-sector"),
+    ("KRE",  "Regional banking stress"),
+    ("SMH",  "Semiconductors / Taiwan supply"),
+    ("XLK",  "Tech / mega-cap growth"),
+    ("XLU",  "Utilities / rates-sensitive defensive"),
+    ("XLP",  "Staples / defensive"),
+    ("XLRE", "Real estate / duration-sensitive"),
+    ("TLT",  "Long Treasuries / safe-haven"),
+    ("EFA",  "International developed equity"),
+    ("EEM",  "Emerging markets / China-sensitive"),
+    ("HYG",  "High-yield credit"),
+]
+
+
+def compute_thematic_exposures(
+    returns: pd.Series,
+    basket_returns: dict[str, pd.Series],
+    lookback: int = 252,
+    exclude_self: str | None = None,
+) -> dict | None:
+    """
+    Regress an asset's returns on a panel of orthogonalized thematic
+    basket returns. Returns the loadings, R², and vol decomposition.
+
+    `basket_returns` is a dict of {ticker: pd.Series} containing the
+    daily log returns for each basket ETF. Caller is responsible for
+    providing only baskets that exist in their data; missing baskets
+    are silently skipped.
+
+    `exclude_self` is the target asset's ticker. If it appears in the
+    basket list (common when regressing a sector ETF that's also a
+    basket), it's removed to avoid trivial self-explanation (regressing
+    an asset on itself produces R²=1 and one β=1, the rest =0 — useless).
+
+    The first basket (typically SPY) is treated as the "market" baseline
+    and is NOT orthogonalized; every other basket is regressed against
+    the market first and only the residual variance is used. So the
+    market loading is just the market β; the other loadings read as
+    "exposure beyond market beta."
+    """
+    if exclude_self:
+        basket_returns = {k: v for k, v in basket_returns.items() if k != exclude_self}
+    available_baskets = [(t, lbl) for t, lbl in THEMATIC_BASKETS
+                         if t in basket_returns]
+    if len(available_baskets) < 3:
+        return None
+
+    # Build aligned DataFrame of asset + all baskets
+    cols = {"R": returns}
+    for t, _ in available_baskets:
+        cols[t] = basket_returns[t]
+    aligned = pd.DataFrame(cols).dropna().tail(lookback)
+    if len(aligned) < 60:
+        return None
+    n = len(aligned)
+
+    market_ticker = available_baskets[0][0]   # typically SPY
+    market = aligned[market_ticker].to_numpy()
+
+    # Orthogonalize each non-market basket against the market: residual
+    # = basket - β·market. Each residual stream is then the
+    # "market-neutral" component of that theme.
+    ortho = {market_ticker: market}
+    for t, _ in available_baskets[1:]:
+        b = aligned[t].to_numpy()
+        cov = np.cov(b, market, ddof=1)
+        if cov[1, 1] <= 0:
+            continue
+        beta_b_mkt = cov[0, 1] / cov[1, 1]
+        ortho[t] = b - beta_b_mkt * market
+
+    # Regress asset's excess returns on [intercept, market, orthogonalized
+    # basket residuals...]. Excess returns assumed = asset return (we
+    # don't strip risk-free — the intercept absorbs any constant).
+    y = aligned["R"].to_numpy()
+    X = np.column_stack([np.ones(n)] + list(ortho.values()))
+    if X.shape[1] < 2:
+        return None
+
+    beta_hat, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
+    y_pred = X @ beta_hat
+    eps    = y - y_pred
+    k      = X.shape[1]
+    df_resid = n - k
+
+    rss = float((eps ** 2).sum())
+    tss = float(((y - y.mean()) ** 2).sum())
+    if tss <= 0:
+        return None
+    r_squared = 1.0 - rss / tss
+
+    sigma2_eps = rss / df_resid
+    try:
+        cov_beta = sigma2_eps * np.linalg.inv(X.T @ X)
+    except np.linalg.LinAlgError:
+        return None
+    se     = np.sqrt(np.diag(cov_beta))
+    tstats = beta_hat / se
+    pvals  = 2.0 * (1.0 - student_t.cdf(np.abs(tstats), df=df_resid))
+
+    sigma_total_daily = float(np.std(y, ddof=1))
+    sigma_total_ann   = sigma_total_daily * np.sqrt(252) * 100
+    sigma_idio_ann    = np.sqrt(sigma2_eps) * np.sqrt(252) * 100
+    sigma_factor_ann  = float(np.sqrt(max(0.0, sigma_total_ann ** 2 - sigma_idio_ann ** 2)))
+
+    basket_keys = list(ortho.keys())
+    label_map   = {t: lbl for t, lbl in THEMATIC_BASKETS}
+    loadings = [
+        {
+            "basket":       basket_keys[i],
+            "label":        label_map.get(basket_keys[i], basket_keys[i]),
+            "is_market":    (i == 0),
+            "beta":         round(float(beta_hat[i + 1]), 4),
+            "tstat":        round(float(tstats[i + 1]), 2),
+            "p_value":      round(float(pvals[i + 1]), 4),
+            "significant":  bool(pvals[i + 1] < 0.05),
+        }
+        for i in range(len(basket_keys))
+    ]
+
+    return {
+        "model":                       "Thematic basket regression (market-orthogonalized)",
+        "lookback_days":               int(n),
+        "first_date":                  aligned.index[0].strftime("%Y-%m-%d"),
+        "last_date":                   aligned.index[-1].strftime("%Y-%m-%d"),
+        "r_squared":                   round(float(r_squared), 4),
+        "alpha_daily_pct":             round(float(beta_hat[0]) * 100, 4),
+        "alpha_annualized_pct":        round(float(beta_hat[0]) * 252 * 100, 2),
+        "alpha_tstat":                 round(float(tstats[0]), 2),
+        "alpha_pvalue":                round(float(pvals[0]), 4),
+        "alpha_significant":           bool(pvals[0] < 0.05),
+        "total_vol_annualized_pct":    round(sigma_total_ann, 2),
+        "factor_vol_annualized_pct":   round(sigma_factor_ann, 2),
+        "idio_vol_annualized_pct":     round(sigma_idio_ann, 2),
+        "loadings":                    loadings,
+        "notes": [
+            "Market loading is the raw β vs SPY (broad equity exposure).",
+            "Non-market loadings are computed against market-orthogonalized "
+            "basket residuals — they read as 'exposure beyond market beta.'",
+            "Each basket is an ETF that approximates a thematic risk driver; "
+            "see the label column for the narrative each represents.",
+        ],
+    }
+
+
 def compute_beta(returns: pd.Series, mkt_returns: pd.Series, lookback: int = 252) -> float | None:
     """Simple OLS beta of `returns` on `mkt_returns`, trailing `lookback` days."""
     aligned = pd.concat([returns, mkt_returns], axis=1, join="inner").dropna().tail(lookback)

@@ -14,7 +14,7 @@ Three tabs, each answering a distinct question:
 |---|---|---|
 | **Portfolio Risk** | *How much risk am I carrying right now, where is it concentrated, and would the models survive a real stress event?* | 5 VaR models (HS, EWMA, GARCH-t, GJR-t, EVT) · Risk-percentile gauge · Component VaR per holding · Out-of-sample backtests (Kupiec + Christoffersen) · Historical + hypothetical stress tests |
 | **Market Context** | *What regime is the market in right now? Is diversification still working?* | S&P 500 risk + VIX, 1928→today · Cross-asset rolling correlation · Multi-window stock-bond correlation (20d / 60d / 252d, 4 bond proxies) · Intraday SPY×TLT correlation with QMLE noise-correction |
-| **Anomaly Detector** | *Is a sector ETF behaving unusually, and what's driving its risk?* | Risk profile per ETF · Fama-French 5 + Momentum factor regression (open-data substitute for Barra) · Stacked detectors: z-score, Page CUSUM, GARCH-residual outliers |
+| **Sector Spotlight** | *Is a sector ETF behaving unusually, and what's driving its risk?* | Risk profile per ETF · Fama-French 5 + Momentum factor regression (open-data substitute for Barra) · Stacked detectors: z-score, Page CUSUM, GARCH-residual outliers |
 
 ## Portfolios supported
 
