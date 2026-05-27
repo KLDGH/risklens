@@ -14,7 +14,7 @@ Across each portfolio it computes five VaR/ES models, formal out-of-sample backt
 
 **Market Context** — *What regime is the market in right now? Is diversification still working?* S&P 500 risk and VIX back to 1928, cross-asset rolling correlation, multi-window stock-bond correlation across four bond proxies, intraday SPY×TLT correlation with QMLE noise-correction toggle.
 
-**Anomaly Detector** — *Is a sector ETF behaving unusually, and what's driving its risk?* Per-ticker risk profile with same VaR/ES models, Fama-French 5 + Momentum factor regression (open-data substitute for Barra-style attribution), three stacked detectors on the same timeline: standardized z-score, Page CUSUM mean-shift, GARCH-residual outliers.
+**Sector Spotlight** — *Is a sector ETF behaving unusually, and what's driving its risk?* Per-ticker risk profile with same VaR/ES models, Fama-French 5 + Momentum factor regression (open-data substitute for Barra-style attribution), three stacked detectors on the same timeline: standardized z-score, Page CUSUM mean-shift, GARCH-residual outliers.
 
 ## Methodology in 60 seconds
 

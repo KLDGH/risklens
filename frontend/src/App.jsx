@@ -16,11 +16,15 @@ import "./App.css";
 // don't have to scroll across 8+ sections to find what they want.
 //   - portfolio: everything that responds to the active portfolio mode
 //   - market:    portfolio-independent market context
-//   - anomaly:   single-asset deep-dive (sector ETFs), Phase-2 build
+//   - anomaly:   single-asset deep-dive (Sector Spotlight) — risk
+//                profile, factor models, thematic exposures, anomaly
+//                detectors per sector ETF. (Internal id is "anomaly"
+//                for backwards-compat; user-facing label is "Sector
+//                Spotlight".)
 const TABS = [
   { id: "portfolio", label: "Portfolio Risk" },
   { id: "market",    label: "Market Context" },
-  { id: "anomaly",   label: "Anomaly Detector" },
+  { id: "anomaly",   label: "Sector Spotlight" },
 ];
 
 // Short label shown on the portfolio summary row of the risk table.
@@ -241,12 +245,18 @@ export default function App() {
             </button>
           ))}
           <button
-            className="tab-btn tab-theme-toggle"
+            className={`theme-toggle theme-toggle--${theme}`}
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
             title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            role="switch"
+            aria-checked={theme === "dark"}
           >
-            {theme === "dark" ? "☀ Light" : "☾ Dark"}
+            <span className="theme-toggle-track">
+              <span className="theme-toggle-icon theme-toggle-icon--sun" aria-hidden="true">☀</span>
+              <span className="theme-toggle-icon theme-toggle-icon--moon" aria-hidden="true">☾</span>
+              <span className="theme-toggle-thumb" />
+            </span>
           </button>
           <a
             href="https://github.com/KLDGH/risklens/blob/main/FAQ.md"
@@ -425,17 +435,19 @@ export default function App() {
         )}
 
         {/* =============================================================
-            TAB 3 — Anomaly Detector (Phase 2)
-            Placeholder for the univariate anomaly-detection view —
-            sector ETF deep-dive with z-score / CUSUM / GARCH-residual /
-            HMM detectors plotted on a shared timeline.
+            TAB 3 — Sector Spotlight
+            Single-asset deep-dive view across 14 sector ETFs. Per ticker:
+            full risk profile, Fama-French + Momentum factor regression,
+            thematic-basket exposure regression, rolling factor loadings
+            over time, and three anomaly detectors (z-score, Page CUSUM,
+            GARCH-residual) on a shared timeline.
             ============================================================= */}
         {activeTab === "anomaly" && data?.anomaly_views && (
           <Section
             id="anomaly-detector"
-            title="Univariate Anomaly Detector"
-            question="When does a single sector ETF start behaving unusually?"
-            description="Single-asset deep-dive view. Pick a sector ETF and see multiple anomaly detectors run on the same return series. Each detector answers a slightly different question — standardized z-score flags outsized single days; Page CUSUM catches sustained mean shifts that individual days don't reveal; GARCH-residual outliers flag days the conditional volatility model didn't anticipate. Disagreement between detectors is the signal, same principle as the VaR table on the Portfolio Risk tab. Universe: 11 SPDR sector ETFs + KRE (regional banks), SMH (semis), IBB (biotech). Lookback ~2 years per ticker."
+            title="Sector Spotlight"
+            question="What's driving the risk and behavior of a single sector ETF?"
+            description="Single-asset deep-dive across the 14-ETF universe (11 SPDR sectors + KRE regional banks, SMH semis, IBB biotech). For each ticker: standalone risk profile (VaR, ES, EVT, tail-α, beta vs SPY); Fama-French 5 + Momentum factor regression; thematic-basket exposure regression mapping loadings to narrative risk drivers (oil shock, regional-banking stress, duration, China sensitivity); rolling factor loadings over 5 years to surface style drift; three anomaly detectors plotted on a shared timeline — standardized z-score flags outsized single days, Page CUSUM catches sustained mean shifts, GARCH-residual outliers flag days the conditional-vol model didn't anticipate. Disagreement between detectors is the signal."
           >
             <AnomalyDetectorPanel views={data.anomaly_views} />
           </Section>

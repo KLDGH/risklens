@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import "./AnomalyDetectorPanel.css";
 import { useThemeColors } from "./useThemeColors";
+import InfoTip from "./InfoTip.jsx";
 
 // Color palette per detector — chosen so none collide with the amber
 // accent (which is reserved for primary UI). Each detector keeps a
@@ -43,40 +44,87 @@ function fmtDate(d) {
 
 
 /* ---------- Risk Profile Card ----------
-   Compact row of stat cards showing the SAME risk metrics that the
-   Portfolio Risk tab uses, but applied to the single selected ETF.
-   Surfaces what the asset's standalone risk looks like before / next
-   to the detector signals. */
+   Compact stat row applied to the single selected ETF. Mirrors the
+   default Portfolio Risk tab table: shows the main risk metrics
+   (tGARCH for daily, EVT for tail, yrVaR for long-horizon) plus the
+   asset-specific descriptors (vol, beta, tail-α). The HS and EWMA
+   numbers are computed and shipped in the JSON but hidden behind
+   hover-over to avoid the model-clutter problem on the snapshot
+   surface. Each card has an InfoTip explaining what it means. */
 function RiskProfileCard({ profile, ticker }) {
   if (!profile) return null;
-  const stat = (label, value, unit) => (
+
+  const stat = (label, value, unit, tip) => (
     <div className="rp-stat" key={label}>
-      <div className="rp-stat-label">{label}</div>
+      <div className="rp-stat-label">
+        {label}
+        {tip && <InfoTip text={tip} />}
+      </div>
       <div className="rp-stat-value">{value}</div>
       {unit && <div className="rp-stat-unit">{unit}</div>}
     </div>
   );
+
+  const fmtPct = (v) => (v == null ? "—" : `${v.toFixed(1)}%`);
+  const fmtDollar = (v) => (v == null ? "—" : `$${v.toFixed(2)}`);
+
+  // Hidden-model summary: HS and EWMA. Surfaced as a single tooltip
+  // hover on the daily VaR header so users can sanity-check against
+  // the alternative model estimates without seeing them in the row.
+  const hiddenModelsTip = (
+    `Other daily VaR models for ${ticker}:\n` +
+    `• HS (Historical Simulation): $${profile.var_hs?.toFixed(2) ?? "—"} ` +
+    `(empirical 1st percentile, no distribution assumption)\n` +
+    `• EWMA (RiskMetrics, λ=0.94): $${profile.var_ewma?.toFixed(2) ?? "—"} ` +
+    `(Gaussian — known to underestimate fat tails)`
+  );
+
   return (
     <div className="risk-profile-card">
       <div className="rp-header">
         <span className="rp-title">Risk profile — {ticker}</span>
         <span className="rp-subtitle">
-          Same models as the Portfolio Risk tab, on this ETF's own NAV.
-          Daily 1% VaR/ES on a $100 position.
+          Standalone risk metrics for this ETF's NAV. Main models shown;
+          HS and EWMA hover-only (see the daily-VaR card).
         </span>
       </div>
       <div className="rp-row">
         {stat(
           "60d Vol",
-          `${profile.vol_60d_annualized_pct.toFixed(1)}%`,
-          "annualized"
+          fmtPct(profile.vol_60d_annualized_pct),
+          "annualized",
+          "Sample standard deviation of the last 60 daily log returns, annualized via √252. Tells you how much the asset has been moving day-to-day in recent weeks.",
         )}
-        {stat("β vs SPY",  profile.beta_spy_252d?.toFixed(2) ?? "—", "252-day OLS")}
-        {stat("VaR (HS)",      `$${profile.var_hs.toFixed(2)}`,      "non-parametric")}
-        {stat("VaR (EWMA)",    `$${profile.var_ewma.toFixed(2)}`,    "Gaussian, λ=0.94")}
-        {stat("VaR (GARCH-t)", `$${profile.var_garch.toFixed(2)}`,   "Student-t innov.")}
-        {stat("VaR (EVT)",     `$${profile.var_evt.toFixed(2)}`,     "GPD-tail")}
-        {stat("Tail α",  profile.tail_index?.toFixed(2) ?? "—", "Hill estimator")}
+        {stat(
+          "β vs SPY",
+          profile.beta_spy_252d?.toFixed(2) ?? "—",
+          "252-day OLS",
+          "Market beta. OLS slope of this ETF's daily returns regressed on SPY over the last 252 trading days. β > 1 = amplifies market moves; β < 1 = muted; β < 0 = inversely correlated (rare for equity).",
+        )}
+        {stat(
+          "Daily VaR (GJR-t)",
+          fmtDollar(profile.var_tgarch),
+          "1% / $100 position",
+          "GJR-GARCH(1,1,1) with Student-t innovations — the main daily VaR model. Captures volatility clustering, the leverage effect (negative shocks raise vol more than positive), AND heavy-tailed innovations. " + hiddenModelsTip,
+        )}
+        {stat(
+          "Daily VaR (EVT)",
+          fmtDollar(profile.var_evt),
+          "1% / GPD tail",
+          "Extreme Value Theory. Generalized Pareto distribution fit to the worst losses directly. Best for fat-tailed assets — usually larger than GJR-t and that gap is the tail premium.",
+        )}
+        {stat(
+          "yrVaR (10%)",
+          fmtPct(profile.var_yr_10pct),
+          "1-year horizon",
+          "1-year VaR at 10% confidence. The 10th-percentile worst loss expected over the next year, % of position. Computed via Student-t parametric scaling. Long-horizon framing: '10% chance of losing more than X% over the next year.'",
+        )}
+        {stat(
+          "Tail α",
+          profile.tail_index?.toFixed(2) ?? "—",
+          "Hill estimator",
+          "Hill tail index. Lower = fatter tails. Broad equity indices typically 3-4; individual stocks 2-4; crypto often below 3. Below 3 indicates meaningfully heavier tails than a normal-distribution model assumes — weight the EVT VaR more heavily.",
+        )}
       </div>
     </div>
   );
@@ -178,6 +226,129 @@ function FactorRegressionPanel({ model }) {
         Significance: <code>***</code> p&lt;0.001 &middot; <code>**</code> p&lt;0.01 &middot; <code>*</code> p&lt;0.05.
         Refs: Fama &amp; French (1993, 2015); Carhart (1997). Daily factor data from the
         Ken French Data Library, public.
+      </div>
+    </div>
+  );
+}
+
+
+/* ---------- Thematic Exposure Panel ----------
+   Regresses the asset's returns against a panel of orthogonalized
+   thematic ETF baskets (energy, regional banks, semis, duration,
+   defensives, EM, credit) to surface narrative-style risk drivers.
+   FF/Carhart factors are academically rigorous but interpretively
+   weak; "your stock has +0.6 oil-shock exposure" reads more actionably
+   than "your stock has +0.4 HML loading." Thematic baskets close that
+   gap by mapping loadings to narrative risk drivers.
+
+   Output mirrors the FF regression panel shape (loadings table +
+   significance + R² + vol decomp) so the two panels read as siblings. */
+function ThematicExposurePanel({ thematic }) {
+  if (!thematic) return null;
+  const sig = (p) =>
+      p < 0.001 ? "***"
+    : p < 0.01  ? "**"
+    : p < 0.05  ? "*"
+    : "";
+
+  // Reusable tooltip text fragments — each one explains a single
+  // concept in plain language and keeps the table readable without
+  // requiring you to remember stats vocab.
+  const TIPS = {
+    title: "What this panel does: regresses the selected ETF's daily returns on a panel of sector / thematic ETFs that each represent a real-world risk driver (oil shocks, regional banking stress, duration, China sensitivity, etc.). The output tells you which themes are actually moving the asset.",
+    rsquared: "Fraction of this asset's daily-return variance explained by the panel of thematic baskets. R² = 90% means themes explain 90% of the day-to-day moves; the remaining 10% is asset-specific (residual). Higher R² = the asset is heavily driven by the themes; lower R² = more idiosyncratic.",
+    basket: "The ETF ticker used as a proxy for the theme. We picked liquid US-listed ETFs that each capture one risk driver cleanly (e.g., XLE for oil-shock exposure, KRE for regional-banking stress, TLT for duration / safe-haven).",
+    theme: "Plain-English description of what the basket captures. Read each loading as 'how much does this asset move when THIS theme moves' — beyond what the broad market alone explains.",
+    loading: "OLS regression coefficient β. Interpretation: a 1% move in the theme corresponds to a β·1% move in the asset, holding the other themes constant. Positive = moves together; negative = moves opposite. The first row is the raw market β vs SPY; all other rows are computed against MARKET-ORTHOGONALIZED basket residuals — they isolate exposure beyond plain market beta.",
+    tstat: "t-statistic = β / standard-error(β). Measures how confident we are that the true loading isn't zero. Rule of thumb: |t| > 2 means the coefficient is statistically meaningful (about 95% confidence). |t| > 3 is strongly meaningful.",
+    pvalue: "Probability of seeing this t-statistic by chance if the true loading were actually zero. Lower = stronger evidence the asset has real exposure to this theme. Convention: p < 0.05 is 'significant', p < 0.001 is 'very significant'.",
+    sig: "Significance stars: *** = p<0.001 (very strong), ** = p<0.01 (strong), * = p<0.05 (significant). No star = the loading is statistically indistinguishable from zero — don't read too much into the β value. Non-significant rows are dimmed.",
+    orthogonalized: "Market-orthogonalized: each non-market basket's returns are first regressed against SPY, and the RESIDUAL (the part of the basket's move not explained by the broad market) is used as the regressor. This way the non-market loadings read as 'exposure to this theme BEYOND general market exposure.' Without this step, every sector ETF looks the same because they're all ~90% correlated with SPY.",
+    totalVol: "Sample standard deviation of this asset's daily returns over the lookback window, annualized by √252 (252 trading days per year), expressed in percent.",
+    factorVol: "The fraction of total volatility explained by the themes. Computed as σ_total × √R². If R² = 81%, then σ_factor = 90% of σ_total — most of the asset's risk comes from these themes.",
+    residualVol: "Idiosyncratic / asset-specific volatility. The part of the asset's risk NOT explained by any theme — corporate-action news, company-specific announcements, microstructure noise. Computed as σ_total × √(1 − R²).",
+  };
+
+  return (
+    <div className="factor-regression-panel thematic-panel">
+      <div className="fr-header">
+        <div>
+          <div className="fr-title">
+            Thematic risk exposures <InfoTip text={TIPS.title} />
+          </div>
+          <div className="fr-subtitle">
+            {thematic.model} · last {thematic.lookback_days} trading days
+            ({thematic.first_date} → {thematic.last_date}).
+            Each basket is a sector/thematic ETF that approximates a
+            narrative risk driver (oil shock, regional-banking stress,
+            duration, China exposure, etc.). Non-market loadings are
+            computed against <em>market-orthogonalized</em>{" "}
+            <InfoTip text={TIPS.orthogonalized} /> basket residuals —
+            they read as exposure <strong>beyond</strong> market beta.
+          </div>
+        </div>
+        <div className="fr-headline-stats">
+          <div className="fr-headline">
+            <span className="fr-headline-value">{(thematic.r_squared * 100).toFixed(0)}%</span>
+            <span className="fr-headline-label">
+              R² <InfoTip text={TIPS.rsquared} />
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <table className="fr-table">
+        <thead>
+          <tr>
+            <th>Basket <InfoTip text={TIPS.basket} /></th>
+            <th>Theme <InfoTip text={TIPS.theme} /></th>
+            <th className="num">Loading (β) <InfoTip text={TIPS.loading} /></th>
+            <th className="num">t-stat <InfoTip text={TIPS.tstat} /></th>
+            <th className="num">p-value <InfoTip text={TIPS.pvalue} /></th>
+            <th>Sig. <InfoTip text={TIPS.sig} /></th>
+          </tr>
+        </thead>
+        <tbody>
+          {thematic.loadings.map((l) => (
+            <tr key={l.basket} className={l.significant ? "" : "fr-row-dim"}>
+              <td><strong>{l.basket}</strong>{l.is_market && <span className="thematic-mkt-tag"> · market</span>}</td>
+              <td className="thematic-label-cell">{l.label}</td>
+              <td className="num">
+                <span style={{ color: l.beta >= 0 ? "var(--green)" : "var(--red)" }}>
+                  {l.beta >= 0 ? "+" : ""}{l.beta.toFixed(3)}
+                </span>
+              </td>
+              <td className="num">{l.tstat.toFixed(2)}</td>
+              <td className="num">{l.p_value.toFixed(3)}</td>
+              <td className="fr-sig">{sig(l.p_value)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="fr-vol-decomp">
+        <span className="fr-vol-label">Annualized vol decomposition:</span>
+        <span className="fr-vol-pair">
+          total <strong>{thematic.total_vol_annualized_pct.toFixed(1)}%</strong>
+          <InfoTip text={TIPS.totalVol} />
+        </span>
+        <span className="fr-vol-pair fr-vol-factor">
+          explained by themes <strong>{thematic.factor_vol_annualized_pct.toFixed(1)}%</strong>
+          <InfoTip text={TIPS.factorVol} />
+        </span>
+        <span className="fr-vol-pair fr-vol-idio">
+          residual <strong>{thematic.idio_vol_annualized_pct.toFixed(1)}%</strong>
+          <InfoTip text={TIPS.residualVol} />
+        </span>
+      </div>
+
+      <div className="fr-footnote">
+        Thematic baskets map directly to narrative risk drivers (oil
+        shock, regional-banking stress, duration, China exposure) rather
+        than to abstract academic factor returns. Reads more naturally for
+        a PM thinking in narrative risk terms. The FF panel above and
+        this thematic panel are complementary — FF for academic rigor,
+        thematic for interpretive narrative.
       </div>
     </div>
   );
@@ -675,6 +846,8 @@ export default function AnomalyDetectorPanel({ views }) {
       <RiskProfileCard profile={view.risk_profile} ticker={ticker} />
 
       <FactorRegressionPanel model={view.factor_model} />
+
+      <ThematicExposurePanel thematic={view.thematic_exposures} />
 
       <RollingFactorLoadingsPanel rolling={view.factor_model_rolling} />
 

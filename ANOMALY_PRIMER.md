@@ -1,6 +1,6 @@
 # Anomaly Detection — A Primer
 
-*An end-to-end self-study guide to the Anomaly Detector tab. Starts from the basics — what a return is, what volatility means — and builds up to the factor model and the three statistical anomaly detectors. Designed to be read straight through in about an hour, with no prior quant background assumed.*
+*An end-to-end self-study guide to the Sector Spotlight tab. Starts from the basics — what a return is, what volatility means — and builds up to the factor model and the three statistical anomaly detectors. Designed to be read straight through in about an hour, with no prior quant background assumed.*
 
 ---
 
@@ -367,7 +367,7 @@ A date hitting **multiple** detectors is a much stronger signal than any one fir
 
 ## Part 7 — Factor models — what they are and what they aren't
 
-The other big panel on the Anomaly Detector tab is a Fama-French + Momentum factor regression. Before we get to the math, let's build the intuition.
+The other big panel on the Sector Spotlight tab is a Fama-French + Momentum factor regression. Before we get to the math, let's build the intuition.
 
 ### 7.1 The motivating question
 
@@ -573,7 +573,7 @@ So Fama-French here is conceptually doing the same job (decompose into factor + 
 
 ## Part 9 — Reading the risk profile card
 
-Above the factor regression in the Anomaly Detector tab is a "risk profile card" with a row of stat boxes. Quick translation of each.
+Above the factor regression in the Sector Spotlight tab is a "risk profile card" with a row of stat boxes. Quick translation of each.
 
 ### 9.1 60-day annualized vol
 

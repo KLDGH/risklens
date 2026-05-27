@@ -337,6 +337,29 @@
   font-style: normal;
 }
 
+/* ---------- Thematic Exposure Panel ----------
+   Sibling to .factor-regression-panel — same structural CSS, different
+   accent treatment. Visually distinguished by a violet left-border vs
+   the FF panel's amber/orange so the two panels read as different
+   concepts. */
+.factor-regression-panel.thematic-panel {
+  border-left: 3px solid #a78bfa;   /* violet — matches GARCH-residual hue */
+}
+
+.thematic-mkt-tag {
+  font-size: 9px;
+  font-style: italic;
+  color: var(--text-dim);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.thematic-label-cell {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-style: italic;
+}
+
 /* ---------- Rolling Factor Loadings Panel ----------
    Medium-horizon style-drift view. Six mini-charts in a responsive grid,
    each showing the rolling 252-day FF/Carhart loading evolution for one
