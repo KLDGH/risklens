@@ -309,8 +309,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-.fr-vol-factor strong { color: #86efac; }
-.fr-vol-idio   strong { color: #f97316; }
+.fr-vol-factor strong { color: var(--green); }
+.fr-vol-idio   strong { color: var(--yellow); }
 
 .fr-vol-formula {
   margin-left: auto;
@@ -335,6 +335,182 @@
   font-size: 10px;
   color: var(--accent);
   font-style: normal;
+}
+
+/* ---------- Rolling Factor Loadings Panel ----------
+   Medium-horizon style-drift view. Six mini-charts in a responsive grid,
+   each showing the rolling 252-day FF/Carhart loading evolution for one
+   factor over the last 5 years. Drift banner at top lists factors that
+   are >1σ from their long-run mean. */
+.rolling-factor-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-soft);
+  border-radius: 3px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rolling-factor-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.rfp-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.rfp-subtitle {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.55;
+  margin-top: 2px;
+  max-width: 720px;
+}
+
+.rfp-window-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 14px;
+}
+
+.rfp-window-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+.rfp-window-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* Drift alert banner — yellow-bordered call-out with chips */
+.rfp-drift-banner {
+  background: rgba(245, 158, 11, 0.07);
+  border: 1px solid rgba(245, 158, 11, 0.30);
+  border-left: 3px solid var(--accent-soft);
+  border-radius: 3px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rfp-drift-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-soft);
+  letter-spacing: 0.02em;
+}
+
+.rfp-drift-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rfp-drift-chip {
+  font-size: 11px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 4px 10px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.rfp-drift-chip strong {
+  color: var(--text-bright);
+  font-weight: 600;
+}
+
+.rfp-drift-chip em {
+  color: var(--text-dim);
+  font-style: italic;
+  font-size: 10px;
+}
+
+/* The 2×3 grid of mini factor charts */
+.rfp-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 8px;
+}
+
+.mini-factor-chart {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 8px 10px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mini-factor-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mini-factor-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.mini-factor-current {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-bright);
+  font-weight: 600;
+}
+
+.mini-factor-mu {
+  color: var(--text-dim);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 10px;
+  margin-left: 4px;
+}
+
+.mini-factor-chart-area {
+  /* keep recharts from collapsing */
+  min-height: 100px;
+}
+
+.mini-factor-drift {
+  font-size: 10px;
+  font-style: italic;
+  color: var(--accent-soft);
+  text-align: right;
+}
+
+.rfp-footnote {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.55;
 }
 
 /* ---------- Stacked chart layout ---------- */

@@ -179,7 +179,7 @@
 }
 
 .mean-cell {
-  color: #f59e0b;
+  color: var(--accent-soft);
   font-weight: 600;
 }
 
@@ -194,7 +194,7 @@
 }
 
 .consensus-cell {
-  color: #f59e0b;
+  color: var(--accent-soft);
   font-weight: 600;
 }
 
@@ -234,7 +234,7 @@
 }
 
 .model-subheader th {
-  background: #1f2935;
+  background: var(--bg3);
   border-top: 1px solid var(--border);
   font-size: 10px;
   padding-top: 5px;
@@ -251,19 +251,19 @@
 /* ── Portfolio summary row ── */
 .portfolio-row {
   border-top: 2px solid var(--accent);
-  background: #1a2530;
+  background: var(--portfolio-row-bg);
 }
 
 .portfolio-row:hover {
-  background: #222a36;
+  background: var(--portfolio-row-hover);
 }
 
 .portfolio-sticky {
-  background: #1a2530 !important;
+  background: var(--portfolio-row-bg) !important;
 }
 
 .portfolio-row:hover .portfolio-sticky {
-  background: #222a36 !important;
+  background: var(--portfolio-row-hover) !important;
 }
 
 .portfolio-ticker {

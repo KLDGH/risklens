@@ -2,6 +2,8 @@
 
 Common questions from demos and reviews. Organized for a PM audience: what does it tell me, what does it not tell me, how does it compare to systems I already use.
 
+> **Quick legal note**: nothing in this FAQ is investment advice. The dashboard is an open-source educational project; figures shown are produced by publicly-known statistical methods on public data and should not drive investment, hedging, or position-sizing decisions. Full disclaimers in [`LEGAL.md`](./LEGAL.md).
+
 ---
 
 ## At a glance

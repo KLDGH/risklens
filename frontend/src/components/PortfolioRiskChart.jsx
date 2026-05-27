@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import "./HistoricalChart.css"; // reuse shared chart styles
+import { useThemeColors } from "./useThemeColors";
 
 // Crisis events — we render the ones that land inside the data window.
 // Matches the set used on the Correlation chart so the timelines read in sync.
@@ -79,6 +80,7 @@ const CustomTooltip = ({ active, payload }) => {
 
 export default function PortfolioRiskChart({ data, portfolioLabel }) {
   const [insightOpen, setInsightOpen] = useState(false);
+  const c = useThemeColors();
   if (!data?.length) return null;
 
   const tickInterval = Math.max(1, Math.floor(data.length / 12));
@@ -139,25 +141,25 @@ export default function PortfolioRiskChart({ data, portfolioLabel }) {
               <linearGradient id="riskFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%"   stopColor="#ef4444" stopOpacity={0.45} />
                 <stop offset="50%"  stopColor="#d97706" stopOpacity={0.22} />
-                <stop offset="100%" stopColor="#0d1526" stopOpacity={0.04} />
+                <stop offset="100%" stopColor={c.bg}    stopOpacity={0.04} />
               </linearGradient>
             </defs>
 
-            <CartesianGrid vertical={false} stroke="#162038" />
+            <CartesianGrid vertical={false} stroke={c.grid} />
 
             <XAxis
               dataKey="date"
               tickFormatter={(v) => v.slice(0, 4)}
               interval={tickInterval}
-              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: c.axisTick, fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
-              axisLine={{ stroke: "#1e2530" }}
+              axisLine={{ stroke: c.axisLine }}
             />
 
             <YAxis
               domain={yDomain}
               tickFormatter={(v) => `$${v}`}
-              tick={{ fill: "#8896aa", fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: c.axisTick, fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={false}
               width={36}

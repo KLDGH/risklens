@@ -29,9 +29,9 @@
 
 /* Hypothetical: amber tint */
 .scenario-card.hypo {
-  background: #16120a;
-  border: 1px solid #3a2e10;
-  border-top: 2px solid #b07d2a;
+  background: var(--hypo-bg);
+  border: 1px solid var(--hypo-border);
+  border-top: 2px solid var(--hypo-accent);
 }
 
 /* ── Card header ── */
@@ -72,9 +72,9 @@
 }
 
 .badge-hypo {
-  background: #2a1f00;
-  color: #d4941a;
-  border: 1px solid #4a3510;
+  background: var(--hypo-badge-bg);
+  color: var(--hypo-accent-bright);
+  border: 1px solid var(--hypo-border-bright);
 }
 
 .scenario-dates {
@@ -84,7 +84,7 @@
 }
 
 .scenario-card.hypo .scenario-dates {
-  color: #7a6030;
+  color: var(--hypo-text-dim);
 }
 
 .scenario-desc {
@@ -109,8 +109,8 @@
 }
 
 .scenario-card.hypo .scenario-pnl {
-  border-top-color: #3a2e10;
-  border-bottom-color: #3a2e10;
+  border-top-color: var(--hypo-border);
+  border-bottom-color: var(--hypo-border);
 }
 
 .scenario-pnl.loss { color: var(--red); }
@@ -155,7 +155,7 @@
 }
 
 .scenario-card.hypo .contrib-track {
-  background: #1e1808;
+  background: var(--hypo-bg3);
 }
 
 .contrib-fill {
@@ -188,7 +188,7 @@
 }
 
 .scenario-card.hypo .prob-outlook {
-  border-top-color: #3a2e10;
+  border-top-color: var(--hypo-border);
 }
 
 .prob-outlook-label {
@@ -200,7 +200,7 @@
 }
 
 .scenario-card.hypo .prob-outlook-label {
-  color: #b07d2a;
+  color: var(--hypo-accent);
 }
 
 .prob-live {
@@ -232,7 +232,7 @@
 }
 
 .scenario-card.hypo .prob-live-value {
-  color: #d4941a;
+  color: var(--hypo-accent-bright);
 }
 
 .prob-live-context {
@@ -273,13 +273,13 @@
 }
 
 .scenario-card.hypo .prob-refs-toggle {
-  border-color: #3a2e10;
-  color: #b07d2a;
+  border-color: var(--hypo-border);
+  color: var(--hypo-accent);
 }
 
 .scenario-card.hypo .prob-refs-toggle:hover {
-  color: #d4941a;
-  border-color: #4a3510;
+  color: var(--hypo-accent-bright);
+  border-color: var(--hypo-border-bright);
 }
 
 .prob-sources {
@@ -322,7 +322,7 @@
 }
 
 .scenario-card.hypo .prob-source-link {
-  color: #d4941a;
+  color: var(--hypo-accent-bright);
   opacity: 0.85;
 }
 
@@ -341,6 +341,6 @@
 }
 
 .scenario-card.hypo .scenario-coverage {
-  color: #7a6030;
-  border-top-color: #3a2e10;
+  color: var(--hypo-text-dim);
+  border-top-color: var(--hypo-border);
 }
