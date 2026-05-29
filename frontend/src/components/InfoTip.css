@@ -15,7 +15,11 @@
 
 .infotip-bubble {
   position: fixed;
-  transform: translateX(-50%) translateY(calc(-100% - 10px));
+  /* `left`/`top` are set inline to the clamped top-left corner (see
+     InfoTip.jsx), so we only translate vertically to sit the bubble above
+     the icon. Horizontal centering is handled by the JS clamp, not a
+     translateX, so the bubble can shift inward near a viewport edge. */
+  transform: translateY(calc(-100% - 10px));
   width: 280px;
   background: var(--bg3);
   border: 1px solid var(--border);
@@ -38,12 +42,15 @@
   white-space: pre-line;
 }
 
-/* Arrow pointing down */
+/* Arrow pointing down. `--arrow-x` is set inline to the icon's position
+   within the (possibly edge-shifted) bubble, so the arrow keeps pointing at
+   the icon even when the bubble has been clamped inward. Falls back to
+   centered if the variable isn't set. */
 .infotip-bubble::after {
   content: "";
   position: absolute;
   top: 100%;
-  left: 50%;
+  left: var(--arrow-x, 50%);
   transform: translateX(-50%);
   border: 5px solid transparent;
   border-top-color: var(--border);

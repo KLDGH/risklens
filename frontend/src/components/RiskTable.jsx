@@ -3,9 +3,33 @@ import RiskBar from "./RiskBar.jsx";
 import InfoTip from "./InfoTip.jsx";
 import "./RiskTable.css";
 
+// Build a multi-line sanity-check tooltip from the per-asset references
+// dict produced by backend/reference_values.py. Returns null if the dict
+// is empty (unknown asset class). Lines appear in a stable order so the
+// tooltip layout is consistent across all rows.
+const REF_LABELS = [
+  ["var_1d_99",      "1-day 99% VaR"],
+  ["year_var_10",    "YearVaR (10%)"],
+  ["hill_alpha",     "Hill tail α"],
+  ["ff_market_beta", "FF Market β"],
+  ["ff_smb",         "FF SMB"],
+  ["ff_hml",         "FF HML"],
+  ["ff_rmw",         "FF RMW"],
+  ["ff_cma",         "FF CMA"],
+  ["ff_mom",         "FF MOM"],
+];
+function buildReferenceTip(ticker, references) {
+  if (!references || Object.keys(references).length === 0) return null;
+  const lines = REF_LABELS
+    .filter(([key]) => references[key])
+    .map(([key, label]) => `• ${label}: ${references[key]}`);
+  if (lines.length === 0) return null;
+  return `Expected ranges for ${ticker} (curated from the literature — sanity-check the live numbers against these bands):\n\n${lines.join("\n\n")}`;
+}
+
 const TIPS = {
   ret:       "Yesterday's log return for this asset.",
-  yrVar:     "1-year VaR at 10% confidence. The 10th-percentile worst loss expected over a 1-year horizon, on a $100 position. Computed via Student-t parametric scaling: fit Student-t degrees of freedom (ν) to daily returns, scale daily volatility by √252, then take the standardized t-quantile at q=0.10. Interpretation: '10% chance of losing more than $X over the next year.' The consumer / long-horizon-PM complement to the 1-day 1% VaR columns (which are pro / trading-floor framing). Bottom number is the expected shortfall — average loss conditional on the loss exceeding VaR.",
+  YearVaR:   "1-year VaR at 10% confidence. The 10th-percentile worst loss expected over a 1-year horizon, on a $100 position. Computed via Student-t parametric scaling: fit Student-t degrees of freedom (ν) to daily returns, scale daily volatility by √252, then take the standardized t-quantile at q=0.10. Interpretation: '10% chance of losing more than $X over the next year.' The consumer / long-horizon-PM complement to the 1-day 1% VaR columns (which are pro / trading-floor framing). Bottom number is the expected shortfall — average loss conditional on the loss exceeding VaR.",
   hs:        "Historical Simulation. Top number = VaR (1% worst daily loss). Bottom number = ES (average loss across the worst 1%). Both drawn directly from the last 1000 trading days; no distribution assumption.",
   ewma:      "EWMA model. Top = VaR; bottom = ES. Computed with exponentially weighted volatility (λ=0.94) under a normal-distribution assumption. Recent days weigh more than older ones.",
   garch:     "GARCH(1,1) with Student-t innovations. Top = VaR; bottom = ES. The conditional volatility process is GARCH(1,1); the innovation distribution is Student-t (degrees of freedom estimated per fit) rather than Normal. This matches the empirical kurtosis of daily equity returns and produces tail-VaR estimates ~30–60% larger than Normal-innovation GARCH at 99% confidence. The EWMA column to the left assumes Normal innovations, so the EWMA-vs-GARCH gap *is* the heavy-tail premium. Falls back to EWMA if fitting fails.",
@@ -102,14 +126,25 @@ function VarCell({ value, className }) {
 }
 
 // Paired cell — shows VaR (top, color-coded) and ES (bottom, smaller and dim).
-// Used for the 5 model columns so each forecast carries both summary stats.
-function VarEsCell({ varValue, esValue, className }) {
+// Used for the 5 daily-VaR model columns so each forecast carries both
+// summary stats.
+//
+// `neutral` disables the green/yellow/red threshold coloring. The thresholds
+// (<2.5 / 2.5–5 / >5) are calibrated for DAILY 1% VaR; they're meaningless
+// for the YearVaR column, whose 1-year losses are naturally 12–40% and so
+// would render uniformly red. Neutral YearVaR cells render in plain bright
+// text, reinforcing the violet col-yr tint's "different horizon, different
+// scale" framing rather than fighting it with a misleading color.
+function VarEsCell({ varValue, esValue, className, neutral = false }) {
   if (varValue == null) {
     return <td className={`num model-cell ${className ?? ""}`}>—</td>;
   }
-  let color = "var(--green)";
-  if (varValue > 5) color = "var(--red)";
-  else if (varValue > 2.5) color = "var(--yellow)";
+  let color = "var(--text-bright)";
+  if (!neutral) {
+    color = "var(--green)";
+    if (varValue > 5) color = "var(--red)";
+    else if (varValue > 2.5) color = "var(--yellow)";
+  }
   return (
     <td className={`num model-cell ${className ?? ""}`}>
       <div className="model-var" style={{ color }}>{varValue.toFixed(2)}</div>
@@ -176,7 +211,7 @@ function PortfolioRow({ a, portfolioLabel, showAllModels }) {
       )}
       <VarEsCell varValue={a.var_tgarch}  esValue={a.es_tgarch}  className={`portfolio-cell col-models ${showAllModels ? "" : "group-start"}`} />
       <VarEsCell varValue={a.var_evt}     esValue={a.es_evt}     className="portfolio-cell col-models group-end" />
-      <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="portfolio-cell col-yr group-start group-end" />
+      <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="portfolio-cell col-yr group-start group-end" neutral />
       <td className="num alpha-cell portfolio-cell">{a.tail_index?.toFixed(2)}</td>
       <td className="left gauge-cell portfolio-cell">
         <RiskBar
@@ -199,10 +234,82 @@ function PortfolioRow({ a, portfolioLabel, showAllModels }) {
   );
 }
 
+// A single asset row. Extracted from the body map so it can be reused for
+// the pinned look-through fund-reference row in the footer (see below) —
+// same columns, same formatting, just rendered in a different slot.
+function AssetRow({ a, portfolioWeights, disclosedWeights, fundTicker, showAllModels, isFundReference = false }) {
+  const wt = portfolioWeights?.[a.ticker];
+  // For look-through baskets we also surface the holding's weight as a
+  // fraction of the fund (pre-normalization), so users see at a glance that
+  // "5% of basket" maps to e.g. "3.7% of CGGO" — making the basket-vs-fund
+  // abstraction legible in the row itself, not just in the panel below.
+  const disclosedPct = disclosedWeights?.[a.ticker];
+  const refTip = buildReferenceTip(a.ticker, a.references);
+  return (
+    <tr className={isFundReference ? "fund-reference-row" : undefined}>
+      <td className="left asset-cell sticky-col">
+        <span className="ticker">
+          {a.ticker}
+          {refTip ? <InfoTip text={refTip} /> : null}
+        </span>
+        <span className="name">{a.name}</span>
+        {wt != null && disclosedPct != null && fundTicker ? (
+          <span className="portfolio-weight">
+            {(wt * 100).toFixed(1)}% basket
+            <span className="weight-secondary">
+              {" · "}{disclosedPct.toFixed(2)}% of {fundTicker}
+            </span>
+          </span>
+        ) : wt != null ? (
+          <span className="portfolio-weight">{(wt * 100).toFixed(0)}% of portfolio</span>
+        ) : null}
+        {/* Look-through reference row: the fund's own ETF, pinned at the
+            bottom so its NAV-based risk can be read against the basket
+            aggregate. It's NOT a basket holding — hence no weight — so we
+            label it explicitly instead of leaving a blank-weight mystery
+            row sorted among the actual holdings. */}
+        {isFundReference && (
+          <span className="portfolio-weight reference-row-tag">
+            actual {a.ticker} NAV — reference vs. the basket aggregate
+          </span>
+        )}
+      </td>
+      <td className="num price">${a.last_price.toLocaleString()}</td>
+      <ReturnCell value={a.last_return_pct} />
+      {showAllModels && (
+        <>
+          <VarEsCell varValue={a.var_hs}      esValue={a.es_hs}      className="col-models group-start" />
+          <VarEsCell varValue={a.var_ewma}    esValue={a.es_ewma}    className="col-models" />
+          <VarEsCell varValue={a.var_garch}   esValue={a.es_garch}   className="col-models" />
+        </>
+      )}
+      <VarEsCell varValue={a.var_tgarch}  esValue={a.es_tgarch}  className={`col-models ${showAllModels ? "" : "group-start"}`} />
+      <VarEsCell varValue={a.var_evt}     esValue={a.es_evt}     className="col-models group-end" />
+      <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="col-yr group-start group-end" neutral />
+      <td className="num alpha-cell">{a.tail_index?.toFixed(2)}</td>
+      <td className="left gauge-cell">
+        <RiskBar
+          level={a.risk_level}
+          trend={a.var_trend}
+          exceptionRate={a.exception_rate}
+          exceptionCount={a.exception_count}
+        />
+      </td>
+      {showAllModels && (
+        <>
+          <td className="num consensus-cell col-summary group-start">{a.mean_var?.toFixed(2)}</td>
+          <RangeCell values={[a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt]} className="col-summary" />
+        </>
+      )}
+      <CompVarCell value={a.component_var} className={`col-summary ${showAllModels ? "group-end" : "group-start group-end"}`} />
+    </tr>
+  );
+}
+
 export default function RiskTable({ assets, portfolioWeights, disclosedWeights, fundTicker, portfolioLabel }) {
   const [sortKey, setSortKey] = useState("risk");
   const [sortDir, setSortDir] = useState("desc");
-  // Default to the compact view (tGARCH + EVT + yrVaR + Comp VaR).
+  // Default to the compact view (tGARCH + EVT + YearVaR + Comp VaR).
   // Showing all five VaR models in the snapshot is quant-flavored
   // clutter for a non-quant audience. The Model Validation backtests
   // still run on all five; this toggle just controls what's surfaced
@@ -224,7 +331,17 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
   const portfolio = assets.find((a) => a.is_portfolio);
   const individuals = assets.filter((a) => !a.is_portfolio);
 
-  const sorted = [...individuals].sort((a, b) => {
+  // In look-through modes the fund's own ETF is appended as an unweighted
+  // reference row (e.g. CGGO sitting among its own 25 holdings). Pull it out
+  // of the sortable set so it doesn't float into the middle of the table —
+  // it's pinned to the footer next to the basket aggregate, where the
+  // NAV-vs-basket comparison it exists for actually reads.
+  const fundRefRow = fundTicker
+    ? individuals.find((a) => a.ticker === fundTicker && portfolioWeights?.[a.ticker] == null)
+    : null;
+  const sortable = fundRefRow ? individuals.filter((a) => a !== fundRefRow) : individuals;
+
+  const sorted = [...sortable].sort((a, b) => {
     const fn = SORT_FNS[sortKey] ?? SORT_FNS.risk;
     const av = fn(a);
     const bv = fn(b);
@@ -236,19 +353,54 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
 
   return (
     <div className="table-wrapper">
-      <div className="table-controls">
-        <button
-          className="model-toggle-btn"
-          onClick={() => setShowAllModels((v) => !v)}
-          aria-pressed={showAllModels}
-        >
-          {showAllModels
-            ? "▾ Hide HS / EWMA / GARCH (show only tGARCH + EVT)"
-            : "▸ Show all 5 VaR models (add HS, EWMA, GARCH)"}
-        </button>
-      </div>
       <table className="risk-table">
         <thead>
+          {/* Group super-header — brackets the model columns under an explicit
+              "Daily VaR" label AND doubles as the expand/collapse control for
+              the hidden models. The individual headers (HS, EWMA, tGARCH, EVT)
+              don't say "VaR" themselves, so without this it's ambiguous which
+              columns the risk-level legend's colors apply to. Tail α, YearVaR,
+              Risk and Comp VaR sit deliberately OUTSIDE the bracket — they are
+              not daily-VaR numbers and the legend does not govern them. The
+              colspans track the show-all-models toggle (2 visible models
+              collapsed, 5 expanded). Clicking the header itself toggles the
+              extra models — no separate button floating off to the side. */}
+          <tr className="group-superheader-row">
+            <th className="left sticky-col" aria-hidden="true" />
+            <th colSpan={2} aria-hidden="true" />
+            <th
+              colSpan={showAllModels ? 5 : 2}
+              className="col-models group-start group-end var-superheader"
+            >
+              {/* Excel-style outline toggle, anchored ON the group's left
+                  separator — the boundary where the hidden HS/EWMA/GARCH
+                  columns tuck in. [+] reveals them, [−] collapses back to
+                  tGARCH + EVT. The label is a secondary (mouse) hit target;
+                  the box is the accessible control. */}
+              <button
+                type="button"
+                className="col-group-toggle"
+                onClick={() => setShowAllModels((v) => !v)}
+                aria-expanded={showAllModels}
+                title={showAllModels
+                  ? "Collapse — hide HS, EWMA, GARCH"
+                  : "Expand — show all 5 VaR models (add HS, EWMA, GARCH)"}
+              >
+                {showAllModels ? "−" : "+"}
+              </button>
+              <button
+                type="button"
+                className="var-superheader-label"
+                onClick={() => setShowAllModels((v) => !v)}
+                tabIndex={-1}
+                aria-hidden="true"
+              >
+                Daily VaR (worst 1%, per $100)
+                {!showAllModels && <span className="var-superheader-hint">+3 models</span>}
+              </button>
+            </th>
+            <th colSpan={showAllModels ? 6 : 4} aria-hidden="true" />
+          </tr>
           <tr>
             <Th col="name"  label="Asset"   className="left sticky-col" {...sp} />
             <Th col="price" label="Price"   className="num" {...sp} />
@@ -262,7 +414,7 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
             )}
             <ThWithTip col="varTgarch" label="tGARCH" tip={TIPS.tgarch} className={`num col-models ${showAllModels ? "" : "group-start"}`} {...sp} />
             <ThWithTip col="varEvt"    label="EVT"    tip={TIPS.evt}    className="num col-models group-end" {...sp} />
-            <ThWithTip col="varYr"     label="yrVaR (10%)" tip={TIPS.yrVar} className="num col-yr group-start group-end" {...sp} />
+            <ThWithTip col="varYr"     label="YearVaR (10%)" tip={TIPS.YearVaR} className="num col-yr group-start group-end" {...sp} />
             <ThWithTip col="alpha"     label={<span style={{textTransform:"none"}}>Tail α</span>} tip={TIPS.alpha} className="num" {...sp} />
             <ThWithTip col="risk"      label="Risk"       tip={TIPS.risk}      className="left" {...sp} />
             {showAllModels && (
@@ -275,73 +427,34 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
           </tr>
         </thead>
         <tbody>
-          {sorted.map((a) => {
-            const wt           = portfolioWeights?.[a.ticker];
-            // For look-through baskets we also surface the holding's
-            // weight as a fraction of the fund (pre-normalization),
-            // so users see at a glance that "5% of basket" maps to e.g.
-            // "3.7% of CGGO" — making the basket-vs-fund abstraction
-            // legible in the row itself, not just in the panel below.
-            const disclosedPct = disclosedWeights?.[a.ticker];
-            return (
-            <tr key={a.ticker}>
-              <td className="left asset-cell sticky-col">
-                <span className="ticker">{a.ticker}</span>
-                <span className="name">{a.name}</span>
-                {wt != null && disclosedPct != null && fundTicker ? (
-                  <span className="portfolio-weight">
-                    {(wt * 100).toFixed(1)}% basket
-                    <span className="weight-secondary">
-                      {" · "}{disclosedPct.toFixed(2)}% of {fundTicker}
-                    </span>
-                  </span>
-                ) : wt != null ? (
-                  <span className="portfolio-weight">{(wt * 100).toFixed(0)}% of portfolio</span>
-                ) : null}
-                {/* Reference row in active-fund modes: the fund itself,
-                    not in the basket. Make that explicit so users don't
-                    wonder why it has no weight. */}
-                {wt == null && fundTicker && a.ticker === fundTicker && (
-                  <span className="portfolio-weight reference-row-tag">
-                    fund reference (not in basket)
-                  </span>
-                )}
-              </td>
-              <td className="num price">${a.last_price.toLocaleString()}</td>
-              <ReturnCell value={a.last_return_pct} />
-              {showAllModels && (
-                <>
-                  <VarEsCell varValue={a.var_hs}      esValue={a.es_hs}      className="col-models group-start" />
-                  <VarEsCell varValue={a.var_ewma}    esValue={a.es_ewma}    className="col-models" />
-                  <VarEsCell varValue={a.var_garch}   esValue={a.es_garch}   className="col-models" />
-                </>
-              )}
-              <VarEsCell varValue={a.var_tgarch}  esValue={a.es_tgarch}  className={`col-models ${showAllModels ? "" : "group-start"}`} />
-              <VarEsCell varValue={a.var_evt}     esValue={a.es_evt}     className="col-models group-end" />
-              <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="col-yr group-start group-end" />
-              <td className="num alpha-cell">{a.tail_index?.toFixed(2)}</td>
-              <td className="left gauge-cell">
-                <RiskBar
-                  level={a.risk_level}
-                  trend={a.var_trend}
-                  exceptionRate={a.exception_rate}
-                  exceptionCount={a.exception_count}
-                />
-              </td>
-              {showAllModels && (
-                <>
-                  <td className="num consensus-cell col-summary group-start">{a.mean_var?.toFixed(2)}</td>
-                  <RangeCell values={[a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt]} className="col-summary" />
-                </>
-              )}
-              <CompVarCell value={a.component_var} className={`col-summary ${showAllModels ? "group-end" : "group-start group-end"}`} />
-            </tr>
-            );
-          })}
+          {sorted.map((a) => (
+            <AssetRow
+              key={a.ticker}
+              a={a}
+              portfolioWeights={portfolioWeights}
+              disclosedWeights={disclosedWeights}
+              fundTicker={fundTicker}
+              showAllModels={showAllModels}
+            />
+          ))}
         </tbody>
-        {portfolio && (
+        {(fundRefRow || portfolio) && (
           <tfoot>
-            <PortfolioRow a={portfolio} portfolioLabel={portfolioLabel} showAllModels={showAllModels} />
+            {/* Pinned look-through fund-NAV reference row, directly above the
+                basket aggregate so the two sit side by side for comparison. */}
+            {fundRefRow && (
+              <AssetRow
+                a={fundRefRow}
+                portfolioWeights={portfolioWeights}
+                disclosedWeights={disclosedWeights}
+                fundTicker={fundTicker}
+                showAllModels={showAllModels}
+                isFundReference
+              />
+            )}
+            {portfolio && (
+              <PortfolioRow a={portfolio} portfolioLabel={portfolioLabel} showAllModels={showAllModels} />
+            )}
           </tfoot>
         )}
       </table>

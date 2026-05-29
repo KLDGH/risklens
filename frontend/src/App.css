@@ -422,6 +422,30 @@
   font-style: italic;
 }
 
+/* Leading caption that scopes the color key to the daily-VaR columns.
+   Rendered as a small-caps label so it reads as "here's what these colors
+   mean" rather than as another swatch in the row. */
+.legend-caption {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+/* In-section variant of .legend. The page-level legend that used to live
+   above the Risk Snapshot section header looked like an orphaned widget;
+   moving it inside the section made it look right semantically but it
+   needs a touch of breathing room so it doesn't crowd the table immediately
+   below. Tighter font + dim border-top separating it from the section
+   header above. */
+.section-legend {
+  padding: 4px 0 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+
 .dot {
   width: 8px;
   height: 8px;
@@ -552,6 +576,16 @@
   font-size: 12px;
   color: var(--text-dim);
   line-height: 1.65;
+}
+
+/* Inline accent used to link a phrase in a section description to a visual
+   element in the table below. Currently ties "five shaded VaR columns" in
+   the Risk Snapshot blurb to the amber-shaded Daily VaR band + super-header,
+   so the prose and the table point at the same thing. var(--accent) is
+   legible in both themes (burnt orange on cream, brighter orange on dark). */
+.desc-accent {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 /* Per-section literature references — small, dim, italic. Quants will recognize
