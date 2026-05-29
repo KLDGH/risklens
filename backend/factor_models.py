@@ -135,6 +135,45 @@ def fetch_ff_carhart_daily(use_cache_on_fail: bool = True) -> pd.DataFrame:
         raise
 
 
+def _paired_bootstrap_betas(
+    X: np.ndarray,
+    y: np.ndarray,
+    n_boot: int = 500,
+    seed: int = 17,
+) -> np.ndarray | None:
+    """
+    Paired (case-resampling) bootstrap for OLS coefficients.
+
+    Resample (X_i, y_i) rows with replacement, refit OLS via least-squares,
+    and collect the coefficient vector across replicates. Returns an
+    (n_boot, k) array of bootstrap β draws, or None if any replicate is
+    singular.
+
+    The "paired" flavor (as opposed to residual bootstrap) is robust to
+    heteroskedasticity — daily equity returns are obviously not
+    homoskedastic, so the analytical OLS SEs systematically understate
+    estimator variance during volatile sub-windows. The bootstrap CIs
+    are wider and more honest in those regimes.
+
+    B=500 is enough for stable 95% percentile bounds at our problem
+    size (~250 obs, ~6 factors); doubling to 1000 changes the displayed
+    CI by less than the rounding precision (3 decimals).
+    """
+    n, k = X.shape
+    rng = np.random.default_rng(seed)
+    betas = np.empty((n_boot, k))
+    for b in range(n_boot):
+        idx = rng.integers(0, n, n)
+        Xb = X[idx]
+        yb = y[idx]
+        try:
+            beta_b, _, _, _ = np.linalg.lstsq(Xb, yb, rcond=None)
+        except np.linalg.LinAlgError:
+            return None
+        betas[b] = beta_b
+    return betas
+
+
 def fit_ff_carhart(
     returns: pd.Series,
     factors: pd.DataFrame,
@@ -189,6 +228,23 @@ def fit_ff_carhart(
     tstats = beta_hat / se
     pvals  = 2.0 * (1.0 - student_t.cdf(np.abs(tstats), df=df_resid))
 
+    # Paired bootstrap CIs — heteroskedasticity-robust complement to the
+    # analytical OLS SEs above. The 2.5th/97.5th percentile bounds are
+    # surfaced in the frontend as β ± uncertainty. We report both the
+    # bootstrap SE (for ± formatting) and the explicit percentile
+    # bounds (so wide-but-skewed CIs read correctly).
+    boot_betas = _paired_bootstrap_betas(X, y, n_boot=500)
+    if boot_betas is not None:
+        boot_se   = np.std(boot_betas, axis=0, ddof=1)
+        ci_low    = np.percentile(boot_betas, 2.5, axis=0)
+        ci_high   = np.percentile(boot_betas, 97.5, axis=0)
+    else:
+        # Fall back to analytical normal-approximation CIs if any
+        # bootstrap replicate hit a singular design matrix.
+        boot_se = se
+        ci_low  = beta_hat - 1.96 * se
+        ci_high = beta_hat + 1.96 * se
+
     # Vol decomposition (annualized percent)
     sigma_total_daily = float(np.std(y, ddof=1))
     sigma_total_ann   = sigma_total_daily * np.sqrt(252) * 100
@@ -204,6 +260,9 @@ def fit_ff_carhart(
             "tstat":       round(float(tstats[i + 1]), 2),
             "p_value":     round(float(pvals[i + 1]), 4),
             "significant": bool(pvals[i + 1] < 0.05),
+            "boot_se":     round(float(boot_se[i + 1]), 4),
+            "ci_low":      round(float(ci_low[i + 1]),  4),
+            "ci_high":     round(float(ci_high[i + 1]), 4),
         }
         for i in range(len(FACTOR_COLS))
     ]

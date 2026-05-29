@@ -29,6 +29,9 @@ from factor_models import (
     compute_rolling_ff_loadings, compute_thematic_exposures,
     THEMATIC_BASKETS,
 )
+from reference_values import (
+    get_references_for_ticker, get_factor_reference,
+)
 
 # Extra tickers fetched beyond the portfolio universe.
 # - AGG: broad bond aggregate for the multi-window stock-bond correlation chart
@@ -335,6 +338,10 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
         print(f"  Computing risk for {ticker}...")
         row = compute_asset_risk(ticker, ret, px)
         row["name"] = names.get(ticker, ticker)
+        # Curated sanity-check reference bands for this ticker. Empty
+        # dict if the ticker isn't in the asset-class taxonomy. Frontend
+        # uses these to render an "expected range" hover on the asset name.
+        row["references"] = get_references_for_ticker(ticker)
         assets.append(row)
 
     # Portfolio summary row
@@ -729,6 +736,11 @@ def main():
                 "beta_spy_252d":  beta_spy,
                 "last_price":     risk_row["last_price"],
                 "last_return_pct": risk_row["last_return_pct"],
+                # Curated sanity-check reference bands (see reference_values.py).
+                # Frontend appends to the InfoTip text on each metric so the
+                # reader can compare today's live number against the literature
+                # bands without leaving the page.
+                "references":     get_references_for_ticker(tkr),
             }
         except Exception as e:
             print(f"  WARNING: {tkr} risk profile failed ({e})")
@@ -739,6 +751,13 @@ def main():
             try:
                 fmodel = fit_ff_carhart(rets, ff_factors, lookback=252)
                 if fmodel:
+                    # Augment each loading with its curated reference band.
+                    # `reference_band` is a short prose string (or None) that
+                    # the frontend appends to the per-factor InfoTip — letting
+                    # the reader compare e.g. XLK's HML loading against the
+                    # expected -0.40 to -0.10 growth-tilt range.
+                    for l in fmodel.get("loadings", []):
+                        l["reference_band"] = get_factor_reference(tkr, l["factor"])
                     view["factor_model"] = fmodel
             except Exception as e:
                 print(f"  WARNING: {tkr} factor model failed ({e})")

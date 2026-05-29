@@ -270,6 +270,17 @@
   opacity: 0.55;
 }
 
+/* 95% CI cell — render in a smaller, dimmer treatment than the β point
+   estimate so the bracketed pair doesn't visually dominate the row.
+   The CI is supplementary information ("how nailed-down is this β"),
+   not the headline number. */
+.fr-ci-cell {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .fr-sig {
   color: var(--accent);
   font-weight: 700;

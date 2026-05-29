@@ -46,7 +46,7 @@ function fmtDate(d) {
 /* ---------- Risk Profile Card ----------
    Compact stat row applied to the single selected ETF. Mirrors the
    default Portfolio Risk tab table: shows the main risk metrics
-   (tGARCH for daily, EVT for tail, yrVaR for long-horizon) plus the
+   (tGARCH for daily, EVT for tail, YearVaR for long-horizon) plus the
    asset-specific descriptors (vol, beta, tail-α). The HS and EWMA
    numbers are computed and shipped in the JSON but hidden behind
    hover-over to avoid the model-clutter problem on the snapshot
@@ -79,10 +79,36 @@ function RiskProfileCard({ profile, ticker }) {
     `(Gaussian — known to underestimate fat tails)`
   );
 
+  // Curated sanity-check reference bands for this ticker (from
+  // backend/reference_values.py). Built as a multi-line tooltip and
+  // surfaced on the panel header so the reader can compare today's live
+  // numbers against the literature without leaving the page.
+  const refLabels = [
+    ["var_1d_99",      "1-day 99% VaR"],
+    ["year_var_10",    "YearVaR (10%)"],
+    ["hill_alpha",     "Hill tail α"],
+    ["ff_market_beta", "FF Market β"],
+    ["ff_smb",         "FF SMB"],
+    ["ff_hml",         "FF HML"],
+    ["ff_rmw",         "FF RMW"],
+    ["ff_cma",         "FF CMA"],
+    ["ff_mom",         "FF MOM"],
+  ];
+  const refs = profile.references || {};
+  const refLines = refLabels
+    .filter(([k]) => refs[k])
+    .map(([k, label]) => `• ${label}: ${refs[k]}`);
+  const referenceTip = refLines.length > 0
+    ? `Expected ranges for ${ticker} (curated from the literature — sanity-check the live numbers against these bands):\n\n${refLines.join("\n\n")}`
+    : null;
+
   return (
     <div className="risk-profile-card">
       <div className="rp-header">
-        <span className="rp-title">Risk profile — {ticker}</span>
+        <span className="rp-title">
+          Risk profile — {ticker}
+          {referenceTip && <InfoTip text={referenceTip} />}
+        </span>
         <span className="rp-subtitle">
           Standalone risk metrics for this ETF's NAV. Main models shown;
           HS and EWMA hover-only (see the daily-VaR card).
@@ -114,7 +140,7 @@ function RiskProfileCard({ profile, ticker }) {
           "Extreme Value Theory. Generalized Pareto distribution fit to the worst losses directly. Best for fat-tailed assets — usually larger than GJR-t and that gap is the tail premium.",
         )}
         {stat(
-          "yrVaR (10%)",
+          "YearVaR (10%)",
           fmtPct(profile.var_yr_10pct),
           "1-year horizon",
           "1-year VaR at 10% confidence. The 10th-percentile worst loss expected over the next year, % of position. Computed via Student-t parametric scaling. Long-horizon framing: '10% chance of losing more than X% over the next year.'",
@@ -176,6 +202,7 @@ function FactorRegressionPanel({ model }) {
     varianceShare: "Same idea as R² expressed as % of variance (R² × 100). 'Variance from factors' = how much of the total daily-return variance the factor model explains.",
     factor: "The risk factor being measured. Each is a published long-short portfolio constructed by Ken French (Dartmouth). Hover the row label below for a plain-English description of what each factor actually measures.",
     loading: "OLS regression coefficient β. Interpretation: a 1% return in this factor's portfolio corresponds to a β·1% return in the asset, holding the other factors constant. Positive = moves with the factor; negative = moves opposite.",
+    ci: "95% confidence interval for the loading, computed via paired bootstrap (500 case-resampled OLS refits, percentile method). Tells you how precisely the β is pinned down: a narrow interval means the data strongly constrain the loading; a wide interval — especially one that straddles zero — means the apparent β could plausibly be much larger, much smaller, or even the opposite sign. The bootstrap is robust to heteroskedasticity (daily returns are obviously not homoskedastic), so these CIs are usually wider and more honest than analytical OLS standard errors during volatile sub-windows.",
     tstat: "t-statistic = β / standard-error(β). Measures how confident we are that the true loading isn't zero. Rule of thumb: |t| > 2 means the coefficient is statistically meaningful (about 95% confidence). |t| > 3 is strongly meaningful.",
     pvalue: "Probability of seeing this t-statistic by chance if the true loading were actually zero. Lower = stronger evidence the asset has real exposure to this factor. Convention: p < 0.05 is 'significant', p < 0.001 is 'very significant'.",
     sig: "Significance stars: *** = p<0.001 (very strong), ** = p<0.01 (strong), * = p<0.05 (significant). No star = the loading is statistically indistinguishable from zero — don't read too much into the β value. Non-significant rows are dimmed.",
@@ -219,30 +246,48 @@ function FactorRegressionPanel({ model }) {
           <tr>
             <th>Factor <InfoTip text={TIPS.factor} /></th>
             <th className="num">Loading (β) <InfoTip text={TIPS.loading} /></th>
+            <th className="num">95% CI <InfoTip text={TIPS.ci} /></th>
             <th className="num">t-stat <InfoTip text={TIPS.tstat} /></th>
             <th className="num">p-value <InfoTip text={TIPS.pvalue} /></th>
             <th>Sig. <InfoTip text={TIPS.sig} /></th>
           </tr>
         </thead>
         <tbody>
-          {model.loadings.map((l) => (
-            <tr key={l.factor} className={l.significant ? "" : "fr-row-dim"}>
-              <td>
-                {l.label}
-                {FF_FACTOR_DESCRIPTIONS[l.factor] && (
-                  <InfoTip text={FF_FACTOR_DESCRIPTIONS[l.factor]} />
-                )}
-              </td>
-              <td className="num">
-                <span style={{ color: l.beta >= 0 ? "var(--green)" : "var(--red)" }}>
-                  {l.beta >= 0 ? "+" : ""}{l.beta.toFixed(3)}
-                </span>
-              </td>
-              <td className="num">{l.tstat.toFixed(2)}</td>
-              <td className="num">{l.p_value.toFixed(3)}</td>
-              <td className="fr-sig">{sig(l.p_value)}</td>
-            </tr>
-          ))}
+          {model.loadings.map((l) => {
+            // CI straddles zero ⇒ sign of β is statistically unresolved.
+            // We render that case in a muted tone to discourage over-
+            // reading the point estimate.
+            const ciStraddlesZero = l.ci_low != null && l.ci_high != null
+              && l.ci_low <= 0 && l.ci_high >= 0;
+            return (
+              <tr key={l.factor} className={l.significant ? "" : "fr-row-dim"}>
+                <td>
+                  {l.label}
+                  {(FF_FACTOR_DESCRIPTIONS[l.factor] || l.reference_band) && (
+                    <InfoTip
+                      text={[
+                        FF_FACTOR_DESCRIPTIONS[l.factor],
+                        l.reference_band ? `\n\nExpected band for this asset: ${l.reference_band}` : null,
+                      ].filter(Boolean).join("")}
+                    />
+                  )}
+                </td>
+                <td className="num">
+                  <span style={{ color: l.beta >= 0 ? "var(--green)" : "var(--red)" }}>
+                    {l.beta >= 0 ? "+" : ""}{l.beta.toFixed(3)}
+                  </span>
+                </td>
+                <td className="num fr-ci-cell" style={ciStraddlesZero ? { opacity: 0.6 } : undefined}>
+                  {l.ci_low != null && l.ci_high != null
+                    ? `[${l.ci_low >= 0 ? "+" : ""}${l.ci_low.toFixed(3)}, ${l.ci_high >= 0 ? "+" : ""}${l.ci_high.toFixed(3)}]`
+                    : "—"}
+                </td>
+                <td className="num">{l.tstat.toFixed(2)}</td>
+                <td className="num">{l.p_value.toFixed(3)}</td>
+                <td className="fr-sig">{sig(l.p_value)}</td>
+              </tr>
+            );
+          })}
           <tr className="fr-alpha-row">
             <td>
               α (intercept) <InfoTip text={TIPS.alpha} />
@@ -250,6 +295,7 @@ function FactorRegressionPanel({ model }) {
             <td className="num">
               {model.alpha_daily_pct >= 0 ? "+" : ""}{model.alpha_daily_pct.toFixed(3)}%/day
             </td>
+            <td className="num fr-ci-cell">—</td>
             <td className="num">{model.alpha_tstat.toFixed(2)}</td>
             <td className="num">{model.alpha_pvalue.toFixed(3)}</td>
             <td className="fr-sig">{sig(model.alpha_pvalue)}</td>
@@ -854,9 +900,14 @@ function RecentAnomaliesList({ anomalies }) {
 }
 
 
-export default function AnomalyDetectorPanel({ views }) {
+export default function AnomalyDetectorPanel({ views, selectedTicker, onTickerChange }) {
   const tickers = views?.tickers ?? [];
-  const [ticker, setTicker] = useState(tickers[0] ?? null);
+  // Local fallback if the parent doesn't supply controlled state.
+  // The new app.jsx always passes selectedTicker / onTickerChange (so
+  // the URL can persist the selection), but keep this for stand-alone use.
+  const [localTicker, setLocalTicker] = useState(tickers[0] ?? null);
+  const ticker  = selectedTicker ?? localTicker;
+  const setTicker = onTickerChange ?? setLocalTicker;
 
   if (!tickers.length || !ticker) {
     return (

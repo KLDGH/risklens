@@ -144,8 +144,34 @@ export default function App() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState("hypothetical");
-  const [activeTab, setActiveTab] = useState("portfolio");
+
+  // ── URL-stateful view selectors ──
+  // The dashboard's shareable state lives in the URL query string:
+  //   ?tab=<portfolio|market|anomaly>
+  //   ?portfolio=<mode_id>
+  //   ?ticker=<sector_etf>
+  // So a URL like https://kldgh.github.io/risklens/?tab=anomaly&ticker=KRE
+  // takes the recipient straight to KRE's Sector Spotlight view. We use
+  // history.replaceState so URL updates don't pile up in browser history
+  // (clicking around fills the back button with junk otherwise).
+  const readUrlParams = () => {
+    if (typeof window === "undefined") return {};
+    const p = new URLSearchParams(window.location.search);
+    return {
+      tab:       p.get("tab"),
+      portfolio: p.get("portfolio"),
+      ticker:    p.get("ticker"),
+    };
+  };
+  const initialParams = readUrlParams();
+  const VALID_TABS = ["portfolio", "market", "anomaly"];
+
+  const [mode, setMode] = useState(initialParams.portfolio || "hypothetical");
+  const [activeTab, setActiveTab] = useState(
+    VALID_TABS.includes(initialParams.tab) ? initialParams.tab : "portfolio"
+  );
+  const [selectedTicker, setSelectedTicker] = useState(initialParams.ticker || null);
+
   // Theme preference persisted across sessions. Defaults to "dark"; the
   // toggle in the tab bar flips and stores the chosen value in localStorage.
   const [theme, setTheme] = useState(() => {
@@ -182,11 +208,47 @@ export default function App() {
           throw new Error("No portfolio data — run the backend first.");
         }
         setData(json);
-        setMode(json.default_mode ?? "hypothetical");
+        // Only fall back to the default mode if the URL didn't supply
+        // a valid one. This way ?portfolio=cggo_active in the URL wins
+        // over the JSON's `default_mode`.
+        setMode((current) =>
+          current && json.portfolios[current] ? current : (json.default_mode ?? "hypothetical")
+        );
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
+
+  // After data loads, validate the URL-supplied ticker. If invalid (or
+  // missing), fall back to the first available sector ETF so the
+  // dropdown always has a sensible default — but only once the JSON
+  // is loaded, so we don't clobber a valid pending URL parameter.
+  useEffect(() => {
+    if (!data?.anomaly_views?.tickers) return;
+    const tickers = data.anomaly_views.tickers;
+    if (!selectedTicker || !tickers.includes(selectedTicker)) {
+      setSelectedTicker(tickers[0] ?? null);
+    }
+  }, [data]);
+
+  // Sync state -> URL whenever tab / portfolio / ticker change. Uses
+  // replaceState so URL updates don't pollute the browser history;
+  // omits parameters at their defaults to keep URLs clean. The hash
+  // (used internally by Section anchor IDs, etc.) is preserved.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams();
+    if (activeTab && activeTab !== "portfolio") params.set("tab", activeTab);
+    if (mode && mode !== "hypothetical") params.set("portfolio", mode);
+    if (selectedTicker && activeTab === "anomaly") {
+      params.set("ticker", selectedTicker);
+    }
+    const qs = params.toString();
+    const newUrl = `${window.location.pathname}${qs ? "?" + qs : ""}${window.location.hash}`;
+    if (newUrl !== window.location.pathname + window.location.search + window.location.hash) {
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [activeTab, mode, selectedTicker]);
 
   const fmtDate = (iso) => {
     if (!iso) return "";
@@ -296,15 +358,6 @@ export default function App() {
         </div>
       )}
 
-      {activeTab === "portfolio" && (
-        <div className="legend">
-          <span className="legend-item"><span className="dot green" />Low risk (&lt;2.5)</span>
-          <span className="legend-item"><span className="dot yellow" />Elevated (2.5–5)</span>
-          <span className="legend-item"><span className="dot red" />High (&gt;5)<InfoTip text="These thresholds are pragmatic rules of thumb, not a regulatory standard. Calibrated for daily 1% VaR on liquid ETFs: diversified US equity (SPY) historically sits around 1.5–2.5%; sector ETFs 2–3%; individual stocks 3–5%; crypto and volatile names often 5%+. Different asset classes warrant different thresholds, which is why the per-asset Risk gauge (percentile rank vs 2-year history) is the more rigorous comparison on this page." /></span>
-          <span className="legend-item legend-note">VaR expressed as $ loss on $100 portfolio</span>
-        </div>
-      )}
-
       <main className="main">
         {loading && (
           <div className="state-msg">
@@ -326,8 +379,29 @@ export default function App() {
             id="risk-snapshot"
             title="Current Risk Snapshot"
             question="How risky is each asset today vs. its own recent history?"
-            description="How risky is each asset today, relative to its own two-year history? Rows default-sorted by risk level. VaR = the minimum expected loss on the worst 1% of trading days, on a $100 position. Five models are shown spanning Normal-vs-heavy-tailed and constant-vs-conditional-volatility assumptions — disagreement between them is itself the signal. EWMA assumes Normal innovations; GARCH/tGARCH use Student-t (heavy-tailed, fit per asset); EVT explicitly models the tail with a generalized Pareto distribution. The EWMA-vs-GARCH gap is roughly the heavy-tail premium for that asset."
+            description={
+              <>
+                Your at-a-glance read on every holding: which positions are running hot, and the dollar loss to expect on a bad day (worst 1%, per $100 held). The <span className="desc-accent">five shaded VaR columns</span> are meant to disagree — when they spread apart (usually EVT pulling high), that name's tail is fatter than standard models assume, and that gap is the signal, not noise. The EWMA-vs-GARCH gap is the heavy-tail premium you're carrying in the name. Sort by the Risk gauge to surface what's most stretched against its own 2-year range. (Per-model definitions live in each column's ⓘ.)
+              </>
+            }
           >
+            {portfolio.is_active_fund_spotlight && portfolio.fund_disclosure && portfolio.coverage_meta && (
+              <FundDisclosurePanel
+                disclosure={portfolio.fund_disclosure}
+                coverageMeta={portfolio.coverage_meta}
+              />
+            )}
+            {/* Legend for the Risk gauge column. Lives inside the section
+                rather than at the page level so it visually belongs to the
+                table it explains (it used to float untethered above the
+                section header, which made it look like a standalone widget). */}
+            <div className="legend section-legend">
+              <span className="legend-item legend-caption">Daily VaR risk level:</span>
+              <span className="legend-item"><span className="dot green" />Low (&lt;2.5)</span>
+              <span className="legend-item"><span className="dot yellow" />Elevated (2.5–5)</span>
+              <span className="legend-item"><span className="dot red" />High (&gt;5)<InfoTip text="Color thresholds for the daily VaR columns (HS, EWMA, GARCH, tGARCH, EVT) only — NOT the YearVaR column, whose 1-year losses sit on a different scale and render in neutral text. These are pragmatic rules of thumb, not a regulatory standard. Calibrated for daily 1% VaR on liquid ETFs: diversified US equity (SPY) historically sits around 1.5–2.5%; sector ETFs 2–3%; individual stocks 3–5%; crypto and volatile names often 5%+. Different asset classes warrant different thresholds, which is why the per-asset Risk gauge (percentile rank vs 2-year history) is the more rigorous comparison on this page." /></span>
+              <span className="legend-item legend-note">VaR expressed as $ loss on $100 portfolio</span>
+            </div>
             <RiskTable
               assets={portfolio.assets}
               portfolioWeights={portfolio.weights}
@@ -337,25 +411,12 @@ export default function App() {
             />
           </Section>
         )}
-        {activeTab === "portfolio" && portfolio?.is_active_fund_spotlight && portfolio?.fund_disclosure && (
-          <Section
-            id="fund-disclosure"
-            title="Fund Holdings — Disclosed"
-            question="What is this active fund actually holding right now?"
-            description="Reference panel for the spotlighted active ETF: sponsor metadata, concentration stats, and the full disclosed holdings list. The Risk Snapshot above models a *look-through basket* of the top 25 disclosed holdings (re-normalized to sum to 100%), so each underlying has its own VaR/ES/EVT row. The fund's own ETF appears as a final reference row in that table — its NAV-based risk vs. the basket is itself an interesting comparison (basket is static at disclosure date and ignores expense ratio; fund NAV reflects continuous trading + costs)."
-          >
-            <FundDisclosurePanel
-              disclosure={portfolio.fund_disclosure}
-              coverageMeta={portfolio.coverage_meta}
-            />
-          </Section>
-        )}
         {activeTab === "portfolio" && portfolio?.risk_history?.length > 0 && (
           <Section
             id="risk-trajectory"
             title="Portfolio Risk Trajectory"
             question="How has the portfolio's daily risk moved over time?"
-            description="How has the active portfolio's daily risk evolved over time? This is the same EWMA VaR as the portfolio summary row in the table above, computed every trading day rather than just today's snapshot. Spikes line up with crises; the gradual return to baseline shows how regimes resolve. The history depth depends on which mode is selected — Vanguard reaches back to 2014, American Funds to 2007."
+            description="Today's risk number in context: is this portfolio near a calm-regime floor, or climbing toward crisis levels? Same EWMA VaR as the summary row above, but plotted every trading day instead of just today. Spikes line up with known shocks; the slow decay afterward is how fast each regime actually resolved — useful for judging whether a current elevation is likely to persist. Available history runs back as far as the portfolio's youngest holding allows."
           >
             <PortfolioRiskChart data={portfolio.risk_history} portfolioLabel={portfolio.label} />
           </Section>
@@ -365,7 +426,7 @@ export default function App() {
             id="model-validation"
             title="VaR Model Validation"
             question="Are these risk models well-calibrated?"
-            description="Out-of-sample backtest of HS, EWMA, and EVT VaR models on the active portfolio. For each of the last 504 trading days, the model is given only the prior 1000 days to forecast that day's 1% VaR; we then compare against actual realized losses. The Kupiec test checks whether the observed exception rate matches the expected 1%; the Christoffersen test checks whether exceptions cluster (a sign of time-varying risk the model misses)."
+            description="Can you trust the VaR numbers above? This is their out-of-sample report card (HS, EWMA, EVT). For each of the last 504 days the model saw only the prior 1000 days, forecast that day's 1% VaR, and we checked it against what actually happened. Kupiec asks: did losses breach VaR roughly 1% of the time, as promised? Christoffersen asks: did breaches cluster — the tell of a model blind to fast-changing risk? Passing both means the snapshot above is well-calibrated for this portfolio; failing flags which model to discount."
           >
             <BacktestPanel data={portfolio.backtests} portfolioLabel={portfolio.label} />
           </Section>
@@ -375,7 +436,7 @@ export default function App() {
             id="stress-tests"
             title="Historical Stress Tests & Scenarios"
             question="How would the portfolio handle past crises and plausible shocks?"
-            description="How would the active portfolio have performed during major market crises (data-driven), and how might it respond to forward-looking scenarios (assumption-driven)? Each card shows total P&L and which holdings hurt — or helped — the most."
+            description="What happens to this portfolio when markets break. Two kinds of test: real crises replayed from history (data-driven), and forward-looking shocks you can't observe yet but should be sized for (assumption-driven). Each card shows total P&L plus the holdings that hurt — or hedged — the most, so you can see where the damage concentrates before it happens and what's actually diversifying you."
           >
             <ScenarioPanel
               scenarios={portfolio.scenarios}
@@ -392,9 +453,9 @@ export default function App() {
         {activeTab === "market" && data?.sp500_history && (
           <Section
             id="sp500-history"
-            title="Market Context — S&P 500 Historical Risk"
+            title="S&P 500 Historical Risk"
             question="How does today's equity stress compare to history?"
-            description="How has U.S. equity market stress evolved year by year? Each bar shows the range of modeled daily loss estimates for that year. Reference data — does not change with portfolio toggle."
+            description="Where today's equity risk sits in the long arc of market history. Each bar is the span of modeled daily-loss estimates for that year — tall bars are crisis years (2008, 2020), short bars are the calm stretches. Use it to gut-check whether the current regime is historically benign or already stretched before you read too much into a quiet snapshot."
           >
             <HistoricalChart data={data.sp500_history} />
           </Section>
@@ -402,9 +463,9 @@ export default function App() {
         {activeTab === "market" && data?.correlation_history && (
           <Section
             id="correlation"
-            title="Market Context — Cross-Asset Correlation"
+            title="Cross-Asset Correlation"
             question="Is diversification still working across asset classes?"
-            description="Are markets moving in lockstep? When assets rise together, diversification breaks down and portfolio risk is higher than any single holding suggests. Reference data — does not change with portfolio toggle."
+            description="Is diversification actually working right now? When cross-asset correlations climb toward 1, the positions you hold to offset each other stop doing so — and your real portfolio risk is higher than any single holding's VaR implies. Rising correlation is the quiet way a diversified book turns into a concentrated one."
           >
             <CorrelationChart data={data.correlation_history} />
           </Section>
@@ -412,9 +473,9 @@ export default function App() {
         {activeTab === "market" && data?.multi_window_corr && Object.keys(data.multi_window_corr).length > 0 && (
           <Section
             id="multi-window-corr"
-            title="Market Context — Stock-Bond Correlation Across Time Scales"
+            title="Stock-Bond Correlation Across Time Scales"
             question="Has the stock-bond relationship shifted recently?"
-            description="SPY × bond correlation at three rolling-window lengths simultaneously, across four bond proxies. Different windows reveal different time scales of regime change. The 20-day line picks up recent shifts; the 252-day line is a slow-moving annual average. When the two diverge sharply, you're seeing a regime change before slower measures register it. Toggle the bond proxy to see how the regime shows up across the bond-market spectrum (broad aggregate AGG, long-duration TLT, intermediate IEF, IG corporate LQD)."
+            description="Do your bonds still hedge your equities — and is that relationship shifting? Stock-bond correlation at three window lengths at once. The 20-day line catches regime changes early; the 252-day line is the slow annual baseline. When the fast line breaks away from the slow one, the hedge is changing before standard measures notice — the 2022 flip to positive correlation (bonds and stocks falling together) is the cautionary case every balanced book felt. Toggle the bond proxy to see whether it holds across the curve."
           >
             <MultiWindowCorrelationChart data={data.multi_window_corr} />
           </Section>
@@ -426,9 +487,9 @@ export default function App() {
         ) && (
           <Section
             id="intraday-corr"
-            title="Market Context — Intraday Stock-Bond Correlation"
+            title="Intraday Stock-Bond Correlation"
             question="Is the very recent regime different from the daily-data picture?"
-            description="A leading version of the chart above. Each bar is one trading day's SPY-TLT correlation computed from intraday bars — so each daily value is statistically meaningful on its own. A run of consecutive same-sign days is a much sharper regime-shift signal than the smoothed 60-day daily-data correlation can produce. Free intraday data via yfinance, limited to the last 60 trading days."
+            description="The earliest warning on the stock-bond hedge. Each bar is a single day's SPY-TLT correlation built from intraday bars, so one day's reading already means something — no 60-day smoothing lag to wait out. A run of same-sign days flags a regime shift days to weeks before the daily-data chart above can confirm it. Last 60 trading days only (free intraday data via yfinance)."
           >
             <IntradayCorrelationChart data={data.intraday_corr_history} />
           </Section>
@@ -449,7 +510,11 @@ export default function App() {
             question="What's driving the risk and behavior of a single sector ETF?"
             description="Single-asset deep-dive across the 14-ETF universe (11 SPDR sectors + KRE regional banks, SMH semis, IBB biotech). For each ticker: standalone risk profile (VaR, ES, EVT, tail-α, beta vs SPY); Fama-French 5 + Momentum factor regression; thematic-basket exposure regression mapping loadings to narrative risk drivers (oil shock, regional-banking stress, duration, China sensitivity); rolling factor loadings over 5 years to surface style drift; three anomaly detectors plotted on a shared timeline — standardized z-score flags outsized single days, Page CUSUM catches sustained mean shifts, GARCH-residual outliers flag days the conditional-vol model didn't anticipate. Disagreement between detectors is the signal."
           >
-            <AnomalyDetectorPanel views={data.anomaly_views} />
+            <AnomalyDetectorPanel
+              views={data.anomaly_views}
+              selectedTicker={selectedTicker}
+              onTickerChange={setSelectedTicker}
+            />
           </Section>
         )}
       </main>

@@ -5,43 +5,70 @@
   position: relative;
 }
 
-/* Toggle button row above the risk table — lets users flip between the
-   compact 2-column VaR view (tGARCH + EVT, default) and the full
-   5-column view (HS / EWMA / GARCH / tGARCH / EVT). */
-.table-controls {
-  display: flex;
-  justify-content: flex-end;
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg2);
-}
-
-.model-toggle-btn {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  color: var(--text-dim);
-  font-family: var(--font);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  padding: 4px 12px;
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
-}
-
-.model-toggle-btn:hover {
-  color: var(--text-bright);
-  border-color: var(--accent);
+/* The "Daily VaR" super-header doubles as the expand/collapse control for
+   the hidden models (HS / EWMA / GARCH), so there's no separate button
+   floating above the table. Two affordances:
+     1. .col-group-toggle — an Excel-style [+]/[−] outline box pinned ON the
+        group's left separator (the boundary the hidden columns expand from).
+        This is the discoverable, accessible control.
+     2. .var-superheader-label — the label text, a larger secondary mouse
+        target that fires the same toggle. */
+.col-group-toggle {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--accent);
+  border-radius: 2px;
   background: var(--bg);
-}
-
-.model-toggle-btn[aria-pressed="true"] {
   color: var(--accent);
-  border-color: var(--accent);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 4;
+  transition: background 0.15s, color 0.15s;
 }
 
-/* yrVaR column — separate tint from the daily-VaR cluster so it reads
+.col-group-toggle:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.var-superheader-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  transition: color 0.15s;
+}
+
+.var-superheader-label:hover {
+  color: var(--accent-soft);
+}
+
+.var-superheader-hint {
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+/* YearVaR column — separate tint from the daily-VaR cluster so it reads
    as "different concept, different horizon" rather than "another VaR
    model in the same row." */
 .risk-table th.col-yr,
@@ -156,11 +183,15 @@
   opacity: 0.85;
 }
 
-/* Column groups — subtle tints to visually cluster related metrics. The
-   tints use rgba so row hover (var(--bg3)) still shows through. */
+/* Column groups — tints to visually cluster related metrics. The tints use
+   rgba so row hover (var(--bg3)) still shows through. The daily-VaR cluster
+   (col-models) is shaded more strongly than the others: it's the group the
+   risk-level legend's green/yellow/red colors apply to, and the "Daily VaR"
+   super-header sits on top of this band. Reading the band as one unit is the
+   whole point — it disambiguates which columns the legend governs. */
 .risk-table th.col-models,
 .risk-table td.col-models {
-  background-color: rgba(245, 158, 11, 0.045);
+  background-color: rgba(245, 158, 11, 0.07);
 }
 
 .risk-table th.col-summary,
@@ -168,16 +199,48 @@
   background-color: rgba(255, 255, 255, 0.025);
 }
 
-/* Subtle vertical separators at the edges of each group, to reinforce
-   the visual chunking without adding noise inside the groups. */
+/* Vertical separators at the edges of each group, to reinforce the visual
+   chunking without adding noise inside the groups. */
 .risk-table th.group-start,
 .risk-table td.group-start {
-  border-left: 1px solid rgba(245, 158, 11, 0.18);
+  border-left: 1px solid rgba(245, 158, 11, 0.25);
 }
 
 .risk-table th.group-end,
 .risk-table td.group-end {
-  border-right: 1px solid rgba(245, 158, 11, 0.18);
+  border-right: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+/* Group super-header row — a thin label row above the column headers that
+   brackets the five model columns as "Daily VaR". Empty cells stay
+   transparent so only the labeled bracket is visible. */
+.risk-table .group-superheader-row th {
+  padding: 5px 16px;
+  border: none;
+  background: transparent;
+}
+
+.risk-table .group-superheader-row .sticky-col {
+  background: var(--bg3);
+}
+
+.risk-table th.var-superheader {
+  position: relative;          /* anchor for the outline toggle box */
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--accent);
+  background-color: rgba(245, 158, 11, 0.12);
+  /* All three visible borders set explicitly. The generic
+     `.group-superheader-row th { border: none }` rule above would otherwise
+     wipe the left/right brackets, so we can't rely on the inherited
+     group-start/group-end borders here. The band's full-height vertical
+     edges still come from those classes on the columns below. */
+  border-left: 1px solid rgba(245, 158, 11, 0.35);
+  border-right: 1px solid rgba(245, 158, 11, 0.35);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.45);
 }
 
 .asset-cell {
@@ -300,6 +363,26 @@
 .gauge-cell {
   padding: 6px 16px;
   vertical-align: middle;
+}
+
+/* ── Look-through fund-NAV reference row ── */
+/* Pinned in the footer just above the basket aggregate. Set apart from the
+   sorted holdings with a top border and a faint wash so it reads as a
+   comparison anchor (the fund's real NAV risk vs. the synthetic basket),
+   not as another holding sorted into the list. The italic "actual NAV"
+   tag in the asset cell carries the explanation. */
+.fund-reference-row {
+  border-top: 1px solid var(--border);
+  background: var(--bg2);
+}
+
+.fund-reference-row .sticky-col {
+  background: var(--bg2);
+}
+
+.fund-reference-row:hover,
+.fund-reference-row:hover .sticky-col {
+  background: var(--bg3);
 }
 
 /* ── Portfolio summary row ── */
