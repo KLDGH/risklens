@@ -27,7 +27,7 @@ If you need investment advice, talk to a qualified professional licensed in your
 
 ## 2. Educational and illustrative only
 
-The dashboard exists as a transparent reference implementation of techniques used in quantitative risk management. Its purpose is to **show how the math works**, not to drive decisions. The methodology is open in `backend/risk_engine.py`, `backend/factor_models.py`, and the supporting documents (`README.md`, `FAQ.md`, `TECH_REVIEW.md`, `ANOMALY_PRIMER.md`) precisely so readers can inspect, learn from, and improve the implementation.
+The dashboard exists as a transparent reference implementation of techniques used in quantitative risk management. Its purpose is to **show how the math works**, not to drive decisions. The methodology is open in `backend/risk_engine.py`, `backend/factor_models.py`, and the supporting documents (`README.md`, `FAQ.md`, `TECH_REVIEW.md`) precisely so readers can inspect, learn from, and improve the implementation.
 
 Any conclusion drawn from the displayed numbers should be tested against your own judgment and other sources. Don't outsource thinking to a dashboard built by one person on weekends.
 
