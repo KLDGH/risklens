@@ -185,7 +185,7 @@ function ScenarioCard({ s, weights, comparisons, currentMode }) {
         <div className={`scenario-pnl ${isLoss ? "loss" : "gain"}`}>
           {s.portfolio_pnl > 0 ? "+" : ""}{s.portfolio_pnl.toFixed(1)}%
           <span className="scenario-pnl-label">
-            {isHypo ? "estimated portfolio P&L on $100" : "portfolio P&L on $100"}
+            portfolio P&L on $100
           </span>
         </div>
       </HoverTip>

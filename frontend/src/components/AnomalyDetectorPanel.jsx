@@ -111,7 +111,7 @@ function RiskProfileCard({ profile, ticker }) {
         </span>
         <span className="rp-subtitle">
           Standalone risk metrics for this ETF's NAV. Main models shown;
-          HS and EWMA hover-only (see the daily-VaR card).
+          HS and EWMA on hover (the Daily VaR GJR-t stat).
         </span>
       </div>
       <div className="rp-row">
@@ -177,7 +177,7 @@ const FF_FACTOR_DESCRIPTIONS = {
   "SMB":
     "Small Minus Big — the size factor. Daily return of a portfolio that's long small-cap stocks and short large-cap stocks (sorted by market cap each June). Positive loading = your asset behaves like small-caps (after controlling for market beta); negative = large-cap tilt. Historically small-caps earn higher returns than large-caps, which is the 'size premium' this factor isolates.",
   "HML":
-    "High Minus Low — the value factor. Daily return of a portfolio that's long high book-to-market (value) stocks and short low book-to-market (growth) stocks. Positive loading = value tilt (cheap stocks); negative = growth tilt (expensive / fast-growing stocks). Famously the single most studied risk factor in finance — Fama & French won the Nobel Prize partly for documenting it.",
+    "High Minus Low — the value factor. Daily return of a portfolio that's long high book-to-market (value) stocks and short low book-to-market (growth) stocks. Positive loading = value tilt (cheap stocks); negative = growth tilt (expensive / fast-growing stocks). Famously the single most studied risk factor in finance; Eugene Fama shared the 2013 Nobel partly for this line of work.",
   "RMW":
     "Robust Minus Weak — the profitability factor (added by Fama-French 2015). Daily return of a portfolio that's long high-profitability ('robust') firms and short low-profitability ('weak') ones. Profitability measured by operating-profit-to-equity. Positive loading = quality tilt; negative = junk tilt. Captures the idea that profitable firms earn higher returns than unprofitable ones after controlling for market, size, and value.",
   "CMA":
@@ -365,7 +365,7 @@ function ThematicExposurePanel({ thematic }) {
     sig: "Significance stars: *** = p<0.001 (very strong), ** = p<0.01 (strong), * = p<0.05 (significant). No star = the loading is statistically indistinguishable from zero — don't read too much into the β value. Non-significant rows are dimmed.",
     orthogonalized: "Market-orthogonalized: each non-market basket's returns are first regressed against SPY, and the RESIDUAL (the part of the basket's move not explained by the broad market) is used as the regressor. This way the non-market loadings read as 'exposure to this theme BEYOND general market exposure.' Without this step, every sector ETF looks the same because they're all ~90% correlated with SPY.",
     totalVol: "Sample standard deviation of this asset's daily returns over the lookback window, annualized by √252 (252 trading days per year), expressed in percent.",
-    factorVol: "The fraction of total volatility explained by the themes. Computed as σ_total × √R². If R² = 81%, then σ_factor = 90% of σ_total — most of the asset's risk comes from these themes.",
+    factorVol: "The fraction of total volatility explained by the themes, computed as σ_total × √R². The square root matters: even a middling R² maps to a large share of volatility. When this is high, most of the asset's risk comes from the themes rather than asset-specific moves.",
     residualVol: "Idiosyncratic / asset-specific volatility. The part of the asset's risk NOT explained by any theme — corporate-action news, company-specific announcements, microstructure noise. Computed as σ_total × √(1 − R²).",
   };
 
@@ -987,7 +987,7 @@ export default function AnomalyDetectorPanel({ views, selectedTicker, onTickerCh
         <DetectorSubpanel
           data={view.series}
           field="garch_resid"
-          label="GARCH-residual outlier (residual after conditional-vol adjustment)"
+          label="GARCH-residual outlier (after conditional-vol adjustment)"
           color={DETECTOR_COLORS.garch_resid}
           threshold={view.thresholds.garch_resid}
           twoSided
