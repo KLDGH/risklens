@@ -172,13 +172,16 @@ export default function App() {
   );
   const [selectedTicker, setSelectedTicker] = useState(initialParams.ticker || null);
 
-  // Theme preference persisted across sessions. Defaults to "dark"; the
-  // toggle in the tab bar flips and stores the chosen value in localStorage.
+  // Theme preference persisted across sessions. Defaults to "light" — the
+  // dashboard is data-dense (small tabular numbers, fine gridlines), which
+  // reads more clearly on a light background in a normally-lit office, and
+  // it matches the institutional context the tool lives in. Returning users
+  // who flip the tab-bar toggle keep their choice via localStorage.
   const [theme, setTheme] = useState(() => {
     try {
-      return localStorage.getItem("risklens-theme") || "dark";
+      return localStorage.getItem("risklens-theme") || "light";
     } catch {
-      return "dark";
+      return "light";
     }
   });
 
@@ -314,11 +317,73 @@ export default function App() {
             role="switch"
             aria-checked={theme === "dark"}
           >
-            <span className="theme-toggle-track">
-              <span className="theme-toggle-icon theme-toggle-icon--sun" aria-hidden="true">☀</span>
-              <span className="theme-toggle-icon theme-toggle-icon--moon" aria-hidden="true">☾</span>
-              <span className="theme-toggle-thumb" />
-            </span>
+            {/* Scene toggle: a sunny day pill in light mode, a starry night
+                pill in dark mode. Shows the current theme; clicking flips it. */}
+            <svg className="theme-toggle-svg" viewBox="0 0 72 32" width="62" height="28" aria-hidden="true">
+              <defs>
+                <linearGradient id="ttDay" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stopColor="#5cc4dc" />
+                  <stop offset="1" stopColor="#9bd8e6" />
+                </linearGradient>
+                <linearGradient id="ttNight" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stopColor="#27406a" />
+                  <stop offset="1" stopColor="#0d1a30" />
+                </linearGradient>
+                {/* Knobs use a soft top-left-lit radial fill so the sun/moon
+                    read as a raised toggle handle rather than a flat bright disc. */}
+                <radialGradient id="ttSun" cx="0.38" cy="0.34" r="0.72">
+                  <stop offset="0" stopColor="#fff0bf" />
+                  <stop offset="1" stopColor="#ecb838" />
+                </radialGradient>
+                <radialGradient id="ttMoon" cx="0.38" cy="0.34" r="0.75">
+                  <stop offset="0" stopColor="#ffffff" />
+                  <stop offset="1" stopColor="#dde3ee" />
+                </radialGradient>
+                <radialGradient id="ttMoonGlow" cx="0.5" cy="0.5" r="0.5">
+                  <stop offset="0.55" stopColor="#ffffff" stopOpacity="0.40" />
+                  <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+                </radialGradient>
+                <filter id="ttKnob" x="-60%" y="-60%" width="220%" height="220%">
+                  <feDropShadow dx="0" dy="1" stdDeviation="1.1" floodColor="#000000" floodOpacity="0.35" />
+                </filter>
+              </defs>
+              <rect x="0.5" y="0.5" width="71" height="31" rx="15.5"
+                fill={theme === "dark" ? "url(#ttNight)" : "url(#ttDay)"}
+                stroke="rgba(0,0,0,0.18)" />
+              {theme === "dark" ? (
+                <g>
+                  <circle cx="13" cy="9"  r="1"   fill="#fff" opacity="0.9" />
+                  <circle cx="21" cy="15" r="0.8" fill="#fff" opacity="0.7" />
+                  <circle cx="17" cy="22" r="0.9" fill="#fff" opacity="0.8" />
+                  <circle cx="29" cy="10" r="0.7" fill="#fff" opacity="0.6" />
+                  <circle cx="33" cy="20" r="1"   fill="#fff" opacity="0.85" />
+                  <circle cx="39" cy="14" r="0.7" fill="#fff" opacity="0.6" />
+                  <circle cx="54" cy="16" r="11" fill="url(#ttMoonGlow)" />
+                  <g filter="url(#ttKnob)">
+                    <circle cx="54" cy="16" r="8" fill="url(#ttMoon)" />
+                  </g>
+                  <circle cx="50.5" cy="13" r="1.5" fill="#cdd5e2" />
+                  <circle cx="57"   cy="18" r="1.9" fill="#cdd5e2" />
+                  <circle cx="55"   cy="12" r="1"   fill="#cdd5e2" />
+                </g>
+              ) : (
+                <g>
+                  <g fill="#ffffff">
+                    <ellipse cx="45" cy="21" rx="9" ry="5" />
+                    <circle cx="41" cy="19" r="4" />
+                    <circle cx="47" cy="17" r="5" />
+                  </g>
+                  <g fill="#ffffff" opacity="0.9">
+                    <ellipse cx="57" cy="12" rx="6" ry="3.2" />
+                    <circle cx="55" cy="11" r="2.6" />
+                    <circle cx="59" cy="10.5" r="3" />
+                  </g>
+                  <g filter="url(#ttKnob)">
+                    <circle cx="18" cy="16" r="8" fill="url(#ttSun)" />
+                  </g>
+                </g>
+              )}
+            </svg>
           </button>
           <a
             href="https://github.com/KLDGH/risklens/blob/main/FAQ.md"
@@ -416,7 +481,7 @@ export default function App() {
             id="risk-trajectory"
             title="Portfolio Risk Trajectory"
             question="How has the portfolio's daily risk moved over time?"
-            description="Today's risk number in context: is this portfolio near a calm-regime floor, or climbing toward crisis levels? Same EWMA VaR as the summary row above, but plotted every trading day instead of just today. Spikes line up with known shocks; the slow decay afterward is how fast each regime actually resolved — useful for judging whether a current elevation is likely to persist. Available history runs back as far as the portfolio's youngest holding allows."
+            description="How the portfolio's daily risk has risen and fallen over time, so today's reading has context: near a calm-regime floor, or climbing toward crisis levels. The line is EWMA VaR, which is fast-reacting and cheap enough to recompute every trading day across the full history; that's also why its level runs a little below the heavy-tailed models in the snapshot above. Spikes mark known shocks, and the slow decay after each shows how fast that regime resolved. History reaches back as far as the portfolio's youngest holding allows."
           >
             <PortfolioRiskChart data={portfolio.risk_history} portfolioLabel={portfolio.label} />
           </Section>
@@ -520,7 +585,7 @@ export default function App() {
       </main>
 
       <footer className="footer">
-        <span>VaR models: Historical Simulation · EWMA (λ=0.94) · GARCH-t / GJR-t · EVT</span>
+        <span>VaR models: Historical Simulation · EWMA (λ=0.94) · GARCH · tGARCH · EVT</span>
         <span>
           Data via yfinance + Ken French Library ·{" "}
           <a

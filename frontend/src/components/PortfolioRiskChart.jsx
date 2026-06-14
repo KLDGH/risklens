@@ -103,7 +103,7 @@ export default function PortfolioRiskChart({ data, portfolioLabel }) {
     <div className="historical-chart-wrapper" style={{ marginTop: 0 }}>
       <div className="chart-header">
         <span className="chart-subtitle">
-          Daily 1% EWMA VaR over time · {portfolioLabel} · weekly samples
+          Daily 1% EWMA VaR over time · {portfolioLabel}
         </span>
         <button
           className={`insight-toggle${insightOpen ? " open" : ""}`}

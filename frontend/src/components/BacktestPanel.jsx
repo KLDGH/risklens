@@ -42,7 +42,7 @@ function modelDescription(model) {
     HS:     "Historical Simulation — empirical 1% percentile of trailing 1000 returns",
     EWMA:   "Exponentially Weighted Moving Average — λ=0.94, normal-distribution VaR",
     EVT:    "Extreme Value Theory — Generalized Pareto fit to tail losses",
-    GARCH:  "GARCH(1,1) — mean-reverting conditional volatility, normal innovations",
+    GARCH:  "GARCH(1,1) — mean-reverting conditional volatility, Student-t innovations",
     tGARCH: "GJR-tGARCH — asymmetric volatility, negative shocks weight more heavily",
   }[model] ?? model;
 }
@@ -160,20 +160,18 @@ export default function BacktestPanel({ data, portfolioLabel }) {
       </div>
 
       <div className="backtest-interpretation">
-        <strong>Why most models often show UNDER-EST.</strong> Parametric
-        volatility models (EWMA, GARCH, tGARCH) assume normal-distribution
-        tails — but real returns have fat tails (excess kurtosis), so they
-        systematically miss the far tail at 1% confidence. This is canonical:
-        every quant textbook covers it. The current 504-day window also
-        includes 2022's dual-asset selloff and the 2025 tariff shock — an
-        above-average-stress regime that any model evaluated against would
-        look like it's missing tails. EVT doesn't share the normality
-        assumption and compensates by being too conservative. The asymmetric
-        failure pattern (parametric models UNDER-EST, EVT OVER-CONSERV) is
-        the literature's predicted result, not a methodology bug — and is
-        precisely why this dashboard shows all five models rather than
-        picking one. Trust EVT for tail sizing in fat-tail regimes; trust
-        the parametric models for everyday vol forecasting.
+        <strong>Why EWMA tends to show UNDER-EST.</strong> EWMA assumes
+        normal-distribution tails, but real returns have fat tails (excess
+        kurtosis), so it systematically misses the far tail at 1% confidence.
+        That is canonical; every quant textbook covers it. The current 504-day
+        window also spans 2022's dual-asset selloff and the 2025 tariff shock,
+        an above-average-stress regime that widens the gap. EVT makes the
+        opposite trade: it fits the tail directly, so it tends to run
+        OVER-CONSERV. That split, the Gaussian model under-estimating and the
+        tail model over-conservative, is the literature's predicted result
+        rather than a methodology bug, and it is exactly why the snapshot shows
+        multiple models instead of one. Lean on EVT for tail sizing in fat-tail
+        regimes, and on the conditional-vol models for everyday forecasting.
       </div>
 
       {(() => {
