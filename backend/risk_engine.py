@@ -105,10 +105,15 @@ def var_es_evt(returns: np.ndarray, p: float = P, threshold_pct: float = 0.10) -
         xi, _, sigma = genpareto.fit(exceedances, floc=0)
         n = len(losses)
         Nu = len(exceedances)
+        # McNeil-Frey-Embrechts POT/GPD VaR (QRM 2015, eq. 7.18):
+        #   VaR_q = u + (beta/xi) * [ ((n/Nu)*(1-q))^(-xi) - 1 ]
+        # with tail prob p = 1-q. ((n/Nu)*p)^(-xi) == (Nu/(n*p))^xi, so the
+        # exceedance-ratio base is Nu/(n*p) (NOT n/(Nu*p) — that inverted the
+        # ratio and inserted a spurious 1/p^2, inflating EVT VaR by ~100^xi).
         if abs(xi) < 1e-8:
-            var = u + sigma * np.log(n / (Nu * p))
+            var = u + sigma * np.log(Nu / (n * p))
         else:
-            var = u + (sigma / xi) * ((n / (Nu * p)) ** xi - 1)
+            var = u + (sigma / xi) * ((Nu / (n * p)) ** xi - 1)
         if xi < 1:
             es = (var + sigma - xi * u) / (1 - xi)
         else:
