@@ -245,12 +245,16 @@ def fit_ff_carhart(
         ci_low  = beta_hat - 1.96 * se
         ci_high = beta_hat + 1.96 * se
 
-    # Vol decomposition (annualized percent)
+    # Vol decomposition (annualized percent). Derive the factor/idiosyncratic
+    # split directly from R² so the decomposition is internally consistent:
+    # factor² + idio² = total², and the factor variance share is exactly R².
+    # (Previously sigma_idio used the (n-k)-adjusted residual variance while
+    # sigma_total used the ddof=1 sample variance, so the share didn't equal R².)
     sigma_total_daily = float(np.std(y, ddof=1))
     sigma_total_ann   = sigma_total_daily * np.sqrt(252) * 100
-    sigma_idio_ann    = np.sqrt(sigma2_eps) * np.sqrt(252) * 100
-    sigma_factor_ann  = float(np.sqrt(max(0.0, sigma_total_ann ** 2 - sigma_idio_ann ** 2)))
-    factor_pct_share  = 100.0 * (sigma_factor_ann ** 2) / max(1e-9, sigma_total_ann ** 2)
+    sigma_factor_ann  = sigma_total_ann * np.sqrt(max(0.0, r_squared))
+    sigma_idio_ann    = sigma_total_ann * np.sqrt(max(0.0, 1.0 - r_squared))
+    factor_pct_share  = 100.0 * max(0.0, r_squared)
 
     loadings = [
         {
