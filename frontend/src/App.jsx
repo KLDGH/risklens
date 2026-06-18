@@ -9,6 +9,7 @@ import BacktestPanel from "./components/BacktestPanel.jsx";
 import ScenarioPanel from "./components/ScenarioPanel.jsx";
 import FundDisclosurePanel from "./components/FundDisclosurePanel.jsx";
 import AnomalyDetectorPanel from "./components/AnomalyDetectorPanel.jsx";
+import OptimizerPanel from "./components/OptimizerPanel.jsx";
 import InfoTip from "./components/InfoTip.jsx";
 import "./App.css";
 
@@ -25,11 +26,17 @@ const TABS = [
   { id: "portfolio", label: "Portfolio Risk" },
   { id: "market",    label: "Market Context" },
   { id: "anomaly",   label: "Sector Spotlight" },
+  // Optimizer tab hidden for now (its "reference book" benchmark concept is being
+  // reconciled with a consistent app-wide benchmark treatment). Component, data,
+  // and render block are all kept intact — re-add this entry + "optimizer" to
+  // VALID_TABS to restore.
+  // { id: "optimizer", label: "Optimizer" },
 ];
 
 // Short label shown on the portfolio summary row of the risk table.
 // Falls back to a generic "PORTFOLIO" label for any unknown mode.
 const PORTFOLIO_SHORT_LABELS = {
+  aor:          "ISHARES CORE 60/40 (AOR)",
   hypothetical: "HYPOTHETICAL PORTFOLIO",
   tdf_2055:     "VANGUARD 2055",
   cg_2055:      "AF TARGET 2055",
@@ -82,6 +89,13 @@ const SECTION_REFERENCES = {
     { label: 'Andersen, Bollerslev, Diebold & Labys, "The Distribution of Realized Exchange Rate Volatility" (JASA, 2001)' },
     { label: 'Pflueger, Siriwardane & Sunderam, "A Measure of Risk Appetite for the Macroeconomy" (NBER WP 27906, 2020)', url: "https://www.nber.org/papers/w27906" },
     { label: 'Campbell, Pflueger & Viceira, "Macroeconomic Drivers of Bond and Equity Risks" (JPE, 2020)', url: "https://doi.org/10.1086/710552" },
+  ],
+  "optimizer": [
+    { label: 'Markowitz, "Portfolio Selection" (J. Finance, 1952)', url: "https://doi.org/10.2307/2975974" },
+    { label: 'Ledoit & Wolf, "A Well-Conditioned Estimator for Large-Dimensional Covariance Matrices" (J. Multivariate Analysis, 2004)', url: "https://doi.org/10.1016/S0047-259X(03)00096-4" },
+    { label: 'Maillard, Roncalli & Teïletche, "The Properties of Equally Weighted Risk Contribution Portfolios" (J. Portfolio Mgmt, 2010)', url: "https://doi.org/10.3905/jpm.2010.36.4.060" },
+    { label: 'DeMiguel, Garlappi & Uppal, "Optimal Versus Naive Diversification" (RFS, 2009)', url: "https://doi.org/10.1093/rfs/hhm075" },
+    { label: 'Michaud, "The Markowitz Optimization Enigma: Is Optimized Optimal?" (FAJ, 1989)', url: "https://doi.org/10.2469/faj.v45.n1.31" },
   ],
 };
 
@@ -164,9 +178,9 @@ export default function App() {
     };
   };
   const initialParams = readUrlParams();
-  const VALID_TABS = ["portfolio", "market", "anomaly"];
+  const VALID_TABS = ["portfolio", "market", "anomaly"];  // "optimizer" hidden for now
 
-  const [mode, setMode] = useState(initialParams.portfolio || "hypothetical");
+  const [mode, setMode] = useState(initialParams.portfolio || "aor");
   const [activeTab, setActiveTab] = useState(
     VALID_TABS.includes(initialParams.tab) ? initialParams.tab : "portfolio"
   );
@@ -215,7 +229,7 @@ export default function App() {
         // a valid one. This way ?portfolio=cggo_active in the URL wins
         // over the JSON's `default_mode`.
         setMode((current) =>
-          current && json.portfolios[current] ? current : (json.default_mode ?? "hypothetical")
+          current && json.portfolios[current] ? current : (json.default_mode ?? "aor")
         );
       })
       .catch((e) => setError(e.message))
@@ -242,7 +256,7 @@ export default function App() {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams();
     if (activeTab && activeTab !== "portfolio") params.set("tab", activeTab);
-    if (mode && mode !== "hypothetical") params.set("portfolio", mode);
+    if (mode && mode !== "aor") params.set("portfolio", mode);
     if (selectedTicker && activeTab === "anomaly") {
       params.set("ticker", selectedTicker);
     }
@@ -465,6 +479,7 @@ export default function App() {
               <span className="legend-item"><span className="dot green" />Low (&lt;2.5)</span>
               <span className="legend-item"><span className="dot yellow" />Elevated (2.5–5)</span>
               <span className="legend-item"><span className="dot red" />High (&gt;5)<InfoTip text="Color thresholds for the daily VaR columns (HS, EWMA, GARCH, tGARCH, EVT) only — NOT the YearVaR column, whose 1-year losses sit on a different scale and render in neutral text. These are pragmatic rules of thumb, not a regulatory standard. Calibrated for daily 1% VaR on liquid ETFs: diversified US equity (SPY) historically sits around 1.5–2.5%; sector ETFs 2–3%; individual stocks 3–5%; crypto and volatile names often 5%+. Different asset classes warrant different thresholds, which is why the per-asset Risk gauge (percentile rank vs 2-year history) is the more rigorous comparison on this page." /></span>
+              <span className="legend-item">each cell: VaR on top, <span className="legend-es-key">Expected Shortfall (ES)</span> below</span>
               <span className="legend-item legend-note">VaR expressed as $ loss on $100 portfolio</span>
             </div>
             <RiskTable
@@ -473,6 +488,7 @@ export default function App() {
               disclosedWeights={portfolio.disclosed_weights}
               fundTicker={portfolio.fund_ticker}
               portfolioLabel={PORTFOLIO_SHORT_LABELS[mode] ?? "PORTFOLIO"}
+              benchmark={portfolio.benchmark}
             />
           </Section>
         )}
@@ -580,6 +596,18 @@ export default function App() {
               selectedTicker={selectedTicker}
               onTickerChange={setSelectedTicker}
             />
+          </Section>
+        )}
+        {activeTab === "optimizer" && (
+          <Section
+            id="optimizer"
+            title="Portfolio Optimizer"
+            question="What happens if we rebuild the strategy systematically?"
+            description="Systematic portfolio construction on a real, publicly-traded fund: the iShares Core 60/40 Balanced Allocation ETF (AOR), modeled directly from its seven underlying iShares ETFs at their disclosed weights (the full fund, not a partial reconstruction). AOR's current allocation is the reference book (the benchmark). It runs a small set of mean-variance / risk-based optimizers — global min-variance, equal-risk-contribution, max-diversification, and two PM tilts (a concentrated tight-tracking-error variant and a lower-risk variant kept close to the fund) — plus an opt-in max-Sharpe shown only to illustrate estimation fragility. For each it reports the deltas a PM cares about: return, vol, Sharpe, active return, information ratio, tracking error, concentration (effective N), turnover, and the risk budget, plus an equity-beta diagnostic. Risk-based objectives use no return forecasts; all return / Sharpe / active-return figures are realized in-sample and descriptive only. A transparent prototype, not a replacement for a production optimizer."
+          >
+            {data?.portfolios?.aor?.optimizer
+              ? <OptimizerPanel opt={data.portfolios.aor.optimizer} />
+              : <p className="opt-empty">The optimizer view isn't in this data build yet — re-run the backend to populate it.</p>}
           </Section>
         )}
       </main>

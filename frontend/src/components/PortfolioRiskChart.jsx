@@ -36,7 +36,7 @@ function findNearest(data, targetDate) {
   }).date;
 }
 
-const CrisisLabel = ({ viewBox, label }) => {
+const CrisisLabel = ({ viewBox, label, color = "#3a2f24" }) => {
   if (!viewBox) return null;
   const { x, y } = viewBox;
   return (
@@ -44,7 +44,7 @@ const CrisisLabel = ({ viewBox, label }) => {
       <text
         x={x + 4}
         y={y + 14}
-        fill="#f59e0b"
+        fill={color}
         fontSize={10}
         fontFamily="JetBrains Mono, monospace"
         fontWeight="600"
@@ -81,6 +81,7 @@ const CustomTooltip = ({ active, payload }) => {
 export default function PortfolioRiskChart({ data, portfolioLabel }) {
   const [insightOpen, setInsightOpen] = useState(false);
   const c = useThemeColors();
+  const crisisLabelColor = c.textBright;  // dark on light / light on dark — readable annotation text
   if (!data?.length) return null;
 
   const tickInterval = Math.max(1, Math.floor(data.length / 12));
@@ -192,7 +193,7 @@ export default function PortfolioRiskChart({ data, portfolioLabel }) {
                 strokeOpacity={0.45}
                 strokeWidth={1}
                 strokeDasharray="3 3"
-                label={<CrisisLabel label={c.label} />}
+                label={<CrisisLabel label={c.label} color={crisisLabelColor} />}
               />
             ))}
 

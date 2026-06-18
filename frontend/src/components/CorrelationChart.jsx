@@ -31,7 +31,7 @@ function findNearest(data, targetDate) {
   }).date;
 }
 
-const CrisisLabel = ({ viewBox, label }) => {
+const CrisisLabel = ({ viewBox, label, color = "#3a2f24" }) => {
   if (!viewBox) return null;
   const { x, y } = viewBox;
   return (
@@ -39,7 +39,7 @@ const CrisisLabel = ({ viewBox, label }) => {
       <text
         x={x + 4}
         y={y + 14}
-        fill="#f59e0b"
+        fill={color}
         fontSize={10}
         fontFamily="JetBrains Mono, monospace"
         fontWeight="600"
@@ -84,6 +84,7 @@ const CustomTooltip = ({ active, payload }) => {
 export default function CorrelationChart({ data }) {
   const [insightOpen, setInsightOpen] = useState(false);
   const c = useThemeColors();
+  const crisisLabelColor = c.textBright;  // dark on light / light on dark — readable annotation text
   if (!data?.length) return null;
 
   const tickInterval = Math.max(1, Math.floor(data.length / 14));
@@ -98,7 +99,7 @@ export default function CorrelationChart({ data }) {
     <div className="historical-chart-wrapper" style={{ marginTop: 24 }}>
       <div className="chart-header">
         <span className="chart-subtitle">
-          60-day rolling avg pairwise correlation · SPY QQQ GLD TLT EEM IWM HYG LQD XLF VNQ · VIX (right axis)
+          60-day rolling avg pairwise correlation · SPY EFA EEM TLT LQD HYG GLD DBC VNQ UUP · VIX (right axis)
         </span>
         <button
           className={`insight-toggle${insightOpen ? " open" : ""}`}
@@ -207,7 +208,7 @@ export default function CorrelationChart({ data }) {
                 strokeOpacity={0.40}
                 strokeWidth={1}
                 strokeDasharray="3 3"
-                label={<CrisisLabel label={c.label} />}
+                label={<CrisisLabel label={c.label} color={crisisLabelColor} />}
               />
             ))}
 

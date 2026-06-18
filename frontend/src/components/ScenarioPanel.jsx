@@ -203,6 +203,13 @@ function ScenarioCard({ s, weights, comparisons, currentMode }) {
         ))}
       </div>
 
+      {!isHypo && s.proxied && Object.keys(s.proxied).length > 0 && (
+        <div className="scenario-proxy-note">
+          Pre-inception proxy: {Object.entries(s.proxied).map(([t, px]) => `${t}→${px}`).join(", ")}
+          {" "}— these funds launched after this window, so a long-history equivalent stands in.
+        </div>
+      )}
+
       {isHypo && (s.probability_live || s.probability_sources?.length > 0) && (
         <div className="prob-outlook">
           <div className="prob-outlook-label">Probability outlook</div>

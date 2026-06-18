@@ -30,7 +30,7 @@ const LINE_H = FONT_SIZE * 1.4;
 // Bottom y of each row (SVG coords from top). Margin top must be >= ROW_BOTTOM[-1] + padding.
 const ROW_BOTTOM = [38, 80];
 
-const EventLabel = ({ viewBox, label, row = 0 }) => {
+const EventLabel = ({ viewBox, label, row = 0, color = "#3a2f24", lineColor = "#9a8a6a" }) => {
   if (!viewBox) return null;
   const { x, y } = viewBox;
   const lines = label.split("\n");
@@ -43,7 +43,7 @@ const EventLabel = ({ viewBox, label, row = 0 }) => {
       <line
         x1={x} y1={bottomY + 4}
         x2={x} y2={y - 2}
-        stroke="#2a4060" strokeWidth={1} strokeDasharray="3,3"
+        stroke={lineColor} strokeWidth={1} strokeDasharray="3,3"
       />
       {lines.map((line, i) => (
         <text
@@ -51,9 +51,9 @@ const EventLabel = ({ viewBox, label, row = 0 }) => {
           x={x}
           y={textTop + i * LINE_H + LINE_H - 3}
           textAnchor="middle"
-          fill="#a8bcd4"
+          fill={color}
           fontSize={FONT_SIZE}
-          fontWeight="500"
+          fontWeight="600"
           fontFamily="JetBrains Mono, monospace"
         >
           {line}
@@ -224,7 +224,7 @@ export default function HistoricalChart({ data }) {
                 x={e.year}
                 yAxisId="left"
                 stroke="transparent"
-                label={<EventLabel label={e.label} row={e.row} />}
+                label={<EventLabel label={e.label} row={e.row} color={c.textBright} lineColor={c.refLine} />}
               />
             ))}
 

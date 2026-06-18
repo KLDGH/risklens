@@ -4,7 +4,7 @@ import "./InfoTip.css";
 
 // Fixed bubble width — keep in sync with `.infotip-bubble { width }` in the
 // CSS — and the minimum gap we hold between the bubble and the viewport edge.
-const BUBBLE_W = 280;
+const BUBBLE_W = 340;
 const EDGE_MARGIN = 8;
 
 export default function InfoTip({ text }) {
