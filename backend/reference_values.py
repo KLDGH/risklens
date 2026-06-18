@@ -80,6 +80,14 @@ ASSET_CLASS: dict[str, str] = {
     "DBC":  "commodities",
     "BTC-USD": "crypto",
     "UUP":  "fx_dollar",
+    # iShares Core (AOR look-through) — reuse the closest existing class so the
+    # per-asset sanity-check reference bands populate for the default portfolio.
+    "IUSB": "broad_bond",        # US total bond market (≈ AGG)
+    "IAGG": "broad_bond",        # intl aggregate bond — domestic broad-bond bands as a proxy
+    "IDEV": "developed_intl",    # developed ex-US
+    "IEMG": "emerging_intl",     # emerging markets
+    "IJH":  "small_cap_equity",  # S&P MidCap 400 — grouped with the small-cap risk band
+    "IJR":  "small_cap_equity",  # S&P SmallCap 600
 }
 
 

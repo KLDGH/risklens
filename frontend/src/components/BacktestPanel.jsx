@@ -200,7 +200,7 @@ export default function BacktestPanel({ data, portfolioLabel }) {
           <div className="exception-calendar-section">
             <div className="exception-calendar-label">
               VaR exception calendar — each cell is one trading day in the eval
-              window; intensity = how many of the 5 models flagged that day as a
+              window; intensity = how many of the {data.length} models flagged that day as a
               VaR breach. Solid clusters of red are the Christoffersen test made
               visual.
             </div>
@@ -231,11 +231,13 @@ export default function BacktestPanel({ data, portfolioLabel }) {
         );
       })()}
 
-      <div className="backtest-footnote">
-        GARCH(1,1) and GJR-tGARCH are not backtested here because they require
-        re-fitting via maximum likelihood at each rolling step, which is too
-        expensive on a routine run. EVT GPD parameters are re-fit at each step.
-      </div>
+      {!data.some((r) => /garch/i.test(r.model)) && (
+        <div className="backtest-footnote">
+          GARCH(1,1) and GJR-tGARCH are not backtested for this portfolio yet —
+          they require re-fitting via maximum likelihood at each rolling step, which
+          is too expensive on a routine run. EVT GPD parameters are re-fit at each step.
+        </div>
+      )}
     </div>
   );
 }

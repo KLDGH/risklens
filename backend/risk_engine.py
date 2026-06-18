@@ -179,11 +179,23 @@ def var_year_t(returns: np.ndarray, q: float = 0.10) -> tuple[float, float] | No
         # std (we use sample std rather than t-implied scale so the
         # √n scaling stays comparable across distributions).
         sigma_daily = float(np.std(rets, ddof=1))
-        if sigma_daily <= 0 or not np.isfinite(nu) or nu <= 2:
+        if sigma_daily <= 0:
             return None
 
         # √n scaling daily-to-annual
         sigma_annual = sigma_daily * np.sqrt(252)
+
+        # When the Student-t fit degenerates — ν ≤ 2 (undefined variance) or a
+        # non-finite ν — the heavy-tail model is unusable. This happens on very
+        # low-volatility series such as aggregate bond funds (IUSB/IAGG). Fall
+        # back to a Normal tail so YearVaR still reports a number; ν = None flags
+        # the fallback so the UI can show "Normal" instead of a degree of freedom.
+        if not np.isfinite(nu) or nu <= 2:
+            from scipy.stats import norm
+            z_q = float(norm.ppf(q))                                    # negative
+            var_loss_pct = -sigma_annual * z_q * 100
+            es_loss_pct  = sigma_annual * float(norm.pdf(z_q)) / q * 100
+            return round(var_loss_pct, 2), round(es_loss_pct, 2), None
 
         # Standardized-Student-t quantile at lower tail q.
         # arch's standardized t convention: variance = 1, so the
@@ -242,8 +254,11 @@ def compute_risk_level(ticker_returns: pd.Series, window: int = WINDOW) -> float
         end = len(ticker_returns) - history_window + i + 1
         start = max(0, end - window)
         chunk = ticker_returns.values[start:end]
-        _, es = var_es_ewma(chunk)
-        ewma_vars.append(es)
+        # Compare like with like: the trailing history must be EWMA VaR, not ES.
+        # (ES is always larger than VaR, so ranking a current VaR against an ES
+        # history biased the gauge systematically low.)
+        var, _ = var_es_ewma(chunk)
+        ewma_vars.append(var)
 
     current_var, _ = var_es_ewma(ticker_returns.values[-window:])
     rank = np.mean(np.array(ewma_vars) <= current_var)
@@ -553,6 +568,14 @@ HYPOTHETICAL_SCENARIOS = [
             "SMCWX":   -0.18,   # global small cap
             "ABNDX":   +0.04,   # US core bonds
             "AMUSX":   +0.05,   # US Treasuries
+            # iShares Core (AOR) underlying ETFs
+            "IVV":     -0.15,   # US large (S&P 500)
+            "IJH":     -0.15,   # US mid
+            "IJR":     -0.14,   # US small
+            "IDEV":    -0.14,   # developed ex-US, Japan/Asia spillover
+            "IEMG":    -0.22,   # EM (heavy Asia)
+            "IUSB":    +0.04,   # US total bond — flight to safety
+            "IAGG":    +0.03,   # intl aggregate bond
         },
     },
     {
@@ -596,6 +619,14 @@ HYPOTHETICAL_SCENARIOS = [
             "SMCWX":   -0.10,
             "ABNDX":   +0.01,
             "AMUSX":   +0.03,
+            # iShares Core (AOR) underlying ETFs
+            "IVV":     -0.09,
+            "IJH":     -0.09,
+            "IJR":     -0.09,
+            "IDEV":    -0.10,   # oil-importer developed markets
+            "IEMG":    -0.13,
+            "IUSB":    +0.02,
+            "IAGG":    +0.01,
         },
     },
     {
@@ -639,6 +670,14 @@ HYPOTHETICAL_SCENARIOS = [
             "SMCWX":   -0.32,   # small caps hit hardest
             "ABNDX":   +0.06,
             "AMUSX":   +0.12,   # rate cut benefit
+            # iShares Core (AOR) underlying ETFs
+            "IVV":     -0.28,   # US large (S&P 500)
+            "IJH":     -0.30,   # US mid
+            "IJR":     -0.32,   # US small — hit hardest
+            "IDEV":    -0.22,   # developed ex-US
+            "IEMG":    -0.22,   # EM
+            "IUSB":    +0.08,   # US total bond — rate-cut benefit
+            "IAGG":    +0.05,   # intl aggregate bond
         },
     },
     {
@@ -682,6 +721,14 @@ HYPOTHETICAL_SCENARIOS = [
             "SMCWX":   -0.16,
             "ABNDX":   +0.03,
             "AMUSX":   +0.06,
+            # iShares Core (AOR) underlying ETFs
+            "IVV":     -0.18,   # US large (S&P 500)
+            "IJH":     -0.15,   # US mid
+            "IJR":     -0.12,   # US small
+            "IDEV":    -0.10,   # less mega-cap AI concentration
+            "IEMG":    -0.10,   # EM
+            "IUSB":    +0.04,   # US total bond — flight to quality
+            "IAGG":    +0.02,   # intl aggregate bond
         },
     },
 ]
@@ -716,11 +763,28 @@ def compute_hypothetical_scenarios(weights: dict) -> list[dict]:
     return results
 
 
+# Long-history proxies for newer ETFs, used ONLY in historical scenario
+# windows that pre-date a fund's inception (e.g. the iShares Core sleeve in
+# AOR launched 2012-2017, so the 2008 GFC window has no native data). Each
+# proxy is a near-identical-exposure fund with data back to the crisis. The
+# substitution is disclosed via the scenario's "proxied" map.
+SCENARIO_PROXIES = {
+    "IUSB": "AGG",   # iShares Core US Total Bond  ← iShares Core US Aggregate Bond
+    "IDEV": "EFA",   # iShares Core MSCI Intl Dev  ← iShares MSCI EAFE
+    "IEMG": "EEM",   # iShares Core MSCI EM        ← iShares MSCI Emerging Markets
+    "IAGG": "AGG",   # iShares Core Intl Agg Bond  ← US Aggregate (domestic stand-in)
+    "VXUS": "EFA",   # Vanguard Total Intl Stock   ← MSCI EAFE (developed-heavy proxy)
+    "BNDX": "AGG",   # Vanguard Total Intl Bond    ← US Aggregate (domestic stand-in)
+}
+
+
 def compute_scenarios(prices: pd.DataFrame, weights: dict) -> list[dict]:
     """
     For each historical scenario, compute portfolio and per-asset total returns
-    over the scenario date range. Missing tickers (e.g. BTC pre-2014) are
-    excluded and weights re-normalized so the portfolio return is still meaningful.
+    over the scenario date range. Tickers whose fund didn't exist yet fall back
+    to a long-history proxy (SCENARIO_PROXIES); any still missing (e.g. BTC
+    pre-2014) are excluded and weights re-normalized so the portfolio return is
+    still meaningful. Proxy substitutions are reported in the "proxied" map.
     """
     results = []
 
@@ -734,20 +798,21 @@ def compute_scenarios(prices: pd.DataFrame, weights: dict) -> list[dict]:
         if len(window) < 2:
             continue
 
-        # Only include tickers that have full non-NaN data across the window
-        avail = [
-            t for t in weights
-            if t in window.columns and window[t].notna().sum() >= 2
-        ]
-        if not avail:
-            continue
-
-        # Total return per ticker: (last / first) - 1
+        # Resolve each holding to a price series over the window, falling back
+        # to a long-history proxy when the real fund didn't exist yet.
         asset_returns = {}
-        for t in avail:
-            series = window[t].dropna()
+        proxied = {}
+        for t in weights:
+            src    = t
+            series = window[t].dropna() if t in window.columns else pd.Series(dtype=float)
+            if len(series) < 2:
+                px = SCENARIO_PROXIES.get(t)
+                if px and px in window.columns and window[px].notna().sum() >= 2:
+                    src, series = px, window[px].dropna()
             if len(series) >= 2:
                 asset_returns[t] = float(series.iloc[-1] / series.iloc[0] - 1)
+                if src != t:
+                    proxied[t] = src
 
         if not asset_returns:
             continue
@@ -776,6 +841,7 @@ def compute_scenarios(prices: pd.DataFrame, weights: dict) -> list[dict]:
             "coverage_pct":     round(total_w * 100, 1),
             "asset_returns":    {t: round(v * 100, 2) for t, v in asset_returns.items()},
             "contributions":    contributions,
+            "proxied":          proxied,
         })
 
     return results

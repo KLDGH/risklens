@@ -29,14 +29,14 @@ function buildReferenceTip(ticker, references) {
 
 const TIPS = {
   ret:       "Yesterday's log return for this asset.",
-  YearVaR:   "1-year VaR at 10% confidence. The 10th-percentile worst loss expected over a 1-year horizon, on a $100 position. Computed via Student-t parametric scaling: fit Student-t degrees of freedom (ν) to daily returns, scale daily volatility by √252, then take the standardized t-quantile at q=0.10. Interpretation: '10% chance of losing more than $X over the next year.' The consumer / long-horizon-PM complement to the 1-day 1% VaR columns (which are pro / trading-floor framing). Bottom number is the expected shortfall — average loss conditional on the loss exceeding VaR.",
+  YearVaR:   "1-year VaR at 10% confidence. The 10th-percentile worst loss expected over a 1-year horizon, on a $100 position. Computed via Student-t parametric scaling: fit Student-t degrees of freedom (ν) to daily returns, scale daily volatility by √252, then take the standardized t-quantile at q=0.10. This is an annualized parametric proxy, not a path simulation — and it falls back to a Normal tail when the Student-t fit degenerates (ν≤2) on very low-volatility series like aggregate bonds. Interpretation: '10% chance of losing more than $X over the next year.' The consumer / long-horizon-PM complement to the 1-day 1% VaR columns (which are pro / trading-floor framing). Bottom number is the expected shortfall — average loss conditional on the loss exceeding VaR.",
   hs:        "Historical Simulation. Top number = VaR (1% worst daily loss). Bottom number = ES (average loss across the worst 1%). Both drawn directly from the last 1000 trading days; no distribution assumption.",
   ewma:      "EWMA model. Top = VaR; bottom = ES. Computed with exponentially weighted volatility (λ=0.94) under a normal-distribution assumption. Recent days weigh more than older ones.",
   garch:     "GARCH(1,1) with Student-t innovations. Top = VaR; bottom = ES. The conditional volatility process is GARCH(1,1); the innovation distribution is Student-t (degrees of freedom estimated per fit) rather than Normal. This matches the empirical kurtosis of daily equity returns and produces tail-VaR estimates ~30–60% larger than Normal-innovation GARCH at 99% confidence. The EWMA column to the left assumes Normal innovations, so the EWMA-vs-GARCH gap *is* the heavy-tail premium. Falls back to EWMA if fitting fails.",
   tgarch:    "GJR-GARCH(1,1,1) with Student-t innovations. Top = VaR; bottom = ES. Two simultaneous corrections to vanilla GARCH: (1) GJR threshold term — negative shocks raise conditional variance more than equal-sized positive shocks, capturing the leverage effect; (2) Student-t innovations — heavy-tailed daily innovations matching empirical equity return kurtosis. The 't' in this column's name refers to BOTH: 'threshold' GARCH AND Student-t innovations. Falls back to EWMA if fitting fails.",
   evt:       "Extreme Value Theory. Top = VaR; bottom = ES. Fits a Generalized Pareto Distribution directly to the worst losses; best for fat-tailed assets like crypto.",
   consensus: "Simple average across all five VaR models. A rough consensus proxy — useful as a single reference number but not a coherent risk measure. Treat it as a heuristic.",
-  range:     "Range across all five VaR models (min – max). When tight, the models agree and standard assumptions hold. When wide — usually EVT pulling high — the asset's tail losses are more extreme than normal-distribution models capture. That gap is a warning, not noise.",
+  range:     "Range across all five VaR models (min – max). When tight, the models agree — reassuring. When wide — usually EVT pulling high — the asset's tail losses are more extreme than normal-distribution models capture. Model disagreement is the alert, not noise.",
   alpha:     "Hill tail index — estimated from the worst losses. Lower = fatter tails. Broad equity indices typically 3–4; individual stocks 2–4; gold and crypto often below 3; long treasuries can be surprisingly fat-tailed.",
   risk:      "Percentile rank of today's EWMA VaR vs the past 2 years of daily values for this asset. 100% = highest risk seen in 2 years.",
   compVar:   "Component VaR — this holding's contribution to the total portfolio VaR (parametric, EWMA covariance). Sum across all holdings equals the portfolio's EWMA VaR. Negative values indicate hedges (the holding's covariance with the rest of the portfolio reduces total risk).",
@@ -190,10 +190,10 @@ function WeightsTooltip({ weights }) {
   return lines;
 }
 
-function PortfolioRow({ a, portfolioLabel, showAllModels }) {
+function PortfolioRow({ a, portfolioLabel, showAllModels, topRollup = false, benchmarkBelow = false }) {
   const weightTip = WeightsTooltip({ weights: a.weights });
   return (
-    <tr className="portfolio-row">
+    <tr className={`portfolio-row${topRollup ? " portfolio-row-top" : ""}${benchmarkBelow ? " has-benchmark-below" : ""}`}>
       <td className="left asset-cell sticky-col portfolio-sticky">
         <span className="ticker portfolio-ticker">{portfolioLabel ?? "PORTFOLIO"}</span>
         <span className="name">{a.name}</span>
@@ -230,6 +230,46 @@ function PortfolioRow({ a, portfolioLabel, showAllModels }) {
       <td className={`num portfolio-cell col-summary ${showAllModels ? "group-end" : "group-start group-end"}`} title="Sum of component VaRs across all holdings — equals portfolio EWMA VaR by construction">
         {a.component_var_total != null ? `Σ ${a.component_var_total.toFixed(2)}` : "—"}
       </td>
+    </tr>
+  );
+}
+
+// Policy-benchmark row — sits directly under the portfolio total so the two
+// rollups compare column-by-column ("Total Plan vs Policy Benchmark"). Same
+// columns as the portfolio row, muted, with no Component VaR (component
+// attribution is portfolio-specific and doesn't apply to the benchmark).
+function BenchmarkRow({ a, showAllModels }) {
+  return (
+    <tr className="benchmark-row">
+      <td className="left asset-cell sticky-col benchmark-sticky">
+        <span className="ticker benchmark-ticker">BENCHMARK</span>
+        <span className="name">{a.name}</span>
+      </td>
+      <td className="num price">
+        <span className="portfolio-nav" title="Synthetic NAV starting at $100">NAV ${a.nav?.toFixed(2) ?? a.last_price?.toFixed(2)}</span>
+      </td>
+      <ReturnCell value={a.last_return_pct} className="benchmark-cell" />
+      {showAllModels && (
+        <>
+          <VarEsCell varValue={a.var_hs}    esValue={a.es_hs}    className="benchmark-cell col-models group-start" />
+          <VarEsCell varValue={a.var_ewma}  esValue={a.es_ewma}  className="benchmark-cell col-models" />
+          <VarEsCell varValue={a.var_garch} esValue={a.es_garch} className="benchmark-cell col-models" />
+        </>
+      )}
+      <VarEsCell varValue={a.var_tgarch} esValue={a.es_tgarch} className={`benchmark-cell col-models ${showAllModels ? "" : "group-start"}`} />
+      <VarEsCell varValue={a.var_evt}    esValue={a.es_evt}    className="benchmark-cell col-models group-end" />
+      <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="benchmark-cell col-yr group-start group-end" neutral />
+      <td className="num alpha-cell benchmark-cell">{a.tail_index?.toFixed(2)}</td>
+      <td className="left gauge-cell benchmark-cell">
+        <RiskBar level={a.risk_level} trend={a.var_trend} exceptionRate={a.exception_rate} exceptionCount={a.exception_count} />
+      </td>
+      {showAllModels && (
+        <>
+          <td className="num consensus-cell benchmark-cell col-summary group-start">{a.mean_var?.toFixed(2)}</td>
+          <RangeCell values={[a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt]} className="benchmark-cell col-summary" />
+        </>
+      )}
+      <td className={`num benchmark-cell col-summary ${showAllModels ? "group-end" : "group-start group-end"}`} title="Component VaR is a within-portfolio attribution; not applicable to the benchmark">—</td>
     </tr>
   );
 }
@@ -306,7 +346,7 @@ function AssetRow({ a, portfolioWeights, disclosedWeights, fundTicker, showAllMo
   );
 }
 
-export default function RiskTable({ assets, portfolioWeights, disclosedWeights, fundTicker, portfolioLabel }) {
+export default function RiskTable({ assets, portfolioWeights, disclosedWeights, fundTicker, portfolioLabel, benchmark }) {
   const [sortKey, setSortKey] = useState("risk");
   const [sortDir, setSortDir] = useState("desc");
   // Default to the compact view (tGARCH + EVT + YearVaR + Comp VaR).
@@ -427,6 +467,16 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
           </tr>
         </thead>
         <tbody>
+          {/* Portfolio total + policy benchmark pinned to the TOP — institutional
+              "rollup" convention (FactSet / Bloomberg / Aladdin lead with the total
+              plan vs its benchmark, so the headline comparison is visible without
+              scrolling). */}
+          {portfolio && (
+            <PortfolioRow a={portfolio} portfolioLabel={portfolioLabel} showAllModels={showAllModels} topRollup benchmarkBelow={!!benchmark} />
+          )}
+          {benchmark && (
+            <BenchmarkRow a={benchmark} showAllModels={showAllModels} />
+          )}
           {sorted.map((a) => (
             <AssetRow
               key={a.ticker}
@@ -438,23 +488,18 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
             />
           ))}
         </tbody>
-        {(fundRefRow || portfolio) && (
+        {fundRefRow && (
           <tfoot>
-            {/* Pinned look-through fund-NAV reference row, directly above the
-                basket aggregate so the two sit side by side for comparison. */}
-            {fundRefRow && (
-              <AssetRow
-                a={fundRefRow}
-                portfolioWeights={portfolioWeights}
-                disclosedWeights={disclosedWeights}
-                fundTicker={fundTicker}
-                showAllModels={showAllModels}
-                isFundReference
-              />
-            )}
-            {portfolio && (
-              <PortfolioRow a={portfolio} portfolioLabel={portfolioLabel} showAllModels={showAllModels} />
-            )}
+            {/* Look-through fund-NAV reference row pinned to the footer, for the
+                NAV-vs-basket comparison (the basket total now sits at the top). */}
+            <AssetRow
+              a={fundRefRow}
+              portfolioWeights={portfolioWeights}
+              disclosedWeights={disclosedWeights}
+              fundTicker={fundTicker}
+              showAllModels={showAllModels}
+              isFundReference
+            />
           </tfoot>
         )}
       </table>

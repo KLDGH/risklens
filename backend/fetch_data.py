@@ -62,6 +62,23 @@ CG_2055_NAMES = {
     "AMUSX": "U.S. Government Securities Fund",
 }
 
+# Underlying look-through of the iShares Core 60/40 Balanced Allocation ETF
+# (AOR) — a real, publicly-traded fund-of-ETFs. Holdings as disclosed
+# 2026-06-11, re-normalized over the seven underlying funds (the ~0.1% net
+# cash sweep is dropped). This gives the app a real, well-known multi-asset
+# fund as its showcase portfolio rather than an invented book.
+AOR_TICKERS = ["IVV", "IUSB", "IDEV", "IEMG", "IAGG", "IJH", "IJR"]
+
+AOR_NAMES = {
+    "IVV":  "iShares Core S&P 500 ETF",
+    "IUSB": "iShares Core Total USD Bond Market ETF",
+    "IDEV": "iShares Core MSCI Intl Developed ETF",
+    "IEMG": "iShares Core MSCI Emerging Markets ETF",
+    "IAGG": "iShares Core International Aggregate Bond ETF",
+    "IJH":  "iShares Core S&P Mid-Cap ETF",
+    "IJR":  "iShares Core S&P Small-Cap ETF",
+}
+
 # Active stock-picker ETFs spotlighted as standalone single-fund modes.
 # Each is an active global equity ETF from a distinct sponsor — selected to
 # let users compare two competing answers to the same active-management

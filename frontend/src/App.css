@@ -396,6 +396,11 @@
   font-style: italic;
 }
 
+.legend-es-key {
+  color: var(--text-dim);
+  opacity: 0.85;
+}
+
 /* Leading caption that scopes the color key to the daily-VaR columns.
    Rendered as a small-caps label so it reads as "here's what these colors
    mean" rather than as another swatch in the row. */

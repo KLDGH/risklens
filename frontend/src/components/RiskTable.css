@@ -391,6 +391,31 @@
   background: var(--portfolio-row-bg);
 }
 
+/* When the total is rolled up to the top, the accent separator goes BELOW it
+   (dividing the total from the holdings) rather than above. */
+.portfolio-row-top {
+  border-top: none;
+  border-bottom: 2px solid var(--accent);
+}
+
+/* When a benchmark row follows the top total, the total→benchmark boundary is
+   a subtle hairline and the accent separator moves to below the benchmark, so
+   the two rollups read as one paired "Total vs Benchmark" block. */
+.portfolio-row-top.has-benchmark-below { border-bottom: 1px solid var(--border); }
+
+.benchmark-row {
+  background: var(--portfolio-row-bg);
+  border-bottom: 2px solid var(--accent);
+  opacity: 0.78;
+}
+.benchmark-row:hover { opacity: 1; }
+.benchmark-sticky { background: var(--portfolio-row-bg) !important; }
+.benchmark-ticker {
+  color: var(--text-dim);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
 .portfolio-row:hover {
   background: var(--portfolio-row-hover);
 }

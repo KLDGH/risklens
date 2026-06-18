@@ -94,6 +94,16 @@
   margin-top: 2px;
 }
 
+.scenario-proxy-note {
+  font-size: 10.5px;
+  font-style: italic;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
 /* ── Big P&L number ── */
 .scenario-pnl {
   display: flex;

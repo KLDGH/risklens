@@ -8,6 +8,7 @@ import pandas as pd
 
 from fetch_data import (
     NAMES, TICKERS,
+    AOR_TICKERS, AOR_NAMES,
     TDF_2055_TICKERS, TDF_2055_NAMES,
     CG_2055_TICKERS, CG_2055_NAMES,
     ACTIVE_FUND_TICKERS, ACTIVE_FUND_NAMES,
@@ -39,6 +40,23 @@ from reference_values import (
 # - UUP: USD index ETF — included in the cross-asset correlation basket as the
 #        FX risk-premium leg. Not held in the portfolio, so fetched separately.
 EXTRA_BOND_PROXIES = ["AGG", "UUP"]
+
+# Policy-benchmark proxies. Each portfolio mode is compared against a simple,
+# investable policy blend — an analyst-chosen proxy, NOT an official benchmark:
+# global equity via ACWI, US aggregate bonds via AGG (already fetched above).
+# The per-mode blend lives in BENCHMARKS; it renders as a muted row directly
+# under the portfolio total, computed through the same engine.
+BENCHMARK_TICKERS = ["ACWI"]
+
+BENCHMARKS = {
+    # mode_key: ({ticker: weight}, display label)
+    "aor":          ({"ACWI": 0.60, "AGG": 0.40}, "Policy benchmark · 60/40 (ACWI / AGG)"),
+    "hypothetical": ({"ACWI": 0.60, "AGG": 0.40}, "Policy benchmark · 60/40 (ACWI / AGG)"),
+    "tdf_2055":     ({"ACWI": 0.90, "AGG": 0.10}, "Policy benchmark · 90/10 (ACWI / AGG)"),
+    "cg_2055":      ({"ACWI": 0.90, "AGG": 0.10}, "Policy benchmark · 90/10 (ACWI / AGG)"),
+    "cggo_active":  ({"ACWI": 1.00},              "Benchmark · MSCI ACWI (global equity)"),
+    "dwld_active":  ({"ACWI": 1.00},              "Benchmark · MSCI ACWI (global equity)"),
+}
 
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "frontend", "public", "data", "risk_output.json")
 
@@ -165,6 +183,24 @@ HYPOTHETICAL_WEIGHTS = {
 }
 
 # ---------------------------------------------------------------------------
+# iShares Core 60/40 Balanced Allocation ETF (AOR) — modeled directly from its
+# disclosed underlying iShares ETFs (2026-06-11), re-normalized over the seven
+# funds. AOR is a fund-of-ETFs holding these directly, so this captures ~99.9%
+# of the fund (a complete decomposition, NOT a partial look-through like the
+# active-fund CGGO/DWLD top-25 baskets). A real, publicly-traded ~61/39
+# multi-asset fund used as the app's showcase portfolio.
+# ---------------------------------------------------------------------------
+AOR_WEIGHTS = {
+    "IVV":  0.3418,   # US large cap (S&P 500)
+    "IUSB": 0.3304,   # US total bond market
+    "IDEV": 0.1717,   # developed ex-US equity
+    "IEMG": 0.0682,   # emerging-markets equity
+    "IAGG": 0.0590,   # international aggregate bonds
+    "IJH":  0.0195,   # US mid cap
+    "IJR":  0.0094,   # US small cap
+}
+
+# ---------------------------------------------------------------------------
 # Vanguard Target Retirement 2055 (VFFVX) underlying allocation
 # Source: Vanguard fund holdings (publicly disclosed quarterly).
 #   ~54% Total US Equity      → VTI
@@ -214,6 +250,15 @@ CGGO_WEIGHTS = {}
 DWLD_WEIGHTS = {}
 
 PORTFOLIO_MODES = {
+    "aor": {
+        "label":       "iShares Core 60/40 (AOR)",
+        "description": "A real, publicly-traded multi-asset fund: the iShares Core 60/40 Balanced Allocation ETF (AOR), modeled directly from its seven underlying iShares ETFs at their disclosed weights — ~61% equity (US large/mid/small + intl developed + EM) and ~39% fixed income (US + international aggregate bonds). AOR is a fund-of-ETFs that holds these directly, so this is the full fund (~99.9% of holdings), not a partial reconstruction. Holdings as of 2026-06-11.",
+        "tickers":     AOR_TICKERS,
+        "names":       AOR_NAMES,
+        "weights":     AOR_WEIGHTS,
+        "name":        "iShares Core 60/40 Balanced Allocation (AOR)",
+        "optimizable": True,   # emit the systematic-construction "optimizer" view
+    },
     "hypothetical": {
         "label":       "Hypothetical Portfolio",
         "description": "An illustrative diversified mix: 60% equity (US + intl developed + EM), 30% fixed income (Treasuries + IG + HY + TIPS), 8% real assets (gold + broad commodities + REITs), 2% crypto. Built from 14 asset-class ETFs.",
@@ -318,7 +363,8 @@ def compute_portfolio_row(returns: pd.DataFrame, weights: dict, name: str,
 
 
 def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
-                 prices_long: pd.DataFrame, mode_cfg: dict) -> dict:
+                 prices_long: pd.DataFrame, mode_cfg: dict,
+                 spy_rets: pd.Series = None, benchmark: tuple = None) -> dict:
     """Compute everything needed for one portfolio mode."""
     tickers  = mode_cfg["tickers"]
     names    = mode_cfg["names"]
@@ -378,7 +424,7 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
     print("  Backtesting VaR models on portfolio (504-day eval, 1000-day lookback)...")
     backtests = backtest_portfolio_var(prices_long, weights)
 
-    return {
+    result = {
         "label":        mode_cfg["label"],
         "description":  mode_cfg["description"],
         "weights":      weights,
@@ -387,6 +433,34 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
         "risk_history": risk_history,
         "backtests":    backtests,
     }
+
+    # Policy-benchmark comparison row — an analyst-chosen proxy run through the
+    # same engine as the portfolio total, surfaced as a muted row beneath it.
+    if benchmark:
+        bm_weights, bm_label = benchmark
+        if all(t in returns_10y.columns for t in bm_weights):
+            print(f"  Computing policy-benchmark row ({bm_label})...")
+            bench = compute_portfolio_row(returns_10y, bm_weights, bm_label)
+            bench["ticker"]       = "BENCHMARK"
+            bench["is_portfolio"] = False
+            bench["is_benchmark"] = True
+            result["benchmark"]   = bench
+        else:
+            missing = [t for t in bm_weights if t not in returns_10y.columns]
+            print(f"  Skipping benchmark row — missing data for {missing}")
+
+    # Systematic portfolio construction — only for modes flagged optimizable.
+    if mode_cfg.get("optimizable") and spy_rets is not None:
+        print("  Running portfolio optimizer (GMV / ERC / max-div / PM tilts / frontier)...")
+        try:
+            from optimizer import compute_optimizer
+            opt = compute_optimizer(returns_10y, weights, prices_long, spy_rets)
+            if opt:
+                result["optimizer"] = opt
+        except Exception as e:
+            print(f"  WARNING: optimizer failed ({e})")
+
+    return result
 
 
 def _augment_active_fund_modes_with_holdings():
@@ -493,7 +567,7 @@ def main():
     for cfg in PORTFOLIO_MODES.values():
         all_tickers.extend(cfg["tickers"])
     all_tickers = list(dict.fromkeys(
-        all_tickers + EXTRA_BOND_PROXIES + ANOMALY_TICKERS
+        all_tickers + EXTRA_BOND_PROXIES + ANOMALY_TICKERS + BENCHMARK_TICKERS
     ))
 
     print("Fetching 10y price data...")
@@ -504,11 +578,15 @@ def main():
     print("Fetching 20y price data (for scenarios + correlation)...")
     prices_long = fetch_prices(period="20y", tickers=all_tickers)
 
+    # SPY daily returns — market proxy for beta/alpha (used by the optimizer and
+    # the per-sector factor views). Computed once here, reused throughout.
+    spy_rets = compute_log_returns(prices_long[["SPY"]])["SPY"].dropna()
+
     # Compute each portfolio mode
     portfolios = {}
     for key, cfg in PORTFOLIO_MODES.items():
         print(f"\n=== Mode: {cfg['label']} ===")
-        portfolios[key] = compute_mode(prices_10y, returns_10y, prices_long, cfg)
+        portfolios[key] = compute_mode(prices_10y, returns_10y, prices_long, cfg, spy_rets=spy_rets, benchmark=BENCHMARKS.get(key))
         # Echo flags so the frontend knows which modes need the holdings panel
         if cfg.get("is_active_fund_spotlight"):
             portfolios[key]["is_active_fund_spotlight"] = True
@@ -678,9 +756,8 @@ def main():
     # (the open-data substitute for a Barra-style attribution).
     print("\nComputing univariate anomaly views for sector ETFs...")
 
-    # SPY excess-return series for the beta-vs-market calc — reused across
-    # all anomaly tickers.
-    spy_rets = compute_log_returns(prices_long[["SPY"]])["SPY"].dropna()
+    # spy_rets (SPY daily returns) already computed before the portfolio loop;
+    # reused here for the per-ticker beta-vs-market calc.
 
     # Fetch the Fama-French + Momentum factors once. If the live download
     # fails we fall back to the cached copy (see factor_models.py).
@@ -816,7 +893,7 @@ def main():
     output = {
         "generated_at":           datetime.now(timezone.utc).isoformat(),
         "data_as_of":             data_as_of,
-        "default_mode":           "hypothetical",
+        "default_mode":           "aor",
         "portfolios":             portfolios,
         "sp500_history":          sp500_history,
         "correlation_history":    corr_history,

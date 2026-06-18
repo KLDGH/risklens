@@ -1,6 +1,6 @@
 .infotip-icon {
   color: var(--infotip-icon);
-  font-size: 10px;
+  font-size: 11px;
   cursor: help;
   line-height: 1;
   user-select: none;
@@ -20,13 +20,13 @@
      the icon. Horizontal centering is handled by the JS clamp, not a
      translateX, so the bubble can shift inward near a viewport edge. */
   transform: translateY(calc(-100% - 10px));
-  width: 280px;
+  width: 340px;
   background: var(--bg3);
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 8px 10px;
-  font-size: 10px;
-  line-height: 1.6;
+  padding: 10px 13px;
+  font-size: 12px;
+  line-height: 1.55;
   color: var(--text);
   font-family: "JetBrains Mono", monospace;
   font-weight: 400;
