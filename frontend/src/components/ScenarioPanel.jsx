@@ -270,6 +270,12 @@ function ScenarioCard({ s, weights, comparisons, currentMode }) {
         </div>
       )}
 
+      {s.fund_level_estimate && (
+        <div className="scenario-coverage">
+          Fund-level estimate — the look-through basket is stressed as a whole using the fund's own scenario assumption, since individual holdings aren't shocked separately.
+        </div>
+      )}
+
       {isHypo && (
         <div className="scenario-coverage">
           Assumptions are illustrative estimates, not forecasts. Shocks reflect analyst consensus on directional exposure.

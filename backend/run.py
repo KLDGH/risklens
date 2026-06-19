@@ -25,6 +25,7 @@ from risk_engine import (
     compute_multi_window_correlation, compute_anomaly_view,
     CORR_TICKERS,
 )
+from scenario_config import report_scenario_coverage
 from factor_models import (
     fetch_ff_carhart_daily, fit_ff_carhart, compute_beta,
     compute_rolling_ff_loadings, compute_thematic_exposures,
@@ -454,7 +455,7 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
     hist = compute_scenarios(prices_long, weights)
     for s in hist:
         s["type"] = "historical"
-    hypo = compute_hypothetical_scenarios(weights)
+    hypo = compute_hypothetical_scenarios(weights, fund_ticker=mode_cfg.get("fund_ticker"))
     scenarios = hist + hypo
 
     # Portfolio risk trajectory — daily EWMA VaR over full available history.
@@ -638,6 +639,11 @@ def main():
                 portfolios[key]["coverage_meta"] = cfg["coverage_meta"]
             if cfg.get("disclosed_weights"):
                 portfolios[key]["disclosed_weights"] = cfg["disclosed_weights"]
+
+    # Build-time guard: print how much of each portfolio every hypothetical
+    # shock vector actually covers, so an edit to scenarios.yaml that leaves a
+    # portfolio partly uncovered is visible at regen time, not in production.
+    report_scenario_coverage(PORTFOLIO_MODES)
 
     # Attach disclosed-holdings reference data to active-fund spotlight modes.
     # Loaded from the preprocessed JSON (committed to repo so CI doesn't need
