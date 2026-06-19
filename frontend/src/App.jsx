@@ -39,7 +39,7 @@ const PORTFOLIO_SHORT_LABELS = {
   aor:          "ISHARES CORE 60/40 (AOR)",
   hypothetical: "HYPOTHETICAL PORTFOLIO",
   tdf_2055:     "VANGUARD 2055",
-  cg_2055:      "AF TARGET 2055",
+  cg_2035:      "AF TARGET 2035",
   cggo_active:  "CGGO TOP-25 BASKET",
   dwld_active:  "DWLD TOP-25 BASKET",
 };
@@ -427,12 +427,10 @@ export default function App() {
                   onClick={() => setMode(k)}
                 >
                   {data.portfolios[k].label}
+                  {mode === k && <InfoTip text={portfolio.description} />}
                 </button>
               ))}
             </div>
-          </div>
-          <div className="mode-info">
-            <span className="mode-desc">{portfolio.description}</span>
           </div>
         </div>
       )}
@@ -479,8 +477,11 @@ export default function App() {
               <span className="legend-item"><span className="dot green" />Low (&lt;2.5)</span>
               <span className="legend-item"><span className="dot yellow" />Elevated (2.5–5)</span>
               <span className="legend-item"><span className="dot red" />High (&gt;5)<InfoTip text="Color thresholds for the daily VaR columns (HS, EWMA, GARCH, tGARCH, EVT) only — NOT the YearVaR column, whose 1-year losses sit on a different scale and render in neutral text. These are pragmatic rules of thumb, not a regulatory standard. Calibrated for daily 1% VaR on liquid ETFs: diversified US equity (SPY) historically sits around 1.5–2.5%; sector ETFs 2–3%; individual stocks 3–5%; crypto and volatile names often 5%+. Different asset classes warrant different thresholds, which is why the per-asset Risk gauge (percentile rank vs 2-year history) is the more rigorous comparison on this page." /></span>
-              <span className="legend-item">each cell: VaR on top, <span className="legend-es-key">Expected Shortfall (ES)</span> below</span>
-              <span className="legend-item legend-note">VaR expressed as $ loss on $100 portfolio</span>
+              <span className="legend-item legend-sep">·</span>
+              <span className="legend-item">each cell: VaR on top, <span className="legend-es-key">ES</span> below</span>
+            </div>
+            <div className="legend-twolayer">
+              Two reads: VaR-column color = <strong>absolute</strong> daily-loss size (comparable across holdings) · <strong>Risk</strong> = how elevated each asset is vs its own 2-yr history (self-normalizing, so a crypto and a bond are judged each against its own normal).
             </div>
             <RiskTable
               assets={portfolio.assets}

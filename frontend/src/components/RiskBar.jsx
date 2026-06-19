@@ -3,10 +3,10 @@ import "./RiskBar.css";
 
 function TipContent({ pct, color, trend, exceptionRate, exceptionCount }) {
   const trendLabel = trend === "up"
-    ? "↑ Rising — VaR has been climbing over the last 5 trading days"
+    ? "↑ Rising — EWMA VaR has been climbing over the last 5 trading days"
     : trend === "down"
-    ? "↓ Falling — VaR has been easing over the last 5 trading days"
-    : "→ Flat — VaR roughly unchanged over the last 5 days";
+    ? "↓ Falling — EWMA VaR has been easing over the last 5 trading days"
+    : "→ Flat — EWMA VaR roughly unchanged over the last 5 days";
 
   const excInterpret = exceptionRate != null
     ? exceptionRate > 3
@@ -19,17 +19,14 @@ function TipContent({ pct, color, trend, exceptionRate, exceptionCount }) {
   return (
     <div style={{ lineHeight: 1.7 }}>
       <div style={{ color: color, fontWeight: 600, marginBottom: 5 }}>
-        Risk gauge: {pct}%
+        Risk gauge: {pct}th percentile
       </div>
-      <div style={{ marginBottom: 4 }}>
-        Percentile rank vs trailing 2-year history. 100% = highest risk seen in 2 years.
-      </div>
-      <div style={{ borderTop: "1px solid #2a3441", paddingTop: 5, marginTop: 4 }}>
+      <div>
         {trendLabel}
       </div>
       {exceptionRate != null && (
         <div style={{ borderTop: "1px solid #2a3441", paddingTop: 5, marginTop: 4 }}>
-          <div>VaR exceptions (2y): <span style={{ color: exceptionRate > 3 ? "#e53e3e" : exceptionRate > 1.5 ? "#f59e0b" : "#4ade80", fontWeight: 600 }}>{exceptionCount} days ({exceptionRate}%)</span></div>
+          <div>EWMA VaR exceptions (2y): <span style={{ color: exceptionRate > 3 ? "#e53e3e" : exceptionRate > 1.5 ? "#f59e0b" : "#4ade80", fontWeight: 600 }}>{exceptionCount} days ({exceptionRate}%)</span></div>
           <div style={{ color: "#8896aa", marginTop: 2 }}>Expected ~1%. {excInterpret}</div>
         </div>
       )}

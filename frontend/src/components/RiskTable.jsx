@@ -190,6 +190,23 @@ function WeightsTooltip({ weights }) {
   return lines;
 }
 
+// Hill tail index (Tail α). Deliberately NOT on the VaR traffic-light scale —
+// it's a tail-SHAPE descriptor whose "normal" range is asset-class-dependent
+// (equity 3-4, gold/crypto often <3), so absolute color thresholds would
+// mislead. Renders neutral, with one subtle flag when the tail is genuinely
+// extreme (α < 2) even for a fat-tailed asset.
+function AlphaCell({ value, className = "" }) {
+  const fat = value != null && value < 2;
+  return (
+    <td
+      className={`num alpha-cell ${className} ${fat ? "fat-tail-flag" : ""}`}
+      title={fat ? "Very fat tail (Hill α < 2): extreme losses are materially more likely, even versus other fat-tailed assets." : undefined}
+    >
+      {value != null ? value.toFixed(2) : "—"}
+    </td>
+  );
+}
+
 function PortfolioRow({ a, portfolioLabel, showAllModels, topRollup = false, benchmarkBelow = false }) {
   const weightTip = WeightsTooltip({ weights: a.weights });
   return (
@@ -199,9 +216,12 @@ function PortfolioRow({ a, portfolioLabel, showAllModels, topRollup = false, ben
         <span className="name">{a.name}</span>
       </td>
       <td className="num price">
-        <span className="portfolio-nav" title="Synthetic NAV starting at $100">NAV ${a.nav?.toFixed(2) ?? a.last_price.toFixed(2)}</span>
+        <span className="portfolio-nav" title={a.nav_is_fund_price ? "Actual fund share price / NAV" : "Synthetic basket index (started at $100 at the window's start)"}>NAV ${a.nav?.toFixed(2) ?? a.last_price.toFixed(2)}</span>
       </td>
       <ReturnCell value={a.last_return_pct} className="portfolio-cell" />
+      <td className="left gauge-cell portfolio-cell">
+        <RiskBar level={a.risk_level} trend={a.var_trend} exceptionRate={a.exception_rate} exceptionCount={a.exception_count} />
+      </td>
       {showAllModels && (
         <>
           <VarEsCell varValue={a.var_hs}      esValue={a.es_hs}      className="portfolio-cell col-models group-start" />
@@ -212,15 +232,7 @@ function PortfolioRow({ a, portfolioLabel, showAllModels, topRollup = false, ben
       <VarEsCell varValue={a.var_tgarch}  esValue={a.es_tgarch}  className={`portfolio-cell col-models ${showAllModels ? "" : "group-start"}`} />
       <VarEsCell varValue={a.var_evt}     esValue={a.es_evt}     className="portfolio-cell col-models group-end" />
       <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="portfolio-cell col-yr group-start group-end" neutral />
-      <td className="num alpha-cell portfolio-cell">{a.tail_index?.toFixed(2)}</td>
-      <td className="left gauge-cell portfolio-cell">
-        <RiskBar
-          level={a.risk_level}
-          trend={a.var_trend}
-          exceptionRate={a.exception_rate}
-          exceptionCount={a.exception_count}
-        />
-      </td>
+      <AlphaCell value={a.tail_index} className="portfolio-cell" />
       {showAllModels && (
         <>
           <td className="num consensus-cell portfolio-cell col-summary group-start">{a.mean_var?.toFixed(2)}</td>
@@ -249,6 +261,9 @@ function BenchmarkRow({ a, showAllModels }) {
         <span className="portfolio-nav" title="Synthetic NAV starting at $100">NAV ${a.nav?.toFixed(2) ?? a.last_price?.toFixed(2)}</span>
       </td>
       <ReturnCell value={a.last_return_pct} className="benchmark-cell" />
+      <td className="left gauge-cell benchmark-cell">
+        <RiskBar level={a.risk_level} trend={a.var_trend} exceptionRate={a.exception_rate} exceptionCount={a.exception_count} />
+      </td>
       {showAllModels && (
         <>
           <VarEsCell varValue={a.var_hs}    esValue={a.es_hs}    className="benchmark-cell col-models group-start" />
@@ -259,10 +274,7 @@ function BenchmarkRow({ a, showAllModels }) {
       <VarEsCell varValue={a.var_tgarch} esValue={a.es_tgarch} className={`benchmark-cell col-models ${showAllModels ? "" : "group-start"}`} />
       <VarEsCell varValue={a.var_evt}    esValue={a.es_evt}    className="benchmark-cell col-models group-end" />
       <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="benchmark-cell col-yr group-start group-end" neutral />
-      <td className="num alpha-cell benchmark-cell">{a.tail_index?.toFixed(2)}</td>
-      <td className="left gauge-cell benchmark-cell">
-        <RiskBar level={a.risk_level} trend={a.var_trend} exceptionRate={a.exception_rate} exceptionCount={a.exception_count} />
-      </td>
+      <AlphaCell value={a.tail_index} className="benchmark-cell" />
       {showAllModels && (
         <>
           <td className="num consensus-cell benchmark-cell col-summary group-start">{a.mean_var?.toFixed(2)}</td>
@@ -316,6 +328,9 @@ function AssetRow({ a, portfolioWeights, disclosedWeights, fundTicker, showAllMo
       </td>
       <td className="num price">${a.last_price.toLocaleString()}</td>
       <ReturnCell value={a.last_return_pct} />
+      <td className="left gauge-cell">
+        <RiskBar level={a.risk_level} trend={a.var_trend} exceptionRate={a.exception_rate} exceptionCount={a.exception_count} />
+      </td>
       {showAllModels && (
         <>
           <VarEsCell varValue={a.var_hs}      esValue={a.es_hs}      className="col-models group-start" />
@@ -326,15 +341,7 @@ function AssetRow({ a, portfolioWeights, disclosedWeights, fundTicker, showAllMo
       <VarEsCell varValue={a.var_tgarch}  esValue={a.es_tgarch}  className={`col-models ${showAllModels ? "" : "group-start"}`} />
       <VarEsCell varValue={a.var_evt}     esValue={a.es_evt}     className="col-models group-end" />
       <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="col-yr group-start group-end" neutral />
-      <td className="num alpha-cell">{a.tail_index?.toFixed(2)}</td>
-      <td className="left gauge-cell">
-        <RiskBar
-          level={a.risk_level}
-          trend={a.var_trend}
-          exceptionRate={a.exception_rate}
-          exceptionCount={a.exception_count}
-        />
-      </td>
+      <AlphaCell value={a.tail_index} />
       {showAllModels && (
         <>
           <td className="num consensus-cell col-summary group-start">{a.mean_var?.toFixed(2)}</td>
@@ -356,16 +363,18 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
   // in the snapshot table.
   const [showAllModels, setShowAllModels] = useState(false);
 
+  // NOTE: keep the two state updates as separate, top-level calls. Nesting
+  // setSortDir inside a setSortKey updater makes the updater impure, so React's
+  // dev StrictMode double-invokes it and the direction toggles twice (net no-op)
+  // — which looked like "sort won't switch asc/desc."
   const handleSort = useCallback((col) => {
-    setSortKey((prev) => {
-      if (prev === col) {
-        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-        return col;
-      }
+    if (col === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(col);
       setSortDir(col === "name" ? "asc" : "desc");
-      return col;
-    });
-  }, []);
+    }
+  }, [sortKey]);
 
   // Separate portfolio from individual assets — portfolio is always pinned to bottom
   const portfolio = assets.find((a) => a.is_portfolio);
@@ -407,7 +416,7 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
               extra models — no separate button floating off to the side. */}
           <tr className="group-superheader-row">
             <th className="left sticky-col" aria-hidden="true" />
-            <th colSpan={2} aria-hidden="true" />
+            <th colSpan={3} aria-hidden="true" />
             <th
               colSpan={showAllModels ? 5 : 2}
               className="col-models group-start group-end var-superheader"
@@ -439,12 +448,13 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
                 {!showAllModels && <span className="var-superheader-hint">+3 models</span>}
               </button>
             </th>
-            <th colSpan={showAllModels ? 6 : 4} aria-hidden="true" />
+            <th colSpan={showAllModels ? 5 : 3} aria-hidden="true" />
           </tr>
           <tr>
             <Th col="name"  label="Asset"   className="left sticky-col" {...sp} />
             <Th col="price" label="Price"   className="num" {...sp} />
             <ThWithTip col="ret"       label="1d Ret%"    tip={TIPS.ret}       className="num" {...sp} />
+            <ThWithTip col="risk"      label="Risk"       tip={TIPS.risk}      className="left" {...sp} />
             {showAllModels && (
               <>
                 <ThWithTip col="varHs"     label="HS"     tip={TIPS.hs}     className="num col-models group-start" {...sp} />
@@ -456,7 +466,6 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
             <ThWithTip col="varEvt"    label="EVT"    tip={TIPS.evt}    className="num col-models group-end" {...sp} />
             <ThWithTip col="varYr"     label="YearVaR (10%)" tip={TIPS.YearVaR} className="num col-yr group-start group-end" {...sp} />
             <ThWithTip col="alpha"     label={<span style={{textTransform:"none"}}>Tail α</span>} tip={TIPS.alpha} className="num" {...sp} />
-            <ThWithTip col="risk"      label="Risk"       tip={TIPS.risk}      className="left" {...sp} />
             {showAllModels && (
               <>
                 <ThWithTip col="consensus" label="Consensus"  tip={TIPS.consensus} className="num col-summary group-start" {...sp} />

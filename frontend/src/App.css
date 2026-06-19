@@ -270,15 +270,18 @@
 
 .mode-bar {
   display: flex;
-  flex-direction: column;       /* stack: toggle on top, info below */
-  align-items: stretch;
-  gap: 12px;
-  padding: 12px 16px 14px;
+  align-items: center;          /* single compact selector strip */
+  padding: 7px 14px;
   background: var(--bg2);
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
   border-radius: 4px;
 }
+
+/* The portfolio-description ⓘ lives inside the active (accent-filled) pill,
+   so it must read on the accent background, not as the default dim icon. */
+.mode-btn.active .infotip-icon { color: rgba(255, 255, 255, 0.85); }
+.mode-btn.active .infotip-icon:hover { color: #fff; }
 
 .mode-info {
   display: flex;
@@ -308,6 +311,22 @@
   line-height: 1.65;
   margin-top: 2px;
 }
+
+/* Collapsed-by-default toggle for the portfolio blurb — keeps the top of the
+   page light; the active pill already names the portfolio. */
+.mode-desc-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  align-self: flex-start;
+  font-family: var(--font);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.mode-desc-toggle:hover { color: var(--accent); }
 
 /* Row that pairs the "Switch portfolio →" cue label with the actual
    toggle. The label tells users the pills are a selector — important
@@ -400,6 +419,19 @@
   color: var(--text-dim);
   opacity: 0.85;
 }
+
+.legend-sep {
+  color: var(--text-dim);
+  opacity: 0.45;
+}
+
+.legend-twolayer {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin: 2px 0 4px;
+}
+.legend-twolayer strong { color: var(--text); font-weight: 600; }
 
 /* Leading caption that scopes the color key to the daily-VaR columns.
    Rendered as a small-caps label so it reads as "here's what these colors
