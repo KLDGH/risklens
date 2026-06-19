@@ -10,7 +10,7 @@ from fetch_data import (
     NAMES, TICKERS,
     AOR_TICKERS, AOR_NAMES,
     TDF_2055_TICKERS, TDF_2055_NAMES,
-    CG_2055_TICKERS, CG_2055_NAMES,
+    CG_2035_TICKERS, CG_2035_NAMES,
     ACTIVE_FUND_TICKERS, ACTIVE_FUND_NAMES,
     ANOMALY_TICKERS, ANOMALY_NAMES,
     compute_log_returns, fetch_prices, fetch_sp500_history, fetch_vix_history,
@@ -48,12 +48,18 @@ EXTRA_BOND_PROXIES = ["AGG", "UUP"]
 # under the portfolio total, computed through the same engine.
 BENCHMARK_TICKERS = ["ACWI"]
 
+# Real-fund NAV tickers — for modes that ARE a tradeable fund (not an invented
+# book), show the fund's actual share price on the portfolio row instead of a
+# synthetic $100-base basket index, which misleads for a real fund (e.g. AOR
+# trades ~$69, not the basket's $212 indexed-from-$100 value).
+NAV_TICKERS = ["AOR", "VFFVX", "AAFTX"]
+
 BENCHMARKS = {
     # mode_key: ({ticker: weight}, display label)
     "aor":          ({"ACWI": 0.60, "AGG": 0.40}, "Policy benchmark · 60/40 (ACWI / AGG)"),
     "hypothetical": ({"ACWI": 0.60, "AGG": 0.40}, "Policy benchmark · 60/40 (ACWI / AGG)"),
     "tdf_2055":     ({"ACWI": 0.90, "AGG": 0.10}, "Policy benchmark · 90/10 (ACWI / AGG)"),
-    "cg_2055":      ({"ACWI": 0.90, "AGG": 0.10}, "Policy benchmark · 90/10 (ACWI / AGG)"),
+    "cg_2035":      ({"ACWI": 0.65, "AGG": 0.35}, "Policy benchmark · 65/35 (ACWI / AGG)"),
     "cggo_active":  ({"ACWI": 1.00},              "Benchmark · MSCI ACWI (global equity)"),
     "dwld_active":  ({"ACWI": 1.00},              "Benchmark · MSCI ACWI (global equity)"),
 }
@@ -216,24 +222,46 @@ TDF_2055_WEIGHTS = {
 }
 
 # ---------------------------------------------------------------------------
-# American Funds Target Date Retirement 2055 (AAFTX) underlying allocation
-# Source: Capital Group fund fact sheet (top holdings, ~95% coverage)
-#   ~89% Equity (mix of US, intl, EM, global) split across 10 active funds
-#   ~11% Fixed Income across 2 active bond funds
+# American Funds 2035 Target Date Retirement Fund (AAFTX) underlying allocation.
+# Source: Capital Group's disclosed underlying-fund holdings as of 2026-05-31 —
+# the real 24-fund roster at its published weights. The 2035 glide path is
+# ~64% equity / ~31% fixed income / ~5% cash (the fund is ~9 years from target).
+# Note: the Balanced (ABALX, GBLAX) and Equity-Income (CAIBX, AMECX) funds hold
+# bonds internally, so their own return series already embed that mix — modeling
+# them at face weight reproduces the true blended risk without further look-through.
+# Weights are point-in-time and drift with the glide path; compute_portfolio_row
+# re-normalizes them.
 # ---------------------------------------------------------------------------
-CG_2055_WEIGHTS = {
-    "AGTHX": 0.13,   # Growth Fund of America — US large growth
-    "AIVSX": 0.11,   # Investment Company of America — US large blend
-    "ANCFX": 0.11,   # Fundamental Investors — US large blend
-    "AWSHX": 0.06,   # Washington Mutual — US value
-    "AMRMX": 0.06,   # American Mutual — US dividend
-    "ANWPX": 0.12,   # New Perspective — global equity
-    "AEPGX": 0.11,   # EuroPacific Growth — intl developed
-    "CWGIX": 0.09,   # Capital World Growth & Income — global income
-    "NEWFX": 0.06,   # New World — emerging markets
-    "SMCWX": 0.04,   # SMALLCAP World — global small cap
-    "ABNDX": 0.07,   # Bond Fund of America — US core bonds
-    "AMUSX": 0.04,   # US Government Securities — Treasuries
+CG_2035_WEIGHTS = {
+    # Growth
+    "AMCPX": 0.059,  # AMCAP — US growth
+    "AGVFX": 0.038,  # Global Insight — global equity
+    "AGTHX": 0.055,  # Growth Fund of America — US large growth
+    "ANWPX": 0.028,  # New Perspective — global equity
+    "SMCWX": 0.034,  # SMALLCAP World — global small cap
+    # Growth & Income
+    "AMRMX": 0.070,  # American Mutual — US dividend
+    "CWGIX": 0.071,  # Capital World Growth & Income — global income
+    "ANCFX": 0.052,  # Fundamental Investors — US large blend
+    "IGAAX": 0.020,  # International Growth & Income — intl developed
+    "AIVSX": 0.037,  # Investment Company of America — US large blend
+    "AWSHX": 0.050,  # Washington Mutual — US value
+    # Equity Income (multi-asset income, equity-leaning)
+    "CAIBX": 0.040,  # Capital Income Builder — global equity income
+    "AMECX": 0.041,  # Income Fund of America — US equity income
+    # Balanced (~60/40 internally)
+    "ABALX": 0.081,  # American Balanced
+    "GBLAX": 0.050,  # Global Balanced
+    # Taxable Bond
+    "EBNAX": 0.003,  # Emerging Markets Bond
+    "BFIAX": 0.044,  # Inflation Linked Bond (TIPS)
+    "MFAAX": 0.049,  # American Funds Mortgage
+    "MIAYX": 0.026,  # Multi-Sector Income
+    "ANBAX": 0.021,  # Strategic Bond
+    "ABNDX": 0.027,  # Bond Fund of America — US core
+    "CWBFX": 0.020,  # Capital World Bond — global bond
+    "AIBAX": 0.035,  # Intermediate Bond of America
+    "AMUSX": 0.049,  # US Government Securities — Treasuries
 }
 
 # Active-fund spotlight modes — the portfolio is the fund's *look-through
@@ -257,6 +285,7 @@ PORTFOLIO_MODES = {
         "names":       AOR_NAMES,
         "weights":     AOR_WEIGHTS,
         "name":        "iShares Core 60/40 Balanced Allocation (AOR)",
+        "nav_ticker":  "AOR",   # show the real fund price on the total row
         "optimizable": True,   # emit the systematic-construction "optimizer" view
     },
     "hypothetical": {
@@ -274,14 +303,16 @@ PORTFOLIO_MODES = {
         "names":       TDF_2055_NAMES,
         "weights":     TDF_2055_WEIGHTS,
         "name":        "Vanguard Target Retirement 2055",
+        "nav_ticker":  "VFFVX",
     },
-    "cg_2055": {
-        "label":       "AF Target 2055 (AAFTX)",
-        "description": "~89% equity, ~11% bonds, split across 12 actively-managed American Funds mutual funds.",
-        "tickers":     CG_2055_TICKERS,
-        "names":       CG_2055_NAMES,
-        "weights":     CG_2055_WEIGHTS,
-        "name":        "American Funds Target 2055",
+    "cg_2035": {
+        "label":       "AF Target 2035 (AAFTX)",
+        "description": "Underlying holdings of the American Funds 2035 Target Date Retirement Fund (AAFTX): ~64% equity, ~31% fixed income, ~5% cash, spread across the 24 actively-managed American Funds it holds (as of 2026-05-31). A ~9-years-to-target glide path — materially more conservative than a 2055 vintage.",
+        "tickers":     CG_2035_TICKERS,
+        "names":       CG_2035_NAMES,
+        "weights":     CG_2035_WEIGHTS,
+        "name":        "American Funds 2035 Target Date",
+        "nav_ticker":  "AAFTX",
     },
     "cggo_active": {
         "label":       "CGGO Look-Through",
@@ -393,6 +424,18 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
     # Portfolio summary row
     print("  Computing portfolio row...")
     port_row = compute_portfolio_row(returns_10y, weights, mode_cfg["name"])
+    # For modes that ARE a real, tradeable fund, show the fund's ACTUAL share
+    # price on the total row instead of the synthetic $100-base basket index
+    # (the basket index misleads for a real fund — e.g. AOR trades ~$69). Risk
+    # and return stay basket-derived (the look-through); only the price label
+    # becomes the real fund's NAV.
+    nav_t = mode_cfg.get("nav_ticker")
+    if nav_t and nav_t in prices_10y.columns:
+        nav_px = prices_10y[nav_t].dropna()
+        if len(nav_px) >= 1:
+            port_row["last_price"] = round(float(nav_px.iloc[-1]), 2)
+            port_row["nav"] = round(float(nav_px.iloc[-1]), 2)
+            port_row["nav_is_fund_price"] = True
     assets.append(port_row)
 
     # Component VaR — each holding's contribution to portfolio VaR (sums to total)
@@ -567,7 +610,7 @@ def main():
     for cfg in PORTFOLIO_MODES.values():
         all_tickers.extend(cfg["tickers"])
     all_tickers = list(dict.fromkeys(
-        all_tickers + EXTRA_BOND_PROXIES + ANOMALY_TICKERS + BENCHMARK_TICKERS
+        all_tickers + EXTRA_BOND_PROXIES + ANOMALY_TICKERS + BENCHMARK_TICKERS + NAV_TICKERS
     ))
 
     print("Fetching 10y price data...")
