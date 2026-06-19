@@ -3,6 +3,15 @@ import pandas as pd
 from scipy.stats import norm, genpareto, chi2, t as student_t
 from arch import arch_model
 
+# Stress-test assumptions (historical windows, forward shocks, pre-inception
+# proxies) live in config/scenarios.yaml and are loaded + validated here. Edit
+# the YAML to change assumptions — not this file. See scenario_config.py.
+from scenario_config import (
+    SCENARIOS,
+    HYPOTHETICAL_SCENARIOS,
+    SCENARIO_PROXIES,
+)
+
 WINDOW = 1000
 P = 0.01
 PORTFOLIO_VALUE = 100
@@ -477,267 +486,27 @@ def compute_asset_risk(ticker: str, returns: pd.Series, prices: pd.Series) -> di
     }
 
 
-# ---------------------------------------------------------------------------
-# Historical scenario analysis
-# ---------------------------------------------------------------------------
-
-SCENARIOS = [
-    {
-        "id": "gfc",
-        "name": "Global Financial Crisis",
-        "desc": "Lehman Brothers collapse triggers global credit freeze",
-        "start": "2008-09-15",
-        "end": "2009-03-09",
-    },
-    {
-        "id": "covid",
-        "name": "COVID Crash",
-        "desc": "Pandemic panic selling, fastest 30% drop in S&P history",
-        "start": "2020-02-20",
-        "end": "2020-03-23",
-    },
-    {
-        "id": "rate_shock_2022",
-        "name": "Fed Rate Shock 2022",
-        "desc": "Most aggressive hiking cycle in 40 years breaks stocks AND bonds",
-        "start": "2022-01-03",
-        "end": "2022-10-12",
-    },
-    {
-        "id": "russia_ukraine",
-        "name": "Russia–Ukraine Invasion",
-        "desc": "Full-scale invasion triggers energy shock and risk-off selloff",
-        "start": "2022-02-24",
-        "end": "2022-03-14",
-    },
-    {
-        "id": "q4_2018",
-        "name": "Q4 2018 Sell-off",
-        "desc": "Fed tightening fears and trade war escalation hit markets",
-        "start": "2018-10-03",
-        "end": "2018-12-24",
-    },
-]
+# Stress-test assumptions — historical crisis windows, forward-looking shock
+# sets, and pre-inception proxies — are defined in config/scenarios.yaml and
+# imported at the top of this module (SCENARIOS / HYPOTHETICAL_SCENARIOS /
+# SCENARIO_PROXIES). Edit the YAML to change assumptions; the functions below
+# only apply them. See scenario_config.py for the loader + validator.
 
 
-# ---------------------------------------------------------------------------
-# Hypothetical / forward-looking scenarios
-# Shocks are analyst-estimated % moves per ETF under each scenario.
-# These are illustrative assumptions, not forecasts.
-# ---------------------------------------------------------------------------
-
-HYPOTHETICAL_SCENARIOS = [
-    {
-        "id": "taiwan_invasion",
-        "name": "Taiwan Invasion",
-        "desc": "PLA military action triggers semiconductor supply shock and broad Asia risk-off",
-        "shocks": {
-            "SPY":     -0.15,
-            "EFA":     -0.13,   # intl developed, Japan-heavy → Asia spillover
-            "EEM":     -0.22,   # EM Asia exposure
-            "QQQ":     -0.22,   # TSMC/NVDA/ASML heavy in Nasdaq
-            "IWM":     -0.14,
-            "IEF":     +0.05,   # flight to safety, intermediate Treasuries
-            "TLT":     +0.09,   # flight to safety, rate cut expectations
-            "LQD":     +0.02,
-            "HYG":     -0.09,   # credit spread widening
-            "TIP":     +0.04,   # real yields fall + commodity inflation
-            "GLD":     +0.14,   # flight to safety
-            "DBC":     +0.08,   # broad commodities — oil/metals supply shock
-            "VNQ":     -0.10,
-            "BTC-USD": -0.28,   # crypto risk-off
-            "XLF":     -0.11,   # legacy: kept for any portfolio still holding
-            # Active-fund spotlight ETFs
-            "CGGO":    -0.22,   # heavy semis/AI infra — direct Taiwan/Asia hit
-            "DWLD":    -0.18,   # concentrated global, sizeable Asia exposure
-            # TDF underlying holdings
-            "VTI":     -0.15,   # US total market
-            "VXUS":    -0.20,   # intl total — heavier Asia weight
-            "BND":     +0.04,   # US bonds — modest flight to safety
-            "BNDX":    +0.03,   # intl bonds
-            # Capital Group TDF underlying funds
-            "AGTHX":   -0.22,   # US growth (heavy semis)
-            "AIVSX":   -0.15,   # US large blend
-            "ANCFX":   -0.16,   # US large blend
-            "AWSHX":   -0.10,   # US value (defensive)
-            "AMRMX":   -0.12,   # US dividend (defensive)
-            "ANWPX":   -0.19,   # global (Asia weight)
-            "AEPGX":   -0.16,   # intl developed
-            "CWGIX":   -0.14,   # global income
-            "NEWFX":   -0.22,   # EM (heavy Asia)
-            "SMCWX":   -0.18,   # global small cap
-            "ABNDX":   +0.04,   # US core bonds
-            "AMUSX":   +0.05,   # US Treasuries
-            # iShares Core (AOR) underlying ETFs
-            "IVV":     -0.15,   # US large (S&P 500)
-            "IJH":     -0.15,   # US mid
-            "IJR":     -0.14,   # US small
-            "IDEV":    -0.14,   # developed ex-US, Japan/Asia spillover
-            "IEMG":    -0.22,   # EM (heavy Asia)
-            "IUSB":    +0.04,   # US total bond — flight to safety
-            "IAGG":    +0.03,   # intl aggregate bond
-        },
-    },
-    {
-        "id": "iran_conflict",
-        "name": "Iran Conflict / Oil Shock",
-        "desc": "Strait of Hormuz disruption drives oil toward $150, stagflation fears spike",
-        "shocks": {
-            "SPY":     -0.09,
-            "EFA":     -0.10,   # Europe/Japan oil-importer hit
-            "EEM":     -0.13,
-            "QQQ":     -0.08,
-            "IWM":     -0.09,
-            "IEF":     +0.02,   # modest flight to safety, capped by inflation
-            "TLT":     +0.04,
-            "LQD":     +0.01,
-            "HYG":     -0.07,
-            "TIP":     +0.05,   # inflation hedge benefits in oil shock
-            "GLD":     +0.13,   # oil/safe haven
-            "DBC":     +0.18,   # commodity index, oil-heavy — biggest beneficiary
-            "VNQ":     -0.07,
-            "BTC-USD": -0.18,
-            "XLF":     -0.08,   # legacy
-            # Active-fund spotlight ETFs
-            "CGGO":    -0.10,   # global growth, modest oil-shock sensitivity
-            "DWLD":    -0.05,   # value-leaning, has Coterra (oil benefits) — softer hit
-            # TDF underlying holdings
-            "VTI":     -0.09,
-            "VXUS":    -0.11,   # intl exposure to oil shock
-            "BND":     +0.02,
-            "BNDX":    +0.01,
-            # Capital Group TDF underlying funds
-            "AGTHX":   -0.10,
-            "AIVSX":   -0.09,
-            "ANCFX":   -0.09,
-            "AWSHX":   -0.07,
-            "AMRMX":   -0.07,
-            "ANWPX":   -0.10,
-            "AEPGX":   -0.11,
-            "CWGIX":   -0.09,
-            "NEWFX":   -0.13,
-            "SMCWX":   -0.10,
-            "ABNDX":   +0.01,
-            "AMUSX":   +0.03,
-            # iShares Core (AOR) underlying ETFs
-            "IVV":     -0.09,
-            "IJH":     -0.09,
-            "IJR":     -0.09,
-            "IDEV":    -0.10,   # oil-importer developed markets
-            "IEMG":    -0.13,
-            "IUSB":    +0.02,
-            "IAGG":    +0.01,
-        },
-    },
-    {
-        "id": "us_recession",
-        "name": "U.S. Recession",
-        "desc": "GDP contraction triggers Fed pivot, credit spreads widen, earnings fall",
-        "shocks": {
-            "SPY":     -0.28,
-            "EFA":     -0.22,   # global recession spillover, less leverage than US
-            "EEM":     -0.22,
-            "QQQ":     -0.32,
-            "IWM":     -0.32,   # small caps hit hardest
-            "IEF":     +0.10,   # rate cuts benefit, less duration than TLT
-            "TLT":     +0.18,   # aggressive rate cuts
-            "LQD":     +0.04,
-            "HYG":     -0.16,   # high yield blowout
-            "TIP":     +0.06,   # real yields fall, but inflation also falls
-            "GLD":     +0.08,
-            "DBC":     -0.18,   # demand collapse hits commodities
-            "VNQ":     -0.22,
-            "BTC-USD": -0.45,
-            "XLF":     -0.30,   # legacy: financials crater
-            # Active-fund spotlight ETFs
-            "CGGO":    -0.26,   # global growth, quality tilt softens vs QQQ
-            "DWLD":    -0.30,   # smaller-cap value-leaning, recession-sensitive
-            # TDF underlying holdings
-            "VTI":     -0.28,
-            "VXUS":    -0.24,   # global recession spillover
-            "BND":     +0.08,   # rate cut benefit
-            "BNDX":    +0.05,
-            # Capital Group TDF underlying funds
-            "AGTHX":   -0.32,   # growth-tilted, hardest hit
-            "AIVSX":   -0.28,
-            "ANCFX":   -0.28,
-            "AWSHX":   -0.22,   # defensive value
-            "AMRMX":   -0.22,   # defensive dividend
-            "ANWPX":   -0.25,
-            "AEPGX":   -0.20,
-            "CWGIX":   -0.22,
-            "NEWFX":   -0.25,
-            "SMCWX":   -0.32,   # small caps hit hardest
-            "ABNDX":   +0.06,
-            "AMUSX":   +0.12,   # rate cut benefit
-            # iShares Core (AOR) underlying ETFs
-            "IVV":     -0.28,   # US large (S&P 500)
-            "IJH":     -0.30,   # US mid
-            "IJR":     -0.32,   # US small — hit hardest
-            "IDEV":    -0.22,   # developed ex-US
-            "IEMG":    -0.22,   # EM
-            "IUSB":    +0.08,   # US total bond — rate-cut benefit
-            "IAGG":    +0.05,   # intl aggregate bond
-        },
-    },
-    {
-        "id": "ai_bubble_burst",
-        "name": "AI Bubble Burst",
-        "desc": "Demand disappointment or capex reality check causes mega-cap tech repricing",
-        "shocks": {
-            "SPY":     -0.18,
-            "EFA":     -0.10,   # less mega-cap AI concentration
-            "EEM":     -0.10,
-            "QQQ":     -0.35,   # highest concentration in AI names
-            "IWM":     -0.12,
-            "IEF":     +0.05,   # modest flight to quality
-            "TLT":     +0.08,
-            "LQD":     +0.02,
-            "HYG":     -0.08,
-            "TIP":     +0.03,
-            "GLD":     +0.05,
-            "DBC":     -0.05,   # modest growth scare
-            "VNQ":     -0.08,
-            "BTC-USD": -0.30,   # correlated risk-off
-            "XLF":     -0.14,   # legacy
-            # Active-fund spotlight ETFs
-            "CGGO":    -0.30,   # heaviest AI/semis concentration — biggest hit
-            "DWLD":    -0.14,   # value-leaning, much less AI exposure
-            # TDF underlying holdings
-            "VTI":     -0.18,   # broad market, includes AI exposure
-            "VXUS":    -0.10,   # less direct AI concentration
-            "BND":     +0.04,
-            "BNDX":    +0.02,
-            # Capital Group TDF underlying funds
-            "AGTHX":   -0.32,   # growth fund — heavy mega-cap AI names
-            "AIVSX":   -0.18,
-            "ANCFX":   -0.18,
-            "AWSHX":   -0.10,   # value, low AI concentration
-            "AMRMX":   -0.10,   # dividend, low AI concentration
-            "ANWPX":   -0.20,   # global growth
-            "AEPGX":   -0.10,
-            "CWGIX":   -0.12,
-            "NEWFX":   -0.12,
-            "SMCWX":   -0.16,
-            "ABNDX":   +0.03,
-            "AMUSX":   +0.06,
-            # iShares Core (AOR) underlying ETFs
-            "IVV":     -0.18,   # US large (S&P 500)
-            "IJH":     -0.15,   # US mid
-            "IJR":     -0.12,   # US small
-            "IDEV":    -0.10,   # less mega-cap AI concentration
-            "IEMG":    -0.10,   # EM
-            "IUSB":    +0.04,   # US total bond — flight to quality
-            "IAGG":    +0.02,   # intl aggregate bond
-        },
-    },
-]
-
-
-def compute_hypothetical_scenarios(weights: dict) -> list[dict]:
+def compute_hypothetical_scenarios(weights: dict, fund_ticker: str = None) -> list[dict]:
     """
     Apply analyst-estimated shock vectors to portfolio weights.
     No historical price data required — pure assumption-based stress test.
+
+    Per-ticker path: when the portfolio's holdings have shocks defined (the
+    ETF-based modes), each holding is shocked individually and the contributions
+    re-normalize over the covered weight.
+
+    Fund-level fallback: a look-through basket holds individual stocks that have
+    no per-name shock. If `fund_ticker` is given and the scenario defines a shock
+    for the fund itself, stress the basket as a WHOLE using the fund's own shock
+    (e.g. "CGGO drops 30% in an AI-bubble burst") rather than leaving it at $0.
+    Flagged via "fund_level_estimate" so the UI can label it.
     """
     results = []
     for s in HYPOTHETICAL_SCENARIOS:
@@ -745,10 +514,28 @@ def compute_hypothetical_scenarios(weights: dict) -> list[dict]:
         avail   = [t for t in weights if t in shocks]
         raw_w   = {t: weights[t] for t in avail}
         total_w = sum(raw_w.values())
-        norm_w  = {t: w / total_w for t, w in raw_w.items()}
 
-        port_return   = sum(shocks[t] * norm_w[t] for t in avail)
-        contributions = {t: round(shocks[t] * norm_w[t] * 100, 2) for t in avail}
+        if total_w > 0:
+            norm_w        = {t: w / total_w for t, w in raw_w.items()}
+            port_return   = sum(shocks[t] * norm_w[t] for t in avail)
+            contributions = {t: round(shocks[t] * norm_w[t] * 100, 2) for t in avail}
+            asset_returns = {t: round(shocks[t] * 100, 1) for t in avail}
+            coverage      = round(total_w * 100, 1)
+            fund_level    = False
+        elif fund_ticker and fund_ticker in shocks:
+            # Look-through basket — apply the fund's own shock to the whole basket.
+            port_return   = shocks[fund_ticker]
+            contributions = {}
+            asset_returns = {}
+            coverage      = 100.0
+            fund_level    = True
+        else:
+            # No per-name shocks and no fund-level fallback available.
+            port_return   = 0.0
+            contributions = {}
+            asset_returns = {}
+            coverage      = 0.0
+            fund_level    = False
 
         results.append({
             "id":            s["id"],
@@ -756,26 +543,12 @@ def compute_hypothetical_scenarios(weights: dict) -> list[dict]:
             "desc":          s["desc"],
             "type":          "hypothetical",
             "portfolio_pnl": round(port_return * 100, 2),
-            "coverage_pct":  round(total_w * 100, 1),
-            "asset_returns": {t: round(shocks[t] * 100, 1) for t in avail},
+            "coverage_pct":  coverage,
+            "asset_returns": asset_returns,
             "contributions": contributions,
+            "fund_level_estimate": fund_level,
         })
     return results
-
-
-# Long-history proxies for newer ETFs, used ONLY in historical scenario
-# windows that pre-date a fund's inception (e.g. the iShares Core sleeve in
-# AOR launched 2012-2017, so the 2008 GFC window has no native data). Each
-# proxy is a near-identical-exposure fund with data back to the crisis. The
-# substitution is disclosed via the scenario's "proxied" map.
-SCENARIO_PROXIES = {
-    "IUSB": "AGG",   # iShares Core US Total Bond  ← iShares Core US Aggregate Bond
-    "IDEV": "EFA",   # iShares Core MSCI Intl Dev  ← iShares MSCI EAFE
-    "IEMG": "EEM",   # iShares Core MSCI EM        ← iShares MSCI Emerging Markets
-    "IAGG": "AGG",   # iShares Core Intl Agg Bond  ← US Aggregate (domestic stand-in)
-    "VXUS": "EFA",   # Vanguard Total Intl Stock   ← MSCI EAFE (developed-heavy proxy)
-    "BNDX": "AGG",   # Vanguard Total Intl Bond    ← US Aggregate (domestic stand-in)
-}
 
 
 def compute_scenarios(prices: pd.DataFrame, weights: dict) -> list[dict]:
