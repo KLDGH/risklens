@@ -452,11 +452,14 @@ def compute_asset_risk(ticker: str, returns: pd.Series, prices: pd.Series) -> di
     exc = compute_var_exceptions(returns, daily_var_series)
 
     last_price = float(prices.iloc[-1])
-    # Use second-to-last return when the last row is a forward-fill artifact (yfinance
-    # sometimes appends today's incomplete trading day with 0% change for closed markets)
-    last_ret = float(returns.iloc[-1])
-    if last_ret == 0.0 and len(returns) > 1:
-        last_ret = float(returns.iloc[-2])
+    # Display the last *real* daily move. yfinance can append one or more stale
+    # trailing rows — today's incomplete session, or closed-market/forward-filled
+    # days — which produce exact-zero log returns. Genuine 0.0 log returns on
+    # liquid daily data are essentially nonexistent, so we walk back past any such
+    # fill artifacts to the last non-zero return rather than showing a flat 0.00%
+    # (a single stale day used to slip through the old one-step fallback).
+    nonzero = returns[returns.notna() & (returns != 0.0)]
+    last_ret = float(nonzero.iloc[-1]) if len(nonzero) else 0.0
     last_return_pct = last_ret * 100
 
     return {
