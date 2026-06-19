@@ -183,6 +183,10 @@
   opacity: 0.85;
 }
 
+/* Single binary flag for a genuinely extreme tail (Hill α < 2) — deliberately
+   one accent, NOT the 3-level VaR traffic-light, since α is a shape descriptor. */
+.alpha-cell.fat-tail-flag { color: var(--red); font-weight: 600; }
+
 /* Column groups — tints to visually cluster related metrics. The tints use
    rgba so row hover (var(--bg3)) still shows through. The daily-VaR cluster
    (col-models) is shaded more strongly than the others: it's the group the
