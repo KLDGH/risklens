@@ -38,27 +38,50 @@ TDF_2055_NAMES = {
     "BNDX": "Vanguard Total International Bond ETF",
 }
 
-# Underlying holdings of American Funds Target Date Retirement 2055 (AAFTX).
-# Capital Group TDFs hold actively-managed American Funds mutual funds, not
-# ETFs — so the layered structure is materially different from Vanguard.
-CG_2055_TICKERS = [
-    "AGTHX", "AIVSX", "ANCFX", "AWSHX", "AMRMX",
-    "ANWPX", "AEPGX", "CWGIX", "NEWFX", "SMCWX",
-    "ABNDX", "AMUSX",
+# Underlying holdings of the American Funds 2035 Target Date Retirement Fund
+# (AAFTX). Capital Group TDFs hold actively-managed American Funds mutual funds,
+# not ETFs — so the layered structure is materially different from Vanguard.
+# This is the fund's real 24-fund roster as disclosed 2026-05-31, grouped into
+# Capital Group's sleeves (Growth / Growth & Income / Equity Income / Balanced /
+# Taxable Bond). The 2035 glide path is ~64% equity / ~31% fixed income / ~5%
+# cash — far more conservative than the 2055 vintage (AAMTX, ~89% equity).
+CG_2035_TICKERS = [
+    # Growth (21.4%)
+    "AMCPX", "AGVFX", "AGTHX", "ANWPX", "SMCWX",
+    # Growth & Income (30.0%)
+    "AMRMX", "CWGIX", "ANCFX", "IGAAX", "AIVSX", "AWSHX",
+    # Equity Income (8.1%)
+    "CAIBX", "AMECX",
+    # Balanced (13.1%)
+    "ABALX", "GBLAX",
+    # Taxable Bond (27.4%)
+    "EBNAX", "BFIAX", "MFAAX", "MIAYX", "ANBAX", "ABNDX", "CWBFX", "AIBAX", "AMUSX",
 ]
 
-CG_2055_NAMES = {
-    "AGTHX": "Growth Fund of America",
-    "AIVSX": "Investment Company of America",
-    "ANCFX": "Fundamental Investors",
-    "AWSHX": "Washington Mutual Investors",
-    "AMRMX": "American Mutual Fund",
+CG_2035_NAMES = {
+    "AMCPX": "AMCAP Fund",
+    "AGVFX": "Global Insight Fund",
+    "AGTHX": "The Growth Fund of America",
     "ANWPX": "New Perspective Fund",
-    "AEPGX": "EuroPacific Growth Fund",
-    "CWGIX": "Capital World Growth & Income",
-    "NEWFX": "New World Fund",
     "SMCWX": "SMALLCAP World Fund",
-    "ABNDX": "Bond Fund of America",
+    "AMRMX": "American Mutual Fund",
+    "CWGIX": "Capital World Growth & Income",
+    "ANCFX": "Fundamental Investors",
+    "IGAAX": "International Growth & Income Fund",
+    "AIVSX": "Investment Company of America",
+    "AWSHX": "Washington Mutual Investors",
+    "CAIBX": "Capital Income Builder",
+    "AMECX": "The Income Fund of America",
+    "ABALX": "American Balanced Fund",
+    "GBLAX": "Global Balanced Fund",
+    "EBNAX": "Emerging Markets Bond Fund",
+    "BFIAX": "Inflation Linked Bond Fund",
+    "MFAAX": "American Funds Mortgage Fund",
+    "MIAYX": "Multi-Sector Income Fund",
+    "ANBAX": "Strategic Bond Fund",
+    "ABNDX": "The Bond Fund of America",
+    "CWBFX": "Capital World Bond Fund",
+    "AIBAX": "Intermediate Bond Fund of America",
     "AMUSX": "U.S. Government Securities Fund",
 }
 
