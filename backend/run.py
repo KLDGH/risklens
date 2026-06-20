@@ -7,14 +7,12 @@ import numpy as np
 import pandas as pd
 
 from fetch_data import (
-    NAMES, TICKERS,
-    AOR_TICKERS, AOR_NAMES,
-    TDF_2055_TICKERS, TDF_2055_NAMES,
-    CG_2035_TICKERS, CG_2035_NAMES,
-    ACTIVE_FUND_TICKERS, ACTIVE_FUND_NAMES,
     ANOMALY_TICKERS, ANOMALY_NAMES,
     compute_log_returns, fetch_prices, fetch_sp500_history, fetch_vix_history,
     fetch_yield_curve_spread, fetch_intraday_data,
+)
+from portfolio_config import (
+    PORTFOLIO_MODES, BENCHMARKS, BENCHMARK_TICKERS, NAV_TICKERS,
 )
 from risk_engine import (
     compute_asset_risk, compute_sp500_history, compute_rolling_correlation,
@@ -42,28 +40,9 @@ from reference_values import (
 #        FX risk-premium leg. Not held in the portfolio, so fetched separately.
 EXTRA_BOND_PROXIES = ["AGG", "UUP"]
 
-# Policy-benchmark proxies. Each portfolio mode is compared against a simple,
-# investable policy blend — an analyst-chosen proxy, NOT an official benchmark:
-# global equity via ACWI, US aggregate bonds via AGG (already fetched above).
-# The per-mode blend lives in BENCHMARKS; it renders as a muted row directly
-# under the portfolio total, computed through the same engine.
-BENCHMARK_TICKERS = ["ACWI"]
-
-# Real-fund NAV tickers — for modes that ARE a tradeable fund (not an invented
-# book), show the fund's actual share price on the portfolio row instead of a
-# synthetic $100-base basket index, which misleads for a real fund (e.g. AOR
-# trades ~$69, not the basket's $212 indexed-from-$100 value).
-NAV_TICKERS = ["AOR", "VFFVX", "AAFTX"]
-
-BENCHMARKS = {
-    # mode_key: ({ticker: weight}, display label)
-    "aor":          ({"ACWI": 0.60, "AGG": 0.40}, "Policy benchmark · 60/40 (ACWI / AGG)"),
-    "hypothetical": ({"ACWI": 0.60, "AGG": 0.40}, "Policy benchmark · 60/40 (ACWI / AGG)"),
-    "tdf_2055":     ({"ACWI": 0.90, "AGG": 0.10}, "Policy benchmark · 90/10 (ACWI / AGG)"),
-    "cg_2035":      ({"ACWI": 0.65, "AGG": 0.35}, "Policy benchmark · 65/35 (ACWI / AGG)"),
-    "cggo_active":  ({"ACWI": 1.00},              "Benchmark · MSCI ACWI (global equity)"),
-    "dwld_active":  ({"ACWI": 1.00},              "Benchmark · MSCI ACWI (global equity)"),
-}
+# Policy benchmarks, real-fund NAV tickers, and the portfolio registry live in
+# config/portfolios.yaml (imported above as BENCHMARKS / BENCHMARK_TICKERS /
+# NAV_TICKERS / PORTFOLIO_MODES).
 
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "frontend", "public", "data", "risk_output.json")
 
@@ -162,180 +141,11 @@ PROBABILITY_SOURCES = {
     ],
 }
 
-# ---------------------------------------------------------------------------
-# Hypothetical blended portfolio weights (must sum to 1.0)
-#   Equity (60%):       SPY 25, EFA 14, EEM 8, QQQ 8, IWM 5
-#   Fixed Income (30%): IEF 8, TLT 4, LQD 10, HYG 5, TIP 3
-#   Real Assets (8%):   GLD 4, DBC 2, VNQ 2
-#   Crypto (2%):        BTC-USD 2
-# Reweighted from a US-equity-heavy mix to give explicit DM-international
-# exposure (EFA), inflation protection (TIP), broad commodities (DBC), and
-# intermediate-duration Treasuries (IEF).
-# ---------------------------------------------------------------------------
-HYPOTHETICAL_WEIGHTS = {
-    "SPY":     0.25,
-    "EFA":     0.14,
-    "EEM":     0.08,
-    "QQQ":     0.08,
-    "IWM":     0.05,
-    "IEF":     0.08,
-    "TLT":     0.04,
-    "LQD":     0.10,
-    "HYG":     0.05,
-    "TIP":     0.03,
-    "GLD":     0.04,
-    "DBC":     0.02,
-    "VNQ":     0.02,
-    "BTC-USD": 0.02,
-}
-
-# ---------------------------------------------------------------------------
-# iShares Core 60/40 Balanced Allocation ETF (AOR) — modeled directly from its
-# disclosed underlying iShares ETFs (2026-06-11), re-normalized over the seven
-# funds. AOR is a fund-of-ETFs holding these directly, so this captures ~99.9%
-# of the fund (a complete decomposition, NOT a partial look-through like the
-# active-fund CGGO/DWLD top-25 baskets). A real, publicly-traded ~61/39
-# multi-asset fund used as the app's showcase portfolio.
-# ---------------------------------------------------------------------------
-AOR_WEIGHTS = {
-    "IVV":  0.3418,   # US large cap (S&P 500)
-    "IUSB": 0.3304,   # US total bond market
-    "IDEV": 0.1717,   # developed ex-US equity
-    "IEMG": 0.0682,   # emerging-markets equity
-    "IAGG": 0.0590,   # international aggregate bonds
-    "IJH":  0.0195,   # US mid cap
-    "IJR":  0.0094,   # US small cap
-}
-
-# ---------------------------------------------------------------------------
-# Vanguard Target Retirement 2055 (VFFVX) underlying allocation
-# Source: Vanguard fund holdings (publicly disclosed quarterly).
-#   ~54% Total US Equity      → VTI
-#   ~36% Total Intl Equity    → VXUS
-#   ~7%  Total US Bonds       → BND
-#   ~3%  Total Intl Bonds     → BNDX
-# ---------------------------------------------------------------------------
-TDF_2055_WEIGHTS = {
-    "VTI":  0.54,
-    "VXUS": 0.36,
-    "BND":  0.07,
-    "BNDX": 0.03,
-}
-
-# ---------------------------------------------------------------------------
-# American Funds 2035 Target Date Retirement Fund (AAFTX) underlying allocation.
-# Source: Capital Group's disclosed underlying-fund holdings as of 2026-05-31 —
-# the real 24-fund roster at its published weights. The 2035 glide path is
-# ~64% equity / ~31% fixed income / ~5% cash (the fund is ~9 years from target).
-# Note: the Balanced (ABALX, GBLAX) and Equity-Income (CAIBX, AMECX) funds hold
-# bonds internally, so their own return series already embed that mix — modeling
-# them at face weight reproduces the true blended risk without further look-through.
-# Weights are point-in-time and drift with the glide path; compute_portfolio_row
-# re-normalizes them.
-# ---------------------------------------------------------------------------
-CG_2035_WEIGHTS = {
-    # Growth
-    "AMCPX": 0.059,  # AMCAP — US growth
-    "AGVFX": 0.038,  # Global Insight — global equity
-    "AGTHX": 0.055,  # Growth Fund of America — US large growth
-    "ANWPX": 0.028,  # New Perspective — global equity
-    "SMCWX": 0.034,  # SMALLCAP World — global small cap
-    # Growth & Income
-    "AMRMX": 0.070,  # American Mutual — US dividend
-    "CWGIX": 0.071,  # Capital World Growth & Income — global income
-    "ANCFX": 0.052,  # Fundamental Investors — US large blend
-    "IGAAX": 0.020,  # International Growth & Income — intl developed
-    "AIVSX": 0.037,  # Investment Company of America — US large blend
-    "AWSHX": 0.050,  # Washington Mutual — US value
-    # Equity Income (multi-asset income, equity-leaning)
-    "CAIBX": 0.040,  # Capital Income Builder — global equity income
-    "AMECX": 0.041,  # Income Fund of America — US equity income
-    # Balanced (~60/40 internally)
-    "ABALX": 0.081,  # American Balanced
-    "GBLAX": 0.050,  # Global Balanced
-    # Taxable Bond
-    "EBNAX": 0.003,  # Emerging Markets Bond
-    "BFIAX": 0.044,  # Inflation Linked Bond (TIPS)
-    "MFAAX": 0.049,  # American Funds Mortgage
-    "MIAYX": 0.026,  # Multi-Sector Income
-    "ANBAX": 0.021,  # Strategic Bond
-    "ABNDX": 0.027,  # Bond Fund of America — US core
-    "CWBFX": 0.020,  # Capital World Bond — global bond
-    "AIBAX": 0.035,  # Intermediate Bond of America
-    "AMUSX": 0.049,  # US Government Securities — Treasuries
-}
-
-# Active-fund spotlight modes — the portfolio is the fund's *look-through
-# basket*: each disclosed top-N underlying is a per-asset row with its own
-# risk metrics, weighted by its disclosed weight (re-normalized over the
-# top-N). The fund's own ticker stays in the tickers list as a final
-# reference row (no weight) so users can compare the look-through basket
-# vs. the fund's own NAV — the difference is the manager's discretionary
-# trading effect since the disclosure date plus expense-ratio drag.
-#
-# Both dicts are placeholders that get fully overwritten by
-# _augment_active_fund_modes_with_holdings() before the pipeline runs.
-CGGO_WEIGHTS = {}
-DWLD_WEIGHTS = {}
-
-PORTFOLIO_MODES = {
-    "aor": {
-        "label":       "iShares Core 60/40 (AOR)",
-        "description": "A real, publicly-traded multi-asset fund: the iShares Core 60/40 Balanced Allocation ETF (AOR), modeled directly from its seven underlying iShares ETFs at their disclosed weights — ~61% equity (US large/mid/small + intl developed + EM) and ~39% fixed income (US + international aggregate bonds). AOR is a fund-of-ETFs that holds these directly, so this is the full fund (~99.9% of holdings), not a partial reconstruction. Holdings as of 2026-06-11.",
-        "tickers":     AOR_TICKERS,
-        "names":       AOR_NAMES,
-        "weights":     AOR_WEIGHTS,
-        "name":        "iShares Core 60/40 Balanced Allocation (AOR)",
-        "nav_ticker":  "AOR",   # show the real fund price on the total row
-        "optimizable": True,   # emit the systematic-construction "optimizer" view
-    },
-    "hypothetical": {
-        "label":       "Hypothetical Portfolio",
-        "description": "An illustrative diversified mix: 60% equity (US + intl developed + EM), 30% fixed income (Treasuries + IG + HY + TIPS), 8% real assets (gold + broad commodities + REITs), 2% crypto. Built from 14 asset-class ETFs.",
-        "tickers":     TICKERS,
-        "names":       NAMES,
-        "weights":     HYPOTHETICAL_WEIGHTS,
-        "name":        "60/40 Blended Portfolio",
-    },
-    "tdf_2055": {
-        "label":       "Vanguard Target 2055 (VFFVX)",
-        "description": "Underlying holdings of the Vanguard 2055 target-date fund: ~90% equity (54% US, 36% intl) and ~10% bonds (7% US, 3% intl). Built from 4 broad passive index ETFs.",
-        "tickers":     TDF_2055_TICKERS,
-        "names":       TDF_2055_NAMES,
-        "weights":     TDF_2055_WEIGHTS,
-        "name":        "Vanguard Target Retirement 2055",
-        "nav_ticker":  "VFFVX",
-    },
-    "cg_2035": {
-        "label":       "AF Target 2035 (AAFTX)",
-        "description": "Underlying holdings of the American Funds 2035 Target Date Retirement Fund (AAFTX): ~64% equity, ~31% fixed income, ~5% cash, spread across the 24 actively-managed American Funds it holds (as of 2026-05-31). A ~9-years-to-target glide path — materially more conservative than a 2055 vintage.",
-        "tickers":     CG_2035_TICKERS,
-        "names":       CG_2035_NAMES,
-        "weights":     CG_2035_WEIGHTS,
-        "name":        "American Funds 2035 Target Date",
-        "nav_ticker":  "AAFTX",
-    },
-    "cggo_active": {
-        "label":       "CGGO Look-Through",
-        "description": "Capital Group Global Growth Equity ETF (CGGO) modeled as a look-through basket of its top 25 disclosed holdings. Each underlying is a per-asset risk row weighted by its disclosed weight (re-normalized over the top 25). The CGGO ETF row at the bottom shows the fund's own NAV-based risk for comparison vs. the basket.",
-        "tickers":     ["CGGO"],   # overwritten by _augment_active_fund_modes_with_holdings
-        "names":       {"CGGO": ACTIVE_FUND_NAMES["CGGO"]},
-        "weights":     CGGO_WEIGHTS,
-        "name":        "CGGO Top-25 Basket (Look-Through)",
-        "is_active_fund_spotlight": True,
-        "fund_ticker": "CGGO",
-    },
-    "dwld_active": {
-        "label":       "DWLD Look-Through",
-        "description": "Davis Select Worldwide ETF (DWLD) modeled as a look-through basket of its top 25 disclosed holdings. Each underlying is a per-asset risk row weighted by its disclosed weight (re-normalized over the top 25). The DWLD ETF row at the bottom shows the fund's own NAV-based risk for comparison vs. the basket.",
-        "tickers":     ["DWLD"],   # overwritten by _augment_active_fund_modes_with_holdings
-        "names":       {"DWLD": ACTIVE_FUND_NAMES["DWLD"]},
-        "weights":     DWLD_WEIGHTS,
-        "name":        "DWLD Top-25 Basket (Look-Through)",
-        "is_active_fund_spotlight": True,
-        "fund_ticker": "DWLD",
-    },
-}
+# Portfolio definitions — holdings/weights, display names, per-mode benchmarks,
+# NAV tickers, and which portfolios are shown — live in config/portfolios.yaml
+# and are built into PORTFOLIO_MODES + BENCHMARKS by portfolio_config.py
+# (imported at the top). Look-through baskets start as placeholders here and are
+# filled by _augment_active_fund_modes_with_holdings() from the disclosure file.
 
 
 def compute_portfolio_row(returns: pd.DataFrame, weights: dict, name: str,
@@ -538,10 +348,10 @@ def _augment_active_fund_modes_with_holdings():
         print(f"  WARNING: failed to load holdings JSON ({e})")
         return
 
-    TOP_N = 25
     for mode_key, cfg in PORTFOLIO_MODES.items():
         if not cfg.get("is_active_fund_spotlight"):
             continue
+        TOP_N = cfg.get("look_through_top_n", 25)   # from portfolios.yaml
         fund_ticker = cfg.get("fund_ticker") or cfg["tickers"][0]
         fund = holdings_index.get(fund_ticker)
         if not fund:
