@@ -592,7 +592,7 @@
    (expanded). State persists per section. */
 .section-title-row {
   cursor: pointer;
-  background: var(--bg2);
+  background: var(--section-header-bg);
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
   transition: background 0.14s;
@@ -651,6 +651,15 @@
   border: none;
   border-radius: 0;
   background: transparent;
+}
+
+/* The section header already names each panel, so hide the sub-panel's own
+   redundant title line (the subtitle, headline stats like R², and tooltips
+   are kept). */
+.section .rp-title,
+.section .fr-title,
+.section .rfp-title {
+  display: none;
 }
 
 /* Loose content (snapshot legends) and the scenario grid have no padding of
