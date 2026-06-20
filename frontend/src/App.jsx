@@ -122,18 +122,52 @@ function SectionReferences({ sectionId }) {
 // title reveals the description above the chart and the references below.
 function Section({ id, title, question, description, children }) {
   const [expanded, setExpanded] = useState(false);
+  // Collapse hides the section's content (chart/table/panel) while keeping the
+  // header, so you can fold away e.g. the VaR table and focus on the chart
+  // below. Persisted per-section in localStorage so it sticks across reloads
+  // and portfolio switches.
+  const storageKey = `risklens.collapsed.${id}`;
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try { return window.localStorage.getItem(storageKey) === "1"; } catch { return false; }
+  });
+  const toggleCollapsed = () => {
+    setCollapsed((c) => {
+      const next = !c;
+      try { window.localStorage.setItem(storageKey, next ? "1" : "0"); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
   const hasRefs = SECTION_REFERENCES[id]?.length > 0;
   const hasMeta = description || hasRefs;
 
   return (
-    <section id={id} className="section">
+    <section id={id} className={`section${collapsed ? " collapsed" : ""}`}>
       <div className="section-header">
         <div className="section-title-row">
-          <span className="section-title">{title}</span>
+          <button
+            className="section-collapse-toggle"
+            onClick={toggleCollapsed}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? "Expand section" : "Collapse section"}
+            title={collapsed ? "Expand section" : "Collapse section"}
+          >
+            {collapsed ? "▸" : "▾"}
+          </button>
+          <span
+            className="section-title section-title-collapsible"
+            onClick={toggleCollapsed}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCollapsed(); } }}
+          >
+            {title}
+          </span>
           {question && (
             <span className="section-question">({question})</span>
           )}
-          {hasMeta && (
+          {hasMeta && !collapsed && (
             <button
               className={`section-meta-toggle${expanded ? " open" : ""}`}
               onClick={() => setExpanded((o) => !o)}
@@ -144,12 +178,12 @@ function Section({ id, title, question, description, children }) {
             </button>
           )}
         </div>
-        {expanded && description && (
+        {!collapsed && expanded && description && (
           <span className="section-desc">{description}</span>
         )}
-        {expanded && hasRefs && <SectionReferences sectionId={id} />}
+        {!collapsed && expanded && hasRefs && <SectionReferences sectionId={id} />}
       </div>
-      {children}
+      {!collapsed && children}
     </section>
   );
 }
