@@ -172,7 +172,20 @@ function Section({ id, title, question, description, children }) {
               {expanded ? "▾ Hide details" : "ⓘ About this section"}
             </button>
           )}
-          <span className="section-collapse-chevron" aria-hidden="true">⌄</span>
+          <span className="section-collapse-chevron" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              width="22"
+              height="22"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="6 15 12 9 18 15" />
+            </svg>
+          </span>
         </div>
         {!collapsed && expanded && description && (
           <span className="section-desc">{description}</span>
