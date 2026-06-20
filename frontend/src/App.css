@@ -583,6 +583,35 @@
   border-color: var(--accent);
 }
 
+/* Section collapse chevron — folds the section's content (chart/table/panel)
+   while keeping the header visible, so a section can be tucked away (e.g. hide
+   the VaR table and keep just the chart). State persists per section. */
+.section-collapse-toggle {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 4px;
+  margin-left: -4px;
+  cursor: pointer;
+  transition: color 0.15s;
+  font-family: var(--font);
+}
+
+.section-collapse-toggle:hover {
+  color: var(--accent);
+}
+
+/* The title doubles as a collapse target so the whole header is clickable. */
+.section-title-collapsible {
+  cursor: pointer;
+}
+
+.section-title-collapsible:hover {
+  color: var(--accent);
+}
+
 .section-desc {
   font-size: 12px;
   color: var(--text-dim);
