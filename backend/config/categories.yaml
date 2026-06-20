@@ -1,0 +1,204 @@
+# ===========================================================================
+# RiskLens — Security Taxonomy (for category-based scenario shocks)
+# ===========================================================================
+# This map lets the scenario configurator (scenarios.yaml) express stress
+# assumptions at the level of an asset class / region / sector instead of one
+# number per ticker. A security's effective shock under a scenario resolves as:
+#
+#     1. per-name override   (scenarios.yaml -> scenario.shocks[ticker])
+#     2. its `sector`        (if the scenario shocks that equity sector)
+#     3. its `class`         (asset-class/region leaf)
+#     4. the class's parent  (walk up `class_parents` until a shocked node)
+#     5. otherwise uncovered (excluded; basket re-normalizes)
+#
+# So an analyst shocks "em -0.22" and "semis -0.35" once, and every EM holding
+# / every semi flows through automatically — including the look-through baskets.
+#
+# Two axes on purpose: the macro scenarios care about BOTH region (EM vs US
+# equity move differently) and sector (semis vs broad equity in an AI shock).
+# `class` is the region/asset-class axis (a small tree); `sector` is an optional
+# equity overlay that, when a scenario shocks it, wins over the region class.
+#
+# Validated on load by scenario_config.py: every `class` must resolve to a root
+# via class_parents, every `sector` must be in `sectors`, weight-vectors must
+# sum to ~1, and every portfolio holding must appear in `securities`.
+# ===========================================================================
+
+
+# Class tree: leaf/intermediate -> parent. Walking up must terminate at a root
+# (a class that is itself a key here mapping to a root, or a declared root).
+# Roots: equity, bond, real_asset, crypto, cash.
+class_parents:
+  # equities (region) roll up to `equity`
+  us_large:        equity
+  us_mid:          equity
+  us_small:        equity
+  dev_intl:        equity
+  em:              equity
+  global_eq:       equity
+  real_estate:     equity      # REITs trade equity-like in these scenarios
+  # fixed income rolls up to `bond`
+  treasuries:      bond
+  long_treasuries: bond
+  us_agg:          bond
+  ig_credit:       bond
+  hy_credit:       bond
+  intl_bond:       bond
+  tips:            bond
+  # real assets
+  commodity:       real_asset
+  gold:            real_asset
+  # roots (map to themselves so the walk-up terminates cleanly)
+  equity:          equity
+  bond:            bond
+  real_asset:      real_asset
+  crypto:          crypto
+  cash:            cash
+
+
+# Valid equity-sector overlays. A scenario may shock any of these; a security
+# tagged with one gets the sector shock in preference to its region class.
+sectors:
+  - semis
+  - tech            # software / internet / platforms (ex-semis)
+  - communications
+  - financials
+  - healthcare
+  - industrials
+  - energy
+  - materials
+  - consumer_disc
+  - consumer_staples
+  - utilities
+
+
+# Security -> taxonomy. Forms:
+#   TICKER: {class: <leaf>}                      pure asset-class/region
+#   TICKER: {class: <leaf>, sector: <sector>}    equity with a sector overlay
+#   TICKER: {weights: {<class>: w, ...}}         blended fund (weights sum ~1)
+securities:
+
+  # ── Broad / asset-class ETFs ───────────────────────────────────────────
+  SPY:  {class: us_large}
+  IVV:  {class: us_large}
+  VOO:  {class: us_large}
+  VTI:  {class: us_large}            # total US market ≈ large-cap behavior
+  QQQ:  {class: us_large, sector: tech}
+  IWM:  {class: us_small}
+  IJH:  {class: us_mid}
+  IJR:  {class: us_small}
+  EFA:  {class: dev_intl}
+  IDEV: {class: dev_intl}
+  EEM:  {class: em}
+  IEMG: {class: em}
+  ACWI: {class: global_eq}
+  VXUS: {weights: {dev_intl: 0.75, em: 0.25}}   # total intl ≈ 75% dev / 25% EM
+  IEF:  {class: treasuries}
+  TLT:  {class: long_treasuries}
+  LQD:  {class: ig_credit}
+  HYG:  {class: hy_credit}
+  TIP:  {class: tips}
+  AGG:  {class: us_agg}
+  IUSB: {class: us_agg}
+  BND:  {class: us_agg}
+  IAGG: {class: intl_bond}
+  BNDX: {class: intl_bond}
+  GLD:  {class: gold}
+  DBC:  {class: commodity}
+  VNQ:  {class: real_estate}
+  BTC-USD: {class: crypto}
+
+  # ── Sector ETFs (market/anomaly views; mapped for completeness) ─────────
+  XLK:  {class: us_large, sector: tech}
+  VGT:  {class: us_large, sector: tech}
+  SMH:  {class: us_large, sector: semis}
+  XLF:  {class: us_large, sector: financials}
+  KRE:  {class: us_large, sector: financials}
+  XLE:  {class: us_large, sector: energy}
+  XLV:  {class: us_large, sector: healthcare}
+  IBB:  {class: us_large, sector: healthcare}
+  XBI:  {class: us_large, sector: healthcare}
+  XLI:  {class: us_large, sector: industrials}
+  XLB:  {class: us_large, sector: materials}
+  XLY:  {class: us_large, sector: consumer_disc}
+  XLP:  {class: us_large, sector: consumer_staples}
+  XLU:  {class: us_large, sector: utilities}
+  XLC:  {class: us_large, sector: communications}
+  XLRE: {class: real_estate}
+
+  # ── American Funds 2035 (AAFTX) underlying funds ────────────────────────
+  AMCPX: {class: us_large}                         # AMCAP (US growth)
+  AGTHX: {class: us_large}                         # Growth Fund of America
+  AIVSX: {class: us_large}                         # Investment Co of America
+  ANCFX: {class: us_large}                         # Fundamental Investors
+  AWSHX: {class: us_large}                         # Washington Mutual (value)
+  AMRMX: {class: us_large}                         # American Mutual (div)
+  AGVFX: {class: global_eq}                        # Global Insight
+  ANWPX: {class: global_eq}                        # New Perspective
+  CWGIX: {class: global_eq}                        # Capital World G&I
+  SMCWX: {class: global_eq}                        # SMALLCAP World
+  IGAAX: {class: dev_intl}                         # International Growth & Income
+  CAIBX: {weights: {global_eq: 0.65, us_agg: 0.35}}   # Capital Income Builder
+  AMECX: {weights: {us_large: 0.65, us_agg: 0.35}}    # Income Fund of America
+  ABALX: {weights: {us_large: 0.60, us_agg: 0.40}}    # American Balanced 60/40
+  GBLAX: {weights: {global_eq: 0.60, us_agg: 0.40}}   # Global Balanced
+  ABNDX: {class: us_agg}                           # Bond Fund of America
+  AIBAX: {class: us_agg}                           # Intermediate Bond
+  ANBAX: {class: us_agg}                           # Strategic Bond (core-plus)
+  MFAAX: {class: us_agg}                           # Mortgage (MBS)
+  AMUSX: {class: treasuries}                       # US Government Securities
+  BFIAX: {class: tips}                             # Inflation Linked Bond
+  CWBFX: {class: intl_bond}                        # Capital World Bond
+  EBNAX: {class: hy_credit}                        # EM Bond (credit-sensitive)
+  MIAYX: {class: hy_credit}                        # Multi-Sector Income
+
+  # ── CGGO look-through holdings ──────────────────────────────────────────
+  TSM:       {class: em,       sector: semis}      # Taiwan Semiconductor
+  MU:        {class: us_large, sector: semis}      # Micron
+  000660.KS: {class: em,       sector: semis}      # SK Hynix (Korea)
+  AVGO:      {class: us_large, sector: semis}      # Broadcom
+  GOOGL:     {class: us_large, sector: tech}       # Alphabet
+  GOOG:      {class: us_large, sector: tech}       # Alphabet
+  ASML:      {class: dev_intl, sector: semis}      # ASML (Netherlands)
+  MSFT:      {class: us_large, sector: tech}       # Microsoft
+  WDC:       {class: us_large, sector: semis}      # Western Digital
+  005930.KS: {class: em,       sector: semis}      # Samsung Electronics (Korea)
+  AON:       {class: us_large, sector: financials} # Aon
+  NVDA:      {class: us_large, sector: semis}      # Nvidia
+  C:         {class: us_large, sector: financials} # Citigroup
+  SBUX:      {class: us_large, sector: consumer_disc}
+  META:      {class: us_large, sector: tech}       # Meta
+  SIEGY:     {class: dev_intl, sector: industrials}# Siemens
+  EADSY:     {class: dev_intl, sector: industrials}# Airbus
+  III.L:     {class: dev_intl, sector: financials} # 3i Group (UK)
+  PRU:       {class: us_large, sector: financials} # Prudential
+  FIX:       {class: us_large, sector: industrials}# Comfort Systems
+  VRTX:      {class: us_large, sector: healthcare} # Vertex
+  PROSY:     {class: dev_intl, sector: tech}       # Prosus
+  UNH:       {class: us_large, sector: healthcare} # UnitedHealth
+  NSRGY:     {class: dev_intl, sector: consumer_staples} # Nestle
+  INTC:      {class: us_large, sector: semis}      # Intel
+  BBVA:      {class: dev_intl, sector: financials} # BBVA (Spain)
+
+  # ── DWLD look-through holdings ──────────────────────────────────────────
+  YMM:       {class: em,       sector: industrials}# Full Truck Alliance (China)
+  CTRA:      {class: us_large, sector: energy}     # Coterra Energy
+  2318.HK:   {class: em,       sector: financials} # Ping An (China)
+  VTRS:      {class: us_large, sector: healthcare} # Viatris
+  TCOM:      {class: em,       sector: consumer_disc}    # Trip.com (China)
+  TSN:       {class: us_large, sector: consumer_staples} # Tyson Foods
+  JBS:       {class: dev_intl, sector: consumer_staples} # JBS N.V.
+  APP:       {class: us_large, sector: tech}       # AppLovin
+  BAER.SW:   {class: dev_intl, sector: financials} # Julius Baer (Switzerland)
+  PRX.AS:    {class: dev_intl, sector: tech}       # Prosus N.V.
+  MGM:       {class: us_large, sector: consumer_disc}    # MGM Resorts
+  SE:        {class: em,       sector: tech}       # Sea Limited (SE Asia)
+  COF:       {class: us_large, sector: financials} # Capital One
+  MKL:       {class: us_large, sector: financials} # Markel
+  CVS:       {class: us_large, sector: healthcare} # CVS Health
+  AMZN:      {class: us_large, sector: tech}       # Amazon (AI/platform)
+  DIDIY:     {class: em,       sector: tech}       # Didi (China)
+  SAP.DE:    {class: dev_intl, sector: tech}       # SAP (Germany)
+  1299.HK:   {class: em,       sector: financials} # AIA Group (Asia)
+  6031.HK:   {class: em,       sector: industrials}# Sany Heavy (China)
+  LYB:       {class: us_large, sector: materials}  # LyondellBasell

@@ -10,6 +10,7 @@ from scenario_config import (
     SCENARIOS,
     HYPOTHETICAL_SCENARIOS,
     SCENARIO_PROXIES,
+    effective_shocks,
 )
 
 WINDOW = 1000
@@ -496,24 +497,22 @@ def compute_asset_risk(ticker: str, returns: pd.Series, prices: pd.Series) -> di
 # only apply them. See scenario_config.py for the loader + validator.
 
 
-def compute_hypothetical_scenarios(weights: dict, fund_ticker: str = None) -> list[dict]:
+def compute_hypothetical_scenarios(weights: dict) -> list[dict]:
     """
-    Apply analyst-estimated shock vectors to portfolio weights.
+    Apply analyst-estimated shock assumptions to portfolio weights.
     No historical price data required — pure assumption-based stress test.
 
-    Per-ticker path: when the portfolio's holdings have shocks defined (the
-    ETF-based modes), each holding is shocked individually and the contributions
+    Each holding's shock is resolved through the security taxonomy
+    (scenario_config.effective_shocks): a scenario shocks categories
+    (asset-class/region + equity sector) and each holding picks up its shock via
+    per-name override -> sector -> class -> class-parent. This covers ETF modes
+    AND the look-through stock baskets bottom-up (no fund-level fallback needed),
+    so the contributions are a genuine per-holding attribution. Contributions
     re-normalize over the covered weight.
-
-    Fund-level fallback: a look-through basket holds individual stocks that have
-    no per-name shock. If `fund_ticker` is given and the scenario defines a shock
-    for the fund itself, stress the basket as a WHOLE using the fund's own shock
-    (e.g. "CGGO drops 30% in an AI-bubble burst") rather than leaving it at $0.
-    Flagged via "fund_level_estimate" so the UI can label it.
     """
     results = []
     for s in HYPOTHETICAL_SCENARIOS:
-        shocks  = s["shocks"]
+        shocks  = effective_shocks(weights, s)
         avail   = [t for t in weights if t in shocks]
         raw_w   = {t: weights[t] for t in avail}
         total_w = sum(raw_w.values())
@@ -524,21 +523,8 @@ def compute_hypothetical_scenarios(weights: dict, fund_ticker: str = None) -> li
             contributions = {t: round(shocks[t] * norm_w[t] * 100, 2) for t in avail}
             asset_returns = {t: round(shocks[t] * 100, 1) for t in avail}
             coverage      = round(total_w * 100, 1)
-            fund_level    = False
-        elif fund_ticker and fund_ticker in shocks:
-            # Look-through basket — apply the fund's own shock to the whole basket.
-            port_return   = shocks[fund_ticker]
-            contributions = {}
-            asset_returns = {}
-            coverage      = 100.0
-            fund_level    = True
         else:
-            # No per-name shocks and no fund-level fallback available.
-            port_return   = 0.0
-            contributions = {}
-            asset_returns = {}
-            coverage      = 0.0
-            fund_level    = False
+            port_return, contributions, asset_returns, coverage = 0.0, {}, {}, 0.0
 
         results.append({
             "id":            s["id"],
@@ -549,7 +535,6 @@ def compute_hypothetical_scenarios(weights: dict, fund_ticker: str = None) -> li
             "coverage_pct":  coverage,
             "asset_returns": asset_returns,
             "contributions": contributions,
-            "fund_level_estimate": fund_level,
         })
     return results
 

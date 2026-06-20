@@ -25,7 +25,7 @@ from risk_engine import (
     compute_multi_window_correlation, compute_anomaly_view,
     CORR_TICKERS,
 )
-from scenario_config import report_scenario_coverage
+from scenario_config import report_scenario_coverage, assert_all_mapped
 from factor_models import (
     fetch_ff_carhart_daily, fit_ff_carhart, compute_beta,
     compute_rolling_ff_loadings, compute_thematic_exposures,
@@ -455,7 +455,7 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
     hist = compute_scenarios(prices_long, weights)
     for s in hist:
         s["type"] = "historical"
-    hypo = compute_hypothetical_scenarios(weights, fund_ticker=mode_cfg.get("fund_ticker"))
+    hypo = compute_hypothetical_scenarios(weights)
     scenarios = hist + hypo
 
     # Portfolio risk trajectory — daily EWMA VaR over full available history.
@@ -603,6 +603,11 @@ def main():
     # Weights remain {fund_ticker: 1.0} — the portfolio is still the fund;
     # underlyings are read-only context with individual risk metrics.
     _augment_active_fund_modes_with_holdings()
+
+    # Guard: every portfolio holding (now including the look-through baskets)
+    # must have a taxonomy entry in categories.yaml, else it would silently get
+    # 0 shock in every scenario. Fail the regen loudly instead.
+    assert_all_mapped(PORTFOLIO_MODES)
 
     # Master ticker list — union of everything we need across all modes,
     # plus extra bond proxies for the multi-window correlation chart and
