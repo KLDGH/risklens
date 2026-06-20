@@ -583,33 +583,58 @@
   border-color: var(--accent);
 }
 
-/* Section collapse chevron — folds the section's content (chart/table/panel)
-   while keeping the header visible, so a section can be tucked away (e.g. hide
-   the VaR table and keep just the chart). State persists per section. */
-.section-collapse-toggle {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 12px;
+/* Section collapse — the whole title row is the accordion control: clicking
+   anywhere folds the section's content (chart/table/panel) while keeping the
+   header. A rotating chevron on the right is the indicator. State persists per
+   section. Negative margins let the hover highlight bleed to the band edges. */
+.section-title-row {
+  cursor: pointer;
+  border-radius: 5px;
+  margin: -5px -8px;
+  padding: 5px 8px;
+  transition: background 0.13s;
+}
+
+.section-title-row:hover {
+  background: var(--bg3);
+}
+
+.section-title-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.section-title-row:hover .section-title {
+  color: var(--accent);
+}
+
+/* Right-aligned chevron — the expand/collapse indicator. Points down when the
+   section is open; rotates to point right when collapsed. Sized up and given a
+   subtle button surface so the collapsibility reads at a glance. */
+.section-collapse-chevron {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 700;
   line-height: 1;
-  padding: 2px 4px;
-  margin-left: -4px;
-  cursor: pointer;
-  transition: color 0.15s;
-  font-family: var(--font);
+  transition: transform 0.18s ease, background 0.13s, border-color 0.13s;
 }
 
-.section-collapse-toggle:hover {
-  color: var(--accent);
+.section-title-row:hover .section-collapse-chevron {
+  background: var(--bg);
+  border-color: var(--accent);
 }
 
-/* The title doubles as a collapse target so the whole header is clickable. */
-.section-title-collapsible {
-  cursor: pointer;
-}
-
-.section-title-collapsible:hover {
-  color: var(--accent);
+.section.collapsed .section-collapse-chevron {
+  transform: rotate(-90deg);
 }
 
 .section-desc {

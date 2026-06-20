@@ -145,38 +145,34 @@ function Section({ id, title, question, description, children }) {
   return (
     <section id={id} className={`section${collapsed ? " collapsed" : ""}`}>
       <div className="section-header">
-        <div className="section-title-row">
-          <button
-            className="section-collapse-toggle"
-            onClick={toggleCollapsed}
-            aria-expanded={!collapsed}
-            aria-label={collapsed ? "Expand section" : "Collapse section"}
-            title={collapsed ? "Expand section" : "Collapse section"}
-          >
-            {collapsed ? "▸" : "▾"}
-          </button>
-          <span
-            className="section-title section-title-collapsible"
-            onClick={toggleCollapsed}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCollapsed(); } }}
-          >
-            {title}
-          </span>
+        {/* The whole title row is the accordion control: click anywhere to
+            collapse/expand, with a rotating chevron on the right as the
+            indicator. The "About this section" button stops propagation so it
+            doesn't also toggle the collapse. */}
+        <div
+          className="section-title-row"
+          onClick={toggleCollapsed}
+          role="button"
+          tabIndex={0}
+          aria-expanded={!collapsed}
+          aria-label={`${title} section, ${collapsed ? "collapsed" : "expanded"}`}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCollapsed(); } }}
+        >
+          <span className="section-title">{title}</span>
           {question && (
             <span className="section-question">({question})</span>
           )}
           {hasMeta && !collapsed && (
             <button
               className={`section-meta-toggle${expanded ? " open" : ""}`}
-              onClick={() => setExpanded((o) => !o)}
+              onClick={(e) => { e.stopPropagation(); setExpanded((o) => !o); }}
               aria-expanded={expanded}
               title="Toggle description and references"
             >
               {expanded ? "▾ Hide details" : "ⓘ About this section"}
             </button>
           )}
+          <span className="section-collapse-chevron" aria-hidden="true">⌄</span>
         </div>
         {!collapsed && expanded && description && (
           <span className="section-desc">{description}</span>
