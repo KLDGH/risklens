@@ -28,6 +28,30 @@
   border-bottom: 1px solid var(--border);
 }
 
+/* Standalone Sector-ETF selector bar that drives all Sector Spotlight
+   sections (analogous to the Switch Portfolio bar). Mirrors the section
+   panels' surface — bordered card — but it's a control, not collapsible. */
+.sector-selector {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+/* The anomaly signals (price chart + detector stack + recent list) render as
+   one section's content, so they carry their own inner padding now that the
+   section panel provides the outer frame. */
+.anomaly-signals {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px 16px;
+}
+
 .anomaly-control-group {
   display: flex;
   align-items: center;

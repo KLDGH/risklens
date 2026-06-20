@@ -643,9 +643,14 @@
 .section > .table-wrapper,
 .section > .historical-chart-wrapper,
 .section > .backtest-panel,
-.section > .anomaly-panel {
+.section > .anomaly-panel,
+.section > .risk-profile-card,
+.section > .factor-regression-panel,
+.section > .rolling-factor-panel,
+.section > .anomaly-signals {
   border: none;
   border-radius: 0;
+  background: transparent;
 }
 
 /* Loose content (snapshot legends) and the scenario grid have no padding of
