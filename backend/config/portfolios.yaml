@@ -1,0 +1,226 @@
+# ===========================================================================
+# RiskLens — Portfolio Registry
+# ===========================================================================
+# The set of portfolios the app shows, and how each is defined. Edit this file
+# to add / hide / reorder portfolios without touching Python. Loaded + validated
+# by backend/portfolio_config.py, which builds the pipeline's PORTFOLIO_MODES
+# and BENCHMARKS from it.
+#
+# A portfolio's HOLDINGS come from one of two sources:
+#   holdings: {weights: {TICKER: w, ...}}        an explicit basket (sums ~1)
+#   holdings: {look_through: {fund_ticker, top_n}} a fund's disclosed top-N,
+#       read from the committed holdings file (active_fund_holdings.json, itself
+#       exported from the sponsor's PDF — there is no reliable free holdings API
+#       for active ETFs / mutual funds, so that export stays a manual step).
+#
+# A ticker gets you the PRICE side for free: `nav_ticker` shows the real fund
+# share price on the total row; `fund_ticker` adds the fund's own reference row.
+# `benchmark` references a named policy blend below. `visible: false` hides a
+# portfolio's tab. List order here is display order.
+#
+# ---------------------------------------------------------------------------
+# HOW TO ADD A PORTFOLIO
+#   1. Add an entry under `portfolios:` with a unique `id`, `label`, `name`,
+#      `description`, a `benchmark:` (one of the keys under `benchmarks:`), and
+#      `holdings: {weights: {TICKER: w, ...}}`. Weights must sum to ~1.0.
+#   2. Every ticker must (a) appear in `names:` below and (b) be classified in
+#      categories.yaml. Miss either and the regen STOPS and prints the exact
+#      ticker to add — nothing breaks silently, so it's safe to try.
+#   3. `visible: false` hides a tab; the order of this list is the tab order.
+#   Common edits — hide/reorder a portfolio, retune a benchmark — are just this
+#   file. Adding a brand-new active FUND (holdings: {look_through: ...}) is the
+#   exception: its basket is read from active_fund_holdings.json (exported from
+#   the sponsor's PDF), so that needs the export step, not just YAML.
+# ===========================================================================
+
+
+# Ticker -> display name, used to label per-asset rows. Look-through holding
+# names come from the disclosure file, so only the fund tickers need listing.
+names:
+  # Hypothetical asset-class universe
+  SPY: S&P 500 ETF
+  EFA: MSCI EAFE (Intl Developed) ETF
+  EEM: Emerging Markets ETF
+  QQQ: Nasdaq 100 ETF
+  IWM: Russell 2000 ETF
+  IEF: 7-10yr Treasury ETF
+  TLT: 20yr Treasury ETF
+  LQD: Investment Grade Bond ETF
+  HYG: High Yield Bond ETF
+  TIP: TIPS (Inflation-Linked) ETF
+  GLD: Gold ETF
+  DBC: Broad Commodities ETF
+  VNQ: Real Estate ETF
+  BTC-USD: Bitcoin / USD
+  # iShares Core 60/40 (AOR) sleeve
+  IVV: iShares Core S&P 500 ETF
+  IUSB: iShares Core Total USD Bond Market ETF
+  IDEV: iShares Core MSCI Intl Developed ETF
+  IEMG: iShares Core MSCI Emerging Markets ETF
+  IAGG: iShares Core International Aggregate Bond ETF
+  IJH: iShares Core S&P Mid-Cap ETF
+  IJR: iShares Core S&P Small-Cap ETF
+  # Vanguard Target 2055 sleeve
+  VTI: Vanguard Total Stock Market ETF
+  VXUS: Vanguard Total International Stock ETF
+  BND: Vanguard Total Bond Market ETF
+  BNDX: Vanguard Total International Bond ETF
+  # American Funds 2035 underlying funds
+  AMCPX: AMCAP Fund
+  AGVFX: Global Insight Fund
+  AGTHX: The Growth Fund of America
+  ANWPX: New Perspective Fund
+  SMCWX: SMALLCAP World Fund
+  AMRMX: American Mutual Fund
+  CWGIX: Capital World Growth & Income
+  ANCFX: Fundamental Investors
+  IGAAX: International Growth & Income Fund
+  AIVSX: Investment Company of America
+  AWSHX: Washington Mutual Investors
+  CAIBX: Capital Income Builder
+  AMECX: The Income Fund of America
+  ABALX: American Balanced Fund
+  GBLAX: Global Balanced Fund
+  EBNAX: Emerging Markets Bond Fund
+  BFIAX: Inflation Linked Bond Fund
+  MFAAX: American Funds Mortgage Fund
+  MIAYX: Multi-Sector Income Fund
+  ANBAX: Strategic Bond Fund
+  ABNDX: The Bond Fund of America
+  CWBFX: Capital World Bond Fund
+  AIBAX: Intermediate Bond Fund of America
+  AMUSX: U.S. Government Securities Fund
+  # Active-fund spotlights (look-through fund tickers)
+  CGGO: Capital Group Global Growth Equity ETF
+  DWLD: Davis Select Worldwide ETF
+  # Common index ETFs — used by the benchmarks above, and listed here so they
+  # can also be dropped straight into a portfolio's holdings without an error.
+  ACWI: MSCI ACWI (Global Equity) ETF
+  AGG: iShares Core US Aggregate Bond ETF
+
+
+# Named policy benchmarks. Each portfolio references one by key; it renders as a
+# muted row under the total, computed through the same engine.
+benchmarks:
+  60_40_acwi_agg:
+    label: "Policy benchmark · 60/40 (ACWI / AGG)"
+    weights: {ACWI: 0.60, AGG: 0.40}
+  90_10_acwi_agg:
+    label: "Policy benchmark · 90/10 (ACWI / AGG)"
+    weights: {ACWI: 0.90, AGG: 0.10}
+  65_35_acwi_agg:
+    label: "Policy benchmark · 65/35 (ACWI / AGG)"
+    weights: {ACWI: 0.65, AGG: 0.35}
+  acwi_global:
+    label: "Benchmark · MSCI ACWI (global equity)"
+    weights: {ACWI: 1.00}
+
+
+# The registry. Order = display order; visible toggles the tab.
+portfolios:
+  - id: aor
+    label: "iShares Core 60/40 (AOR)"
+    name: "iShares Core 60/40 Balanced Allocation (AOR)"
+    description: "A real, publicly-traded multi-asset fund: the iShares Core 60/40 Balanced Allocation ETF (AOR), modeled directly from its seven underlying iShares ETFs at their disclosed weights — ~61% equity (US large/mid/small + intl developed + EM) and ~39% fixed income (US + international aggregate bonds). AOR is a fund-of-ETFs that holds these directly, so this is the full fund (~99.9% of holdings), not a partial reconstruction. Holdings as of 2026-06-11."
+    visible: true
+    nav_ticker: AOR
+    benchmark: 60_40_acwi_agg
+    optimizable: true
+    holdings:
+      weights:
+        IVV:  0.3418
+        IUSB: 0.3304
+        IDEV: 0.1717
+        IEMG: 0.0682
+        IAGG: 0.0590
+        IJH:  0.0195
+        IJR:  0.0094
+
+  - id: hypothetical
+    label: "Hypothetical Portfolio"
+    name: "60/40 Blended Portfolio"
+    description: "An illustrative diversified mix: 60% equity (US + intl developed + EM), 30% fixed income (Treasuries + IG + HY + TIPS), 8% real assets (gold + broad commodities + REITs), 2% crypto. Built from 14 asset-class ETFs."
+    visible: true
+    benchmark: 60_40_acwi_agg
+    holdings:
+      weights:
+        SPY:     0.25
+        EFA:     0.14
+        EEM:     0.08
+        QQQ:     0.08
+        IWM:     0.05
+        IEF:     0.08
+        TLT:     0.04
+        LQD:     0.10
+        HYG:     0.05
+        TIP:     0.03
+        GLD:     0.04
+        DBC:     0.02
+        VNQ:     0.02
+        BTC-USD: 0.02
+
+  - id: tdf_2055
+    label: "Vanguard Target 2055 (VFFVX)"
+    name: "Vanguard Target Retirement 2055"
+    description: "Underlying holdings of the Vanguard 2055 target-date fund: ~90% equity (54% US, 36% intl) and ~10% bonds (7% US, 3% intl). Built from 4 broad passive index ETFs."
+    visible: true
+    nav_ticker: VFFVX
+    benchmark: 90_10_acwi_agg
+    holdings:
+      weights:
+        VTI:  0.54
+        VXUS: 0.36
+        BND:  0.07
+        BNDX: 0.03
+
+  - id: cg_2035
+    label: "AF Target 2035 (AAFTX)"
+    name: "American Funds 2035 Target Date"
+    description: "Underlying holdings of the American Funds 2035 Target Date Retirement Fund (AAFTX): ~64% equity, ~31% fixed income, ~5% cash, spread across the 24 actively-managed American Funds it holds (as of 2026-05-31). A ~9-years-to-target glide path — materially more conservative than a 2055 vintage."
+    visible: true
+    nav_ticker: AAFTX
+    benchmark: 65_35_acwi_agg
+    holdings:
+      weights:
+        AMCPX: 0.059
+        AGVFX: 0.038
+        AGTHX: 0.055
+        ANWPX: 0.028
+        SMCWX: 0.034
+        AMRMX: 0.070
+        CWGIX: 0.071
+        ANCFX: 0.052
+        IGAAX: 0.020
+        AIVSX: 0.037
+        AWSHX: 0.050
+        CAIBX: 0.040
+        AMECX: 0.041
+        ABALX: 0.081
+        GBLAX: 0.050
+        EBNAX: 0.003
+        BFIAX: 0.044
+        MFAAX: 0.049
+        MIAYX: 0.026
+        ANBAX: 0.021
+        ABNDX: 0.027
+        CWBFX: 0.020
+        AIBAX: 0.035
+        AMUSX: 0.049
+
+  - id: cggo_active
+    label: "CGGO Look-Through"
+    name: "CGGO Top-25 Basket (Look-Through)"
+    description: "Capital Group Global Growth Equity ETF (CGGO) modeled as a look-through basket of its top 25 disclosed holdings. Each underlying is a per-asset risk row weighted by its disclosed weight (re-normalized over the top 25). The CGGO ETF row at the bottom shows the fund's own NAV-based risk for comparison vs. the basket."
+    visible: true
+    benchmark: acwi_global
+    holdings:
+      look_through: {fund_ticker: CGGO, top_n: 25}
+
+  - id: dwld_active
+    label: "DWLD Look-Through"
+    name: "DWLD Top-25 Basket (Look-Through)"
+    description: "Davis Select Worldwide ETF (DWLD) modeled as a look-through basket of its top 25 disclosed holdings. Each underlying is a per-asset risk row weighted by its disclosed weight (re-normalized over the top 25). The DWLD ETF row at the bottom shows the fund's own NAV-based risk for comparison vs. the basket."
+    visible: true
+    benchmark: acwi_global
+    holdings:
+      look_through: {fund_ticker: DWLD, top_n: 25}
