@@ -8,7 +8,14 @@ import PortfolioRiskChart from "./components/PortfolioRiskChart.jsx";
 import BacktestPanel from "./components/BacktestPanel.jsx";
 import ScenarioPanel from "./components/ScenarioPanel.jsx";
 import FundDisclosurePanel from "./components/FundDisclosurePanel.jsx";
-import AnomalyDetectorPanel from "./components/AnomalyDetectorPanel.jsx";
+import {
+  SectorSelector,
+  RiskProfileCard,
+  FactorRegressionPanel,
+  ThematicExposurePanel,
+  RollingFactorLoadingsPanel,
+  AnomalySignalsPanel,
+} from "./components/AnomalyDetectorPanel.jsx";
 import OptimizerPanel from "./components/OptimizerPanel.jsx";
 import InfoTip from "./components/InfoTip.jsx";
 import "./App.css";
@@ -628,20 +635,60 @@ export default function App() {
             over time, and three anomaly detectors (z-score, Page CUSUM,
             GARCH-residual) on a shared timeline.
             ============================================================= */}
-        {activeTab === "anomaly" && data?.anomaly_views && (
-          <Section
-            id="anomaly-detector"
-            title="Sector Spotlight"
-            question="What's driving the risk and behavior of a single sector ETF?"
-            description="Single-asset deep-dive across the 14-ETF universe (11 SPDR sectors + KRE regional banks, SMH semis, IBB biotech). For each ticker: standalone risk profile (VaR, ES, EVT, tail-α, beta vs SPY); Fama-French 5 + Momentum factor regression; thematic-basket exposure regression mapping loadings to narrative risk drivers (oil shock, regional-banking stress, duration, China sensitivity); rolling factor loadings over 5 years to surface style drift; three anomaly detectors plotted on a shared timeline — standardized z-score flags outsized single days, Page CUSUM catches sustained mean shifts, GARCH-residual outliers flag days the conditional-vol model didn't anticipate. Disagreement between detectors is the signal."
-          >
-            <AnomalyDetectorPanel
-              views={data.anomaly_views}
-              selectedTicker={selectedTicker}
-              onTickerChange={setSelectedTicker}
-            />
-          </Section>
-        )}
+        {activeTab === "anomaly" && data?.anomaly_views?.tickers?.length > 0 && (() => {
+          // Single-asset deep-dive, split into distinct collapsible sections all
+          // driven by one ETF selector. The selector resolves the active view;
+          // each section renders one facet of it.
+          const views  = data.anomaly_views;
+          const ticker = (selectedTicker && views.data[selectedTicker]) ? selectedTicker : views.tickers[0];
+          const view   = views.data[ticker];
+          if (!view) return null;
+          return (
+            <>
+              <SectorSelector views={views} ticker={ticker} setTicker={setSelectedTicker} view={view} />
+              <Section
+                id="sector-risk-profile"
+                title="Risk Profile"
+                question="How risky is this ETF on its own, today?"
+                description="Standalone risk metrics for the selected ETF's NAV, mirroring the Portfolio Risk snapshot: recent realized volatility, market beta vs SPY, the daily 1% VaR (GJR-t and EVT), the 1-year YearVaR, and the Hill tail-α. HS and EWMA estimates are on hover. Curated expected-range bands (from the literature) are available as a tooltip on the title to sanity-check the live numbers."
+              >
+                <RiskProfileCard profile={view.risk_profile} ticker={ticker} />
+              </Section>
+              <Section
+                id="sector-factor-model"
+                title="Factor Risk Model"
+                question="Which systematic factors drive its returns?"
+                description="Fama-French 5 + Carhart momentum regression on the ETF's daily excess returns — an open-data substitute for a Barra-style multi-factor decomposition. Per-factor loadings with bootstrapped 95% CIs, t-stats and significance, plus R², alpha, and the total/factor/idiosyncratic volatility decomposition."
+              >
+                <FactorRegressionPanel model={view.factor_model} />
+              </Section>
+              <Section
+                id="sector-thematic"
+                title="Thematic Risk Exposures"
+                question="Which narrative risk drivers actually move it?"
+                description="Regression against a panel of sector/thematic ETF baskets that each proxy a real-world risk driver (oil shock, regional-banking stress, duration, China sensitivity). Non-market loadings are computed on market-orthogonalized basket residuals, so they read as exposure beyond plain market beta — more actionable than abstract academic factor loadings."
+              >
+                <ThematicExposurePanel thematic={view.thematic_exposures} />
+              </Section>
+              <Section
+                id="sector-factor-drift"
+                title="Factor Loadings Over Time"
+                question="Is it still doing what it was bought to do?"
+                description="Rolling 252-day factor loadings stepped monthly over the last ~5 years, one mini-chart per factor with its long-run mean. A loading drifting more than 1σ from its own long-run mean is flagged as style drift — the months-to-years horizon at which sector rotations and thesis drift play out."
+              >
+                <RollingFactorLoadingsPanel rolling={view.factor_model_rolling} />
+              </Section>
+              <Section
+                id="sector-anomalies"
+                title="Anomaly Detection"
+                question="When did it behave abnormally — and do the detectors agree?"
+                description="Three detectors on a shared timeline over the closing-price series: standardized z-score flags outsized single days, Page CUSUM catches sustained mean shifts, and GARCH-residual outliers flag days the conditional-vol model didn't anticipate. A date hitting multiple detectors is the strong signal — disagreement between them is informative."
+              >
+                <AnomalySignalsPanel view={view} ticker={ticker} />
+              </Section>
+            </>
+          );
+        })()}
         {activeTab === "optimizer" && (
           <Section
             id="optimizer"

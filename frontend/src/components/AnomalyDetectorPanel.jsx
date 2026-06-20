@@ -51,7 +51,7 @@ function fmtDate(d) {
    numbers are computed and shipped in the JSON but hidden behind
    hover-over to avoid the model-clutter problem on the snapshot
    surface. Each card has an InfoTip explaining what it means. */
-function RiskProfileCard({ profile, ticker }) {
+export function RiskProfileCard({ profile, ticker }) {
   if (!profile) return null;
 
   const stat = (label, value, unit, tip) => (
@@ -186,7 +186,7 @@ const FF_FACTOR_DESCRIPTIONS = {
     "Momentum — Carhart (1997) extension. Daily return of a portfolio that's long recent winners and short recent losers, ranked on trailing 12-month return excluding the most recent month. Positive loading = chases winners (momentum-following); negative = mean-reversion (buys losers, sells winners). Momentum has been a robust factor across markets and decades.",
 };
 
-function FactorRegressionPanel({ model }) {
+export function FactorRegressionPanel({ model }) {
   if (!model) return null;
   const sig = (p) =>
       p < 0.001 ? "***"
@@ -343,7 +343,7 @@ function FactorRegressionPanel({ model }) {
 
    Output mirrors the FF regression panel shape (loadings table +
    significance + R² + vol decomp) so the two panels read as siblings. */
-function ThematicExposurePanel({ thematic }) {
+export function ThematicExposurePanel({ thematic }) {
   if (!thematic) return null;
   const sig = (p) =>
       p < 0.001 ? "***"
@@ -570,7 +570,7 @@ const FACTOR_COLORS = {
 };
 
 
-function RollingFactorLoadingsPanel({ rolling }) {
+export function RollingFactorLoadingsPanel({ rolling }) {
   if (!rolling || !rolling.snapshots?.length) return null;
   const latest = rolling.snapshots[rolling.snapshots.length - 1];
   const drift = rolling.drift_alerts ?? [];
@@ -900,43 +900,27 @@ function RecentAnomaliesList({ anomalies }) {
 }
 
 
-export default function AnomalyDetectorPanel({ views, selectedTicker, onTickerChange }) {
-  const tickers = views?.tickers ?? [];
-  // Local fallback if the parent doesn't supply controlled state.
-  // The new app.jsx always passes selectedTicker / onTickerChange (so
-  // the URL can persist the selection), but keep this for stand-alone use.
-  const [localTicker, setLocalTicker] = useState(tickers[0] ?? null);
-  const ticker  = selectedTicker ?? localTicker;
-  const setTicker = onTickerChange ?? setLocalTicker;
-
-  if (!tickers.length || !ticker) {
-    return (
-      <div className="anomaly-empty">
-        No anomaly views available. Run the backend to populate.
-      </div>
-    );
-  }
-
-  const view = views.data[ticker];
-  if (!view) return null;
-
+/* ---------- Sector ETF selector ----------
+   The control that drives every Sector Spotlight section. Rendered as a
+   standalone control bar above the sections (analogous to the Switch
+   Portfolio bar), so changing the ETF updates all sections at once. */
+export function SectorSelector({ views, ticker, setTicker, view }) {
   const fmtTickerLabel = (t) => `${t} — ${views.names[t] ?? t}`;
-
   return (
-    <div className="anomaly-panel">
-      <div className="anomaly-controls">
-        <div className="anomaly-control-group">
-          <span className="anomaly-control-label">Sector ETF</span>
-          <select
-            className="anomaly-ticker-select"
-            value={ticker}
-            onChange={(e) => setTicker(e.target.value)}
-          >
-            {tickers.map((t) => (
-              <option key={t} value={t}>{fmtTickerLabel(t)}</option>
-            ))}
-          </select>
-        </div>
+    <div className="sector-selector">
+      <div className="anomaly-control-group">
+        <span className="anomaly-control-label">Sector ETF</span>
+        <select
+          className="anomaly-ticker-select"
+          value={ticker}
+          onChange={(e) => setTicker(e.target.value)}
+        >
+          {views.tickers.map((t) => (
+            <option key={t} value={t}>{fmtTickerLabel(t)}</option>
+          ))}
+        </select>
+      </div>
+      {view && (
         <div className="anomaly-stats">
           <span><strong>{view.series.length}</strong> trading days</span>
           <span className="anomaly-stat-sep">·</span>
@@ -946,16 +930,19 @@ export default function AnomalyDetectorPanel({ views, selectedTicker, onTickerCh
           <span className="anomaly-stat-sep">·</span>
           <span>lookback <strong>{view.params.lookback_days}d</strong></span>
         </div>
-      </div>
+      )}
+    </div>
+  );
+}
 
-      <RiskProfileCard profile={view.risk_profile} ticker={ticker} />
 
-      <FactorRegressionPanel model={view.factor_model} />
-
-      <ThematicExposurePanel thematic={view.thematic_exposures} />
-
-      <RollingFactorLoadingsPanel rolling={view.factor_model_rolling} />
-
+/* ---------- Anomaly signals ----------
+   The price chart with anomaly markers + the three stacked detector
+   subpanels on a shared timeline + the recent-flagged-dates list. */
+export function AnomalySignalsPanel({ view, ticker }) {
+  if (!view) return null;
+  return (
+    <div className="anomaly-signals">
       <div className="anomaly-chart-stack">
         <div className="anomaly-chart-title">
           {ticker} closing price · anomaly markers colored by first-firing detector
@@ -1010,6 +997,38 @@ export default function AnomalyDetectorPanel({ views, selectedTicker, onTickerCh
         detector firing alone — disagreement among detectors is the signal,
         same principle as the VaR table on the Portfolio Risk tab.
       </div>
+    </div>
+  );
+}
+
+
+/* Standalone composition (kept for non-section use). App.jsx renders the
+   selector + each panel in its own collapsible Section instead. */
+export default function AnomalyDetectorPanel({ views, selectedTicker, onTickerChange }) {
+  const tickers = views?.tickers ?? [];
+  const [localTicker, setLocalTicker] = useState(tickers[0] ?? null);
+  const ticker  = selectedTicker ?? localTicker;
+  const setTicker = onTickerChange ?? setLocalTicker;
+
+  if (!tickers.length || !ticker) {
+    return (
+      <div className="anomaly-empty">
+        No anomaly views available. Run the backend to populate.
+      </div>
+    );
+  }
+
+  const view = views.data[ticker];
+  if (!view) return null;
+
+  return (
+    <div className="anomaly-panel">
+      <SectorSelector views={views} ticker={ticker} setTicker={setTicker} view={view} />
+      <RiskProfileCard profile={view.risk_profile} ticker={ticker} />
+      <FactorRegressionPanel model={view.factor_model} />
+      <ThematicExposurePanel thematic={view.thematic_exposures} />
+      <RollingFactorLoadingsPanel rolling={view.factor_model_rolling} />
+      <AnomalySignalsPanel view={view} ticker={ticker} />
     </div>
   );
 }
