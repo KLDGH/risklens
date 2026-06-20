@@ -13,6 +13,7 @@
   --bg2:         #1c222c;
   --bg3:         #232a37;
   --border:      #2e3744;
+  --section-header-bg: #171c25;   /* slightly darker than bg2 — section header bar */
   --text:        #c5cbd4;
   --text-dim:    #7e8794;
   --text-bright: #e8ecf2;
@@ -59,6 +60,7 @@
   --bg2:         #ede5d0;   /* slightly darker for panels */
   --bg3:         #e0d6bc;   /* deeper for hover / sticky headers */
   --border:      #c9bd9f;   /* muted parchment edge */
+  --section-header-bg: #e7dec8;   /* between bg2 and bg3 — section header bar */
   --text:        #3a2f24;   /* deep ink */
   --text-dim:    #7a6b58;
   --text-bright: #1a140c;   /* near-black with brown tint */

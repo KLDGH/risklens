@@ -107,11 +107,11 @@ export function RiskProfileCard({ profile, ticker }) {
       <div className="rp-header">
         <span className="rp-title">
           Risk profile — {ticker}
-          {referenceTip && <InfoTip text={referenceTip} />}
         </span>
         <span className="rp-subtitle">
           Standalone risk metrics for this ETF's NAV. Main models shown;
           HS and EWMA on hover (the Daily VaR GJR-t stat).
+          {referenceTip && <InfoTip text={referenceTip} />}
         </span>
       </div>
       <div className="rp-row">
