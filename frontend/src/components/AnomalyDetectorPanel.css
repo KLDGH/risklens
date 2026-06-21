@@ -415,16 +415,16 @@
   font-size: 11px;
 }
 
-.section .rp-stat-value { font-size: 21px; color: var(--accent-soft); }
+.section .rp-stat-value { font-size: 19px; color: var(--text-bright); }
 .section .rp-stat-unit  { font-size: 11px; }
 
 .section .fr-headline-value,
 .section .rfp-window-value {
-  font-size: 23px;
-  color: var(--accent);
+  font-size: 20px;
+  color: var(--text-bright);
 }
 
-.section .fr-table         { font-size: 13.5px; }
+.section .fr-table         { font-size: 14px; }
 .section .fr-table thead th { color: var(--text); }
 .section .fr-table tbody td { padding: 9px 10px; }
 .section .fr-row-dim       { opacity: 0.78; }
