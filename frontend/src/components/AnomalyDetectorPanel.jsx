@@ -282,7 +282,7 @@ export function FactorRegressionPanel({ model }) {
                     ? `[${l.ci_low >= 0 ? "+" : ""}${l.ci_low.toFixed(3)}, ${l.ci_high >= 0 ? "+" : ""}${l.ci_high.toFixed(3)}]`
                     : "—"}
                 </td>
-                <td className="num">{l.tstat.toFixed(2)}</td>
+                <td className="num" style={{ color: Math.abs(l.tstat) >= 2 ? "var(--green)" : "var(--text-dim)", fontWeight: Math.abs(l.tstat) >= 2 ? 600 : 400 }}>{l.tstat.toFixed(2)}</td>
                 <td className="num">{l.p_value.toFixed(3)}</td>
                 <td className="fr-sig">{sig(l.p_value)}</td>
               </tr>
@@ -296,7 +296,7 @@ export function FactorRegressionPanel({ model }) {
               {model.alpha_daily_pct >= 0 ? "+" : ""}{model.alpha_daily_pct.toFixed(3)}%/day
             </td>
             <td className="num fr-ci-cell">—</td>
-            <td className="num">{model.alpha_tstat.toFixed(2)}</td>
+            <td className="num" style={{ color: Math.abs(model.alpha_tstat) >= 2 ? "var(--green)" : "var(--text-dim)", fontWeight: Math.abs(model.alpha_tstat) >= 2 ? 600 : 400 }}>{model.alpha_tstat.toFixed(2)}</td>
             <td className="num">{model.alpha_pvalue.toFixed(3)}</td>
             <td className="fr-sig">{sig(model.alpha_pvalue)}</td>
           </tr>
@@ -418,7 +418,7 @@ export function ThematicExposurePanel({ thematic }) {
                   {l.beta >= 0 ? "+" : ""}{l.beta.toFixed(3)}
                 </span>
               </td>
-              <td className="num">{l.tstat.toFixed(2)}</td>
+              <td className="num" style={{ color: Math.abs(l.tstat) >= 2 ? "var(--green)" : "var(--text-dim)", fontWeight: Math.abs(l.tstat) >= 2 ? 600 : 400 }}>{l.tstat.toFixed(2)}</td>
               <td className="num">{l.p_value.toFixed(3)}</td>
               <td className="fr-sig">{sig(l.p_value)}</td>
             </tr>
