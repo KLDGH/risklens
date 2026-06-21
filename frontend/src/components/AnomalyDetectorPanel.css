@@ -395,6 +395,48 @@
   font-style: italic;
 }
 
+/* ---------- Legibility pass (Sector Spotlight) ----------
+   These sub-panels ran small and heavily muted, so the page read faint. When
+   they sit inside a section (always, now), bump the type sizes, lift the muted
+   greys toward full-strength text, and add accent color to the headline stats.
+   Scoped to .section so it only re-weights these panels in the dashboard. */
+.section .rp-subtitle,
+.section .fr-subtitle,
+.section .rfp-subtitle {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.section .rp-stat-label,
+.section .fr-headline-label,
+.section .rfp-window-label,
+.section .fr-vol-label,
+.section .fr-table thead th {
+  font-size: 11px;
+}
+
+.section .rp-stat-value { font-size: 21px; color: var(--accent-soft); }
+.section .rp-stat-unit  { font-size: 11px; }
+
+.section .fr-headline-value,
+.section .rfp-window-value {
+  font-size: 23px;
+  color: var(--accent);
+}
+
+.section .fr-table         { font-size: 13.5px; }
+.section .fr-table thead th { color: var(--text); }
+.section .fr-table tbody td { padding: 9px 10px; }
+.section .fr-row-dim       { opacity: 0.78; }
+.section .fr-ci-cell       { font-size: 12px; }
+.section .fr-sig          { font-size: 14px; }
+.section .fr-alpha-row td  { color: var(--text); }
+.section .fr-vol-decomp    { font-size: 12.5px; color: var(--text); }
+.section .fr-vol-formula   { font-size: 11.5px; }
+.section .fr-footnote      { font-size: 11.5px; }
+.section .thematic-label-cell { font-size: 12.5px; color: var(--text); }
+.section .thematic-mkt-tag    { font-size: 10px; }
+
 /* ---------- Rolling Factor Loadings Panel ----------
    Medium-horizon style-drift view. Six mini-charts in a responsive grid,
    each showing the rolling 252-day FF/Carhart loading evolution for one
