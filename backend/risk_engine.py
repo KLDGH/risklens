@@ -11,7 +11,78 @@ from scenario_config import (
     HYPOTHETICAL_SCENARIOS,
     SCENARIO_PROXIES,
     effective_shocks,
+    resolve_shock,
 )
+
+# Reference indices shown at the top of each scenario card, so a portfolio's
+# P&L has context (is -25% in the GFC good or bad?). S&P 500 = equity pole,
+# AGG = bond pole; the portfolio's own benchmark is appended per-mode.
+SCENARIO_REF_INDICES = [("S&P 500", "SPY"), ("US Agg Bond", "AGG")]
+
+
+def _window_blend_return(window: pd.DataFrame, w: dict):
+    """Total return of a weighted basket over a price window, with the same
+    pre-inception proxy fallback used for portfolio holdings. None if no
+    component has data."""
+    rets = {}
+    for t in w:
+        series = window[t].dropna() if t in window.columns else pd.Series(dtype=float)
+        if len(series) < 2:
+            px = SCENARIO_PROXIES.get(t)
+            if px and px in window.columns and window[px].notna().sum() >= 2:
+                series = window[px].dropna()
+        if len(series) >= 2:
+            rets[t] = float(series.iloc[-1] / series.iloc[0] - 1)
+    if not rets:
+        return None
+    tot = sum(w[t] for t in rets)
+    return sum(rets[t] * (w[t] / tot) for t in rets) if tot > 0 else None
+
+
+def _short_benchmark_label(label: str, weights: dict) -> str:
+    """A compact, portfolio-specific name for the benchmark reference row, e.g.
+    'Benchmark 60/40' or 'Benchmark ACWI'. Pulls an explicit 'XX/YY' blend token
+    out of the authored label when present; otherwise names a single-asset
+    benchmark by its one ticker. Falls back to plain 'Benchmark'."""
+    for tok in (label or "").replace("(", " ").replace(")", " ").split():
+        parts = tok.split("/")
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+            return f"Benchmark {tok}"
+    if weights and len(weights) == 1:
+        return f"Benchmark {next(iter(weights))}"
+    return "Benchmark"
+
+
+def _references_historical(window: pd.DataFrame, benchmark: tuple | None):
+    refs = []
+    for label, tk in SCENARIO_REF_INDICES:
+        r = _window_blend_return(window, {tk: 1.0})
+        if r is not None:
+            refs.append({"label": label, "ret_pct": round(r * 100, 2)})
+    if benchmark:
+        bw, blabel = benchmark
+        r = _window_blend_return(window, bw)
+        if r is not None:
+            refs.append({"label": _short_benchmark_label(blabel, bw), "ret_pct": round(r * 100, 2)})
+    return refs
+
+
+def _references_hypothetical(scenario: dict, benchmark: tuple | None):
+    refs = []
+    for label, tk in SCENARIO_REF_INDICES:
+        s = resolve_shock(tk, scenario)
+        if s is not None:
+            refs.append({"label": label, "ret_pct": round(s * 100, 2)})
+    if benchmark:
+        bw, blabel = benchmark
+        acc, tot = 0.0, 0.0
+        for t, w in bw.items():
+            s = resolve_shock(t, scenario)
+            if s is not None:
+                acc += w * s; tot += w
+        if tot > 0:
+            refs.append({"label": _short_benchmark_label(blabel, bw), "ret_pct": round(acc / tot * 100, 2)})
+    return refs
 
 WINDOW = 1000
 P = 0.01
@@ -497,7 +568,7 @@ def compute_asset_risk(ticker: str, returns: pd.Series, prices: pd.Series) -> di
 # only apply them. See scenario_config.py for the loader + validator.
 
 
-def compute_hypothetical_scenarios(weights: dict) -> list[dict]:
+def compute_hypothetical_scenarios(weights: dict, benchmark: tuple = None) -> list[dict]:
     """
     Apply analyst-estimated shock assumptions to portfolio weights.
     No historical price data required — pure assumption-based stress test.
@@ -535,11 +606,12 @@ def compute_hypothetical_scenarios(weights: dict) -> list[dict]:
             "coverage_pct":  coverage,
             "asset_returns": asset_returns,
             "contributions": contributions,
+            "references":    _references_hypothetical(s, benchmark),
         })
     return results
 
 
-def compute_scenarios(prices: pd.DataFrame, weights: dict) -> list[dict]:
+def compute_scenarios(prices: pd.DataFrame, weights: dict, benchmark: tuple = None) -> list[dict]:
     """
     For each historical scenario, compute portfolio and per-asset total returns
     over the scenario date range. Tickers whose fund didn't exist yet fall back
@@ -603,6 +675,7 @@ def compute_scenarios(prices: pd.DataFrame, weights: dict) -> list[dict]:
             "asset_returns":    {t: round(v * 100, 2) for t, v in asset_returns.items()},
             "contributions":    contributions,
             "proxied":          proxied,
+            "references":       _references_historical(window, benchmark),
         })
 
     return results

@@ -260,12 +260,14 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
     if comp_var and assets and assets[-1].get("is_portfolio"):
         assets[-1]["component_var_total"] = round(float(portfolio_total_comp), 4)
 
-    # Scenarios — historical (data-driven) + hypothetical (shock-driven)
+    # Scenarios — historical (data-driven) + hypothetical (shock-driven).
+    # Pass the benchmark (weights, label) so each card can show reference rows
+    # (S&P 500, US Agg, and the portfolio's own blended benchmark) for context.
     print("  Computing scenarios...")
-    hist = compute_scenarios(prices_long, weights)
+    hist = compute_scenarios(prices_long, weights, benchmark=benchmark)
     for s in hist:
         s["type"] = "historical"
-    hypo = compute_hypothetical_scenarios(weights)
+    hypo = compute_hypothetical_scenarios(weights, benchmark=benchmark)
     scenarios = hist + hypo
 
     # Portfolio risk trajectory — daily EWMA VaR over full available history.
