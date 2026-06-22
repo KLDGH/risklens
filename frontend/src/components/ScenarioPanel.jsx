@@ -190,6 +190,22 @@ function ScenarioCard({ s, weights, comparisons, currentMode }) {
         </div>
       </HoverTip>
 
+      {s.references?.length > 0 && (
+        <div className="scenario-refs">
+          <div className="scenario-refs-caption">
+            {isHypo ? "For context · same shocks" : "For context · same window"}
+          </div>
+          {s.references.map((r) => (
+            <div className="scenario-ref-row" key={r.label}>
+              <span className="scenario-ref-label">{r.label}</span>
+              <span className={`scenario-ref-val ${r.ret_pct < 0 ? "loss" : "gain"}`}>
+                {r.ret_pct > 0 ? "+" : ""}{r.ret_pct.toFixed(1)}%
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="contrib-list">
         {sorted.map(([ticker, contrib]) => (
           <ContribBar

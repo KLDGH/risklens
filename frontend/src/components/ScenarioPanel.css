@@ -135,6 +135,55 @@
   margin-top: 2px;
 }
 
+/* ── Reference indices (context under the P&L) ── */
+.scenario-refs {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  background: var(--bg3);
+  border-radius: 3px;
+}
+
+.scenario-card.hypo .scenario-refs {
+  background: var(--hypo-bg3);
+}
+
+.scenario-refs-caption {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 2px;
+}
+
+.scenario-card.hypo .scenario-refs-caption {
+  color: var(--hypo-accent);
+}
+
+.scenario-ref-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.scenario-ref-label {
+  font-size: 11px;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+.scenario-ref-val {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.scenario-ref-val.loss { color: var(--red); }
+.scenario-ref-val.gain { color: var(--green); }
+
 /* ── Contribution bars ── */
 .contrib-list {
   display: flex;
