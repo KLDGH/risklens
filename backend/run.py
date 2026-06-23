@@ -21,7 +21,7 @@ from risk_engine import (
     backtest_portfolio_var, backtest_portfolio_garch,
     nyfed_recession_probability, compute_intraday_correlation_daily,
     compute_multi_window_correlation, compute_anomaly_view,
-    CORR_TICKERS,
+    CORR_TICKERS, SCENARIO_REF_INDICES,
 )
 from scenario_config import report_scenario_coverage, assert_all_mapped
 from factor_models import (
@@ -261,13 +261,13 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
         assets[-1]["component_var_total"] = round(float(portfolio_total_comp), 4)
 
     # Scenarios — historical (data-driven) + hypothetical (shock-driven).
-    # Pass the benchmark (weights, label) so each card can show reference rows
-    # (S&P 500, US Agg, and the portfolio's own blended benchmark) for context.
+    # Each card shows equity reference rows (S&P 500, Nasdaq 100, equal-weight
+    # S&P) for context; the reference indices are defined in risk_engine.
     print("  Computing scenarios...")
-    hist = compute_scenarios(prices_long, weights, benchmark=benchmark)
+    hist = compute_scenarios(prices_long, weights)
     for s in hist:
         s["type"] = "historical"
-    hypo = compute_hypothetical_scenarios(weights, benchmark=benchmark)
+    hypo = compute_hypothetical_scenarios(weights)
     scenarios = hist + hypo
 
     # Portfolio risk trajectory — daily EWMA VaR over full available history.
@@ -427,8 +427,10 @@ def main():
     all_tickers = []
     for cfg in PORTFOLIO_MODES.values():
         all_tickers.extend(cfg["tickers"])
+    scenario_ref_tickers = [tk for _, tk in SCENARIO_REF_INDICES]
     all_tickers = list(dict.fromkeys(
-        all_tickers + EXTRA_BOND_PROXIES + ANOMALY_TICKERS + BENCHMARK_TICKERS + NAV_TICKERS
+        all_tickers + EXTRA_BOND_PROXIES + ANOMALY_TICKERS + BENCHMARK_TICKERS
+        + NAV_TICKERS + scenario_ref_tickers
     ))
 
     print("Fetching 10y price data...")
@@ -759,7 +761,7 @@ def main():
     output = {
         "generated_at":           datetime.now(timezone.utc).isoformat(),
         "data_as_of":             data_as_of,
-        "default_mode":           "aor",
+        "default_mode":           "hypothetical",
         "portfolios":             portfolios,
         "sp500_history":          sp500_history,
         "correlation_history":    corr_history,

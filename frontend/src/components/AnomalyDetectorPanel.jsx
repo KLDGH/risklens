@@ -66,16 +66,15 @@ export function RiskProfileCard({ profile, ticker }) {
   );
 
   const fmtPct = (v) => (v == null ? "—" : `${v.toFixed(1)}%`);
-  const fmtDollar = (v) => (v == null ? "—" : `$${v.toFixed(2)}`);
 
   // Hidden-model summary: HS and EWMA. Surfaced as a single tooltip
   // hover on the daily VaR header so users can sanity-check against
   // the alternative model estimates without seeing them in the row.
   const hiddenModelsTip = (
     `Other daily VaR models for ${ticker}:\n` +
-    `• HS (Historical Simulation): $${profile.var_hs?.toFixed(2) ?? "—"} ` +
+    `• HS (Historical Simulation): ${profile.var_hs != null ? profile.var_hs.toFixed(2) + "%" : "—"} ` +
     `(empirical 1st percentile, no distribution assumption)\n` +
-    `• EWMA (RiskMetrics, λ=0.94): $${profile.var_ewma?.toFixed(2) ?? "—"} ` +
+    `• EWMA (RiskMetrics, λ=0.94): ${profile.var_ewma != null ? profile.var_ewma.toFixed(2) + "%" : "—"} ` +
     `(Gaussian — known to underestimate fat tails)`
   );
 
@@ -129,13 +128,13 @@ export function RiskProfileCard({ profile, ticker }) {
         )}
         {stat(
           "Daily VaR (GJR-t)",
-          fmtDollar(profile.var_tgarch),
-          "1% / $100 position",
+          fmtPct(profile.var_tgarch),
+          "1% / 1-day",
           "GJR-GARCH(1,1,1) with Student-t innovations — the main daily VaR model. Captures volatility clustering, the leverage effect (negative shocks raise vol more than positive), AND heavy-tailed innovations. " + hiddenModelsTip,
         )}
         {stat(
           "Daily VaR (EVT)",
-          fmtDollar(profile.var_evt),
+          fmtPct(profile.var_evt),
           "1% / GPD tail",
           "Extreme Value Theory. Generalized Pareto distribution fit to the worst losses directly. Best for fat-tailed assets — usually larger than GJR-t and that gap is the tail premium.",
         )}

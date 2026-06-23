@@ -230,7 +230,7 @@ export default function App() {
   const initialParams = readUrlParams();
   const VALID_TABS = ["portfolio", "market", "anomaly"];  // "optimizer" hidden for now
 
-  const [mode, setMode] = useState(initialParams.portfolio || "aor");
+  const [mode, setMode] = useState(initialParams.portfolio || "hypothetical");
   const [activeTab, setActiveTab] = useState(
     VALID_TABS.includes(initialParams.tab) ? initialParams.tab : "portfolio"
   );
@@ -279,7 +279,7 @@ export default function App() {
         // a valid one. This way ?portfolio=cggo_active in the URL wins
         // over the JSON's `default_mode`.
         setMode((current) =>
-          current && json.portfolios[current] ? current : (json.default_mode ?? "aor")
+          current && json.portfolios[current] ? current : (json.default_mode ?? "hypothetical")
         );
       })
       .catch((e) => setError(e.message))
@@ -508,7 +508,7 @@ export default function App() {
             question="How risky is each asset today vs. its own recent history?"
             description={
               <>
-                Your at-a-glance read on every holding: which positions are running hot, and the dollar loss to expect on a bad day (worst 1%, per $100 held). The <span className="desc-accent">five shaded VaR columns</span> are meant to disagree — when they spread apart (usually EVT pulling high), that name's tail is fatter than standard models assume, and that gap is the signal, not noise. The EWMA-vs-GARCH gap is the heavy-tail premium you're carrying in the name. Sort by the Risk gauge to surface what's most stretched against its own 2-year range. (Per-model definitions live in each column's ⓘ.)
+                Your at-a-glance read on every holding: which positions are running hot, and the loss to expect on a bad day (worst 1%, as a % of the position). The <span className="desc-accent">five shaded VaR columns</span> are meant to disagree — when they spread apart (usually EVT pulling high), that name's tail is fatter than standard models assume, and that gap is the signal, not noise. The EWMA-vs-GARCH gap is the heavy-tail premium you're carrying in the name. Sort by the Risk gauge to surface what's most stretched against its own 2-year range. (Per-model definitions live in each column's ⓘ.)
               </>
             }
           >

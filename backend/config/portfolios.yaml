@@ -118,24 +118,6 @@ benchmarks:
 
 # The registry. Order = display order; visible toggles the tab.
 portfolios:
-  - id: aor
-    label: "iShares Core 60/40 (AOR)"
-    name: "iShares Core 60/40 Balanced Allocation (AOR)"
-    description: "A real, publicly-traded multi-asset fund: the iShares Core 60/40 Balanced Allocation ETF (AOR), modeled directly from its seven underlying iShares ETFs at their disclosed weights — ~61% equity (US large/mid/small + intl developed + EM) and ~39% fixed income (US + international aggregate bonds). AOR is a fund-of-ETFs that holds these directly, so this is the full fund (~99.9% of holdings), not a partial reconstruction. Holdings as of 2026-06-11."
-    visible: true
-    nav_ticker: AOR
-    benchmark: 60_40_acwi_agg
-    optimizable: true
-    holdings:
-      weights:
-        IVV:  0.3418
-        IUSB: 0.3304
-        IDEV: 0.1717
-        IEMG: 0.0682
-        IAGG: 0.0590
-        IJH:  0.0195
-        IJR:  0.0094
-
   - id: hypothetical
     label: "Hypothetical Portfolio"
     name: "60/40 Blended Portfolio"
@@ -158,6 +140,24 @@ portfolios:
         DBC:     0.02
         VNQ:     0.02
         BTC-USD: 0.02
+
+  - id: aor
+    label: "iShares Core 60/40 (AOR)"
+    name: "iShares Core 60/40 Balanced Allocation (AOR)"
+    description: "A real, publicly-traded multi-asset fund: the iShares Core 60/40 Balanced Allocation ETF (AOR), modeled directly from its seven underlying iShares ETFs at their disclosed weights — ~61% equity (US large/mid/small + intl developed + EM) and ~39% fixed income (US + international aggregate bonds). AOR is a fund-of-ETFs that holds these directly, so this is the full fund (~99.9% of holdings), not a partial reconstruction. Holdings as of 2026-06-11."
+    visible: true
+    nav_ticker: AOR
+    benchmark: 60_40_acwi_agg
+    optimizable: true
+    holdings:
+      weights:
+        IVV:  0.3418
+        IUSB: 0.3304
+        IDEV: 0.1717
+        IEMG: 0.0682
+        IAGG: 0.0590
+        IJH:  0.0195
+        IJR:  0.0094
 
   - id: tdf_2055
     label: "Vanguard Target 2055 (VFFVX)"

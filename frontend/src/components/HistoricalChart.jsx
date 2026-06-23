@@ -22,7 +22,7 @@ const EVENTS = [
   { year: 2008, label: "Global\nfinancial crisis", row: 0 },
   { year: 2010, label: "Euro\ncrisis",           row: 1 },
   { year: 2020, label: "Covid-19",               row: 0 },
-  { year: 2022, label: "Ukraine\nwar",           row: 1 },
+  { year: 2022, label: "Inflation\n& Fed hikes",  row: 1 },
 ];
 
 const FONT_SIZE = 11;
@@ -73,11 +73,11 @@ const CustomTooltip = ({ active, payload, label }) => {
       {event && <div className="tt-event">{event.label.replace(/\n/g, " ")}</div>}
       <div className="tt-row">
         <span style={{ color: "#4ade80" }}>Min VaR</span>
-        <span>${d?.min_var?.toFixed(2)}</span>
+        <span>{d?.min_var?.toFixed(2)}%</span>
       </div>
       <div className="tt-row">
         <span style={{ color: "#f59e0b" }}>Max VaR</span>
-        <span>${d?.max_var?.toFixed(2)}</span>
+        <span>{d?.max_var?.toFixed(2)}%</span>
       </div>
       {d?.annual_return_pct != null && (
         <div className="tt-row">
@@ -99,8 +99,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const tickFormatter = (v) => {
   if (v === 0) return "0";
-  if (v < 0) return `${v}%`;
-  return `$${v}`;
+  return `${v}%`;
 };
 
 export default function HistoricalChart({ data }) {
@@ -125,7 +124,7 @@ export default function HistoricalChart({ data }) {
     <div className="historical-chart-wrapper">
       <div className="chart-header">
         <span className="chart-subtitle">
-          Daily EWMA VaR (1% / $100 portfolio) · min &amp; max per year
+          Daily EWMA VaR (1%, % of portfolio) · min &amp; max per year
         </span>
         <button
           className={`insight-toggle${insightOpen ? " open" : ""}`}
@@ -142,9 +141,9 @@ export default function HistoricalChart({ data }) {
             The <span className="ins-blue">amber bars</span> show peak daily VaR each
             year — the worst single-day loss the model expected, at the 1% confidence
             level. The <span className="ins-red">red bars</span> show full-year returns
-            for years that ended negative. (Both are scaled to a $100 position, so dollar
-            VaR and percent returns are directly comparable — a $15 VaR is the same as a
-            15% loss.) In <strong>2008</strong>, peak daily VaR reached roughly{" "}
+            for years that ended negative. (Both are shown as a percent of the position, so
+            the VaR bars and the return bars share one scale — a 15% VaR sits at the
+            same height as a 15% loss.) In <strong>2008</strong>, peak daily VaR reached roughly{" "}
             <strong>15%</strong> by mid-year, well before the year's full{" "}
             <strong>38%</strong> loss had been booked. In March <strong>2020</strong>,
             it spiked above <strong>10%</strong> within weeks and fell back under{" "}

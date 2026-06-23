@@ -224,15 +224,13 @@ export default function IntradayCorrelationChart({ data }) {
             Each cell or bar is one trading day's correlation between SPY and TLT
             <em> within</em> that day, computed from intraday log returns at the
             selected sampling frequency.{" "}
-            <strong>Red = positive correlation (rates regime)</strong>: stocks
-            and bonds moved the same direction, meaning the day's news driver
-            was rates-related rather than growth-related.{" "}
-            <strong>Green = negative correlation (growth regime)</strong>: the
-            textbook flight-to-safety pattern where bad equity news rallies
-            bonds. The strongest signal is the <strong>streak</strong> — a run
-            of consecutive same-sign days is statistically a much sharper
-            regime-shift indicator than the smoothed 60-day daily-data
-            correlation chart above.
+            <strong>Red = positive correlation</strong>: stocks and bonds moved
+            the same direction that day.{" "}
+            <strong>Green = negative correlation</strong>: they moved in opposite
+            directions. The strongest signal is the <strong>streak</strong> — a
+            run of consecutive same-sign days is a sharper sign that the
+            stock-bond correlation has genuinely flipped than the smoothed 60-day
+            daily-data correlation chart above.
           </p>
           <p style={{ marginTop: 8 }}>
             <strong>Why two sampling intervals?</strong> 5-minute bars give 78

@@ -116,19 +116,18 @@ export default function CorrelationChart({ data }) {
           <p>
             <strong>The GFC was a volatility crisis. 2022 was a correlation
             crisis.</strong> In <strong>2008</strong> and <strong>2020</strong>{" "}
-            (COVID), the VIX line and the correlation area moved
-            together — equity vol exploded and assets piled into the same
-            direction. Classic risk-off. But <strong>2022</strong> broke the
-            pattern: cross-asset correlation hit <strong>0.70</strong> — the
-            highest in the dataset — while VIX peaked only around{" "}
-            <strong>35</strong>. The Fed's hiking cycle pushed stocks <em>and</em>{" "}
-            bonds down together without the equity vol spike normally
-            associated with crisis. A portfolio looking only at VIX would have
-            seen "moderate" stress; the same portfolio looking at correlation
-            would have seen the worst diversification breakdown in modern
-            history. Vol-driven crises hammer single-asset risk; correlation-driven
-            crises hammer the diversification benefit between assets. They
-            require different defenses.
+            (COVID), the VIX line and the correlation area rose
+            together — equity vol spiked and cross-asset correlation climbed at
+            the same time. In <strong>2022</strong> the two decoupled:
+            cross-asset correlation hit <strong>0.70</strong> — the highest in
+            the dataset — while VIX peaked only around <strong>35</strong>. High
+            inflation, and the Fed's tightening cycle to contain it, drove stocks{" "}
+            <em>and</em> bonds down together, without the equity-vol spike usually
+            seen in a crisis. A portfolio watching only VIX would have read
+            "moderate" stress; the same portfolio watching correlation would have
+            seen the worst diversification breakdown shown here. Vol-driven
+            episodes hammer single-asset risk; correlation-driven episodes hammer
+            the diversification benefit between assets.
           </p>
         </div>
       )}
