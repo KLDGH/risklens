@@ -29,7 +29,7 @@ function buildReferenceTip(ticker, references) {
 
 const TIPS = {
   ret:       "Yesterday's log return for this asset.",
-  YearVaR:   "1-year VaR at 10% confidence. The 10th-percentile worst loss expected over a 1-year horizon, on a $100 position. Computed via Student-t parametric scaling: fit Student-t degrees of freedom (ν) to daily returns, scale daily volatility by √252, then take the standardized t-quantile at q=0.10. This is an annualized parametric proxy, not a path simulation — and it falls back to a Normal tail when the Student-t fit degenerates (ν≤2) on very low-volatility series like aggregate bonds. Interpretation: '10% chance of losing more than $X over the next year.' The consumer / long-horizon-PM complement to the 1-day 1% VaR columns (which are pro / trading-floor framing). Bottom number is the expected shortfall — average loss conditional on the loss exceeding VaR.",
+  YearVaR:   "1-year VaR at 10% confidence. The 10th-percentile worst loss expected over a 1-year horizon, as a % of the position. Computed via Student-t parametric scaling: fit Student-t degrees of freedom (ν) to daily returns, scale daily volatility by √252, then take the standardized t-quantile at q=0.10. This is an annualized parametric proxy, not a path simulation — and it falls back to a Normal tail when the Student-t fit degenerates (ν≤2) on very low-volatility series like aggregate bonds. Interpretation: '10% chance of losing more than X% over the next year.' The consumer / long-horizon-PM complement to the 1-day 1% VaR columns (which are pro / trading-floor framing). Bottom number is the expected shortfall — average loss conditional on the loss exceeding VaR.",
   hs:        "Historical Simulation. Top number = VaR (1% worst daily loss). Bottom number = ES (average loss across the worst 1%). Both drawn directly from the last 1000 trading days; no distribution assumption.",
   ewma:      "EWMA model. Top = VaR; bottom = ES. Computed with exponentially weighted volatility (λ=0.94) under a normal-distribution assumption. Recent days weigh more than older ones.",
   garch:     "GARCH(1,1) with Student-t innovations. Top = VaR; bottom = ES. The conditional volatility process is GARCH(1,1); the innovation distribution is Student-t (degrees of freedom estimated per fit) rather than Normal. This matches the empirical kurtosis of daily equity returns and produces tail-VaR estimates ~30–60% larger than Normal-innovation GARCH at 99% confidence. The EWMA column to the left assumes Normal innovations, so the EWMA-vs-GARCH gap *is* the heavy-tail premium. Falls back to EWMA if fitting fails.",
@@ -444,7 +444,7 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
                 tabIndex={-1}
                 aria-hidden="true"
               >
-                Daily VaR (worst 1%, per $100)
+                Daily VaR (worst 1%, % of position)
                 {!showAllModels && <span className="var-superheader-hint">+3 models</span>}
               </button>
             </th>

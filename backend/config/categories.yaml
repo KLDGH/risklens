@@ -84,6 +84,7 @@ securities:
   VOO:  {class: us_large}
   VTI:  {class: us_large}            # total US market ≈ large-cap behavior
   QQQ:  {class: us_large, sector: tech}
+  RSP:  {class: us_large}            # equal-weight S&P — broad large-cap, no tech tilt
   IWM:  {class: us_small}
   IJH:  {class: us_mid}
   IJR:  {class: us_small}

@@ -69,7 +69,7 @@ const CustomTooltip = ({ active, payload }) => {
       <div className="tt-year">{d?.date}</div>
       <div className="tt-row">
         <span style={{ color: "#f59e0b" }}>Daily VaR (1%)</span>
-        <span>${v?.toFixed(2)} / {v?.toFixed(2)}%</span>
+        <span>{v?.toFixed(2)}%</span>
       </div>
       <div style={{ marginTop: 6, fontSize: 11, color: "#8896aa", lineHeight: 1.4 }}>
         {level}
@@ -121,9 +121,8 @@ export default function PortfolioRiskChart({ data, portfolioLabel }) {
           <p>
             This is the same daily EWMA VaR shown in the portfolio summary row
             of the table above, computed on every trading day rather than just
-            today. Both the dollar value (on a $100 position) and the percent
-            equivalent are shown in the tooltip — they are the same number
-            expressed two ways. Risk regimes shift faster than they normalize:
+            today. The tooltip shows the loss as a percent of the portfolio.
+            Risk regimes shift faster than they normalize:
             spikes appear within days of a crisis starting and decay over weeks
             or months. The current level is the rightmost value; reading left
             tells you whether risk has been climbing, falling, or holding
@@ -159,7 +158,7 @@ export default function PortfolioRiskChart({ data, portfolioLabel }) {
 
             <YAxis
               domain={yDomain}
-              tickFormatter={(v) => `$${v}`}
+              tickFormatter={(v) => `${v}%`}
               tick={{ fill: c.axisTick, fontSize: 12, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={false}
@@ -216,7 +215,7 @@ export default function PortfolioRiskChart({ data, portfolioLabel }) {
             Earlier events not shown (data starts {data[0].date}): {eventsBeforeWindow.join(", ")}
           </span>
         ) : <span />}
-        <span>Y-axis: $ daily VaR on $100 portfolio (= % loss). Sampled every 5 trading days.</span>
+        <span>Y-axis: daily VaR (% loss). Sampled every 5 trading days.</span>
       </div>
     </div>
   );
