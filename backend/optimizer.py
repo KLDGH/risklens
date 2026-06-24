@@ -2,9 +2,9 @@
 optimizer.py — systematic portfolio construction for the Optimizer tab.
 
 Takes a base strategy (the hypothetical portfolio's weights) and produces a small
-set of mean-variance / risk-based variants, plus the metric deltas a PM cares
-about (return, vol, Sharpe, beta, alpha, tracking error, concentration, turnover,
-risk budget). It is a transparent prototype, not a replacement for a production
+set of mean-variance / risk-based variants, plus per-variant metric deltas
+(return, vol, Sharpe, beta, alpha, tracking error, concentration, turnover,
+risk budget). It is a prototype, not a replacement for a production
 optimizer.
 
 Design decisions (see the deck's Optimizer caveats):

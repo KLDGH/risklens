@@ -29,14 +29,15 @@ function buildReferenceTip(ticker, references) {
 
 const TIPS = {
   ret:       "Yesterday's log return for this asset.",
-  YearVaR:   "1-year VaR at 10% confidence. The 10th-percentile worst loss expected over a 1-year horizon, as a % of the position. Computed via Student-t parametric scaling: fit Student-t degrees of freedom (ν) to daily returns, scale daily volatility by √252, then take the standardized t-quantile at q=0.10. This is an annualized parametric proxy, not a path simulation — and it falls back to a Normal tail when the Student-t fit degenerates (ν≤2) on very low-volatility series like aggregate bonds. Interpretation: '10% chance of losing more than X% over the next year.' The consumer / long-horizon-PM complement to the 1-day 1% VaR columns (which are pro / trading-floor framing). Bottom number is the expected shortfall — average loss conditional on the loss exceeding VaR.",
+  monthly:   "Monthly (21 trading-day) empirical downside. Top: 5th percentile of overlapping 21-day returns. Bottom: worst 21-day return on record. From all available history; no √t scaling.",
+  YearVaR:   "1-year VaR at 10% confidence. The 10th-percentile worst loss expected over a 1-year horizon, as a % of the position. Computed via Student-t parametric scaling: fit Student-t degrees of freedom (ν) to daily returns, scale daily volatility by √252, then take the standardized t-quantile at q=0.10. This is an annualized parametric proxy, not a path simulation — and it falls back to a Normal tail when the Student-t fit degenerates (ν≤2) on very low-volatility series like aggregate bonds. Interpretation: '10% chance of losing more than X% over the next year.' A 1-year-horizon complement to the 1-day 1% VaR columns. Bottom number is the expected shortfall — average loss conditional on the loss exceeding VaR.",
   hs:        "Historical Simulation. Top number = VaR (1% worst daily loss). Bottom number = ES (average loss across the worst 1%). Both drawn directly from the last 1000 trading days; no distribution assumption.",
   ewma:      "EWMA model. Top = VaR; bottom = ES. Computed with exponentially weighted volatility (λ=0.94) under a normal-distribution assumption. Recent days weigh more than older ones.",
   garch:     "GARCH(1,1) with Student-t innovations. Top = VaR; bottom = ES. The conditional volatility process is GARCH(1,1); the innovation distribution is Student-t (degrees of freedom estimated per fit) rather than Normal. This matches the empirical kurtosis of daily equity returns and produces tail-VaR estimates ~30–60% larger than Normal-innovation GARCH at 99% confidence. The EWMA column to the left assumes Normal innovations, so the EWMA-vs-GARCH gap *is* the heavy-tail premium. Falls back to EWMA if fitting fails.",
   tgarch:    "GJR-GARCH(1,1,1) with Student-t innovations. Top = VaR; bottom = ES. Two simultaneous corrections to vanilla GARCH: (1) GJR threshold term — negative shocks raise conditional variance more than equal-sized positive shocks, capturing the leverage effect; (2) Student-t innovations — heavy-tailed daily innovations matching empirical equity return kurtosis. The 't' in this column's name refers to BOTH: 'threshold' GARCH AND Student-t innovations. Falls back to EWMA if fitting fails.",
   evt:       "Extreme Value Theory. Top = VaR; bottom = ES. Fits a Generalized Pareto Distribution directly to the worst losses; best for fat-tailed assets like crypto.",
   consensus: "Simple average across all five VaR models. A rough consensus proxy — useful as a single reference number but not a coherent risk measure. Treat it as a heuristic.",
-  range:     "Range across all five VaR models (min – max). When tight, the models agree — reassuring. When wide — usually EVT pulling high — the asset's tail losses are more extreme than normal-distribution models capture. Model disagreement is the alert, not noise.",
+  range:     "Range across all five VaR models (min – max). Tight = the models agree. Wide — usually EVT pulling high — means the asset's tail losses are more extreme than normal-distribution models capture.",
   alpha:     "Hill tail index — estimated from the worst losses. Lower = fatter tails. Broad equity indices typically 3–4; individual stocks 2–4; gold and crypto often below 3; long treasuries can be surprisingly fat-tailed.",
   risk:      "Percentile rank of today's EWMA VaR vs the past 2 years of daily values for this asset. 100% = highest risk seen in 2 years.",
   compVar:   "Component VaR — this holding's contribution to the total portfolio VaR (parametric, EWMA covariance). Sum across all holdings equals the portfolio's EWMA VaR. Negative values indicate hedges (the holding's covariance with the rest of the portfolio reduces total risk).",
@@ -53,6 +54,7 @@ const SORT_FNS = {
   varGarch:  (a) => a.var_garch,
   varTgarch: (a) => a.var_tgarch,
   varEvt:    (a) => a.var_evt,
+  monthly:   (a) => a.monthly_p5 ?? 0,
   varYr:     (a) => a.var_yr_10pct ?? 0,
   consensus: (a) => a.mean_var,
   range:     (a) => (Math.max(a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt) - Math.min(a.var_hs, a.var_ewma, a.var_garch, a.var_tgarch, a.var_evt)),
@@ -207,7 +209,7 @@ function AlphaCell({ value, className = "" }) {
   );
 }
 
-function PortfolioRow({ a, portfolioLabel, showAllModels, topRollup = false, benchmarkBelow = false }) {
+function PortfolioRow({ a, portfolioLabel, showAllModels, showLongHorizon, topRollup = false, benchmarkBelow = false }) {
   const weightTip = WeightsTooltip({ weights: a.weights });
   return (
     <tr className={`portfolio-row${topRollup ? " portfolio-row-top" : ""}${benchmarkBelow ? " has-benchmark-below" : ""}`}>
@@ -231,7 +233,8 @@ function PortfolioRow({ a, portfolioLabel, showAllModels, topRollup = false, ben
       )}
       <VarEsCell varValue={a.var_tgarch}  esValue={a.es_tgarch}  className={`portfolio-cell col-models ${showAllModels ? "" : "group-start"}`} />
       <VarEsCell varValue={a.var_evt}     esValue={a.es_evt}     className="portfolio-cell col-models group-end" />
-      <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="portfolio-cell col-yr group-start group-end" neutral />
+      <VarEsCell varValue={a.monthly_p5} esValue={a.monthly_worst} className={`portfolio-cell col-yr group-start ${showLongHorizon ? "" : "group-end"}`} neutral />
+      {showLongHorizon && <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="portfolio-cell col-yr group-end" neutral />}
       <AlphaCell value={a.tail_index} className="portfolio-cell" />
       {showAllModels && (
         <>
@@ -250,7 +253,7 @@ function PortfolioRow({ a, portfolioLabel, showAllModels, topRollup = false, ben
 // rollups compare column-by-column ("Total Plan vs Policy Benchmark"). Same
 // columns as the portfolio row, muted, with no Component VaR (component
 // attribution is portfolio-specific and doesn't apply to the benchmark).
-function BenchmarkRow({ a, showAllModels }) {
+function BenchmarkRow({ a, showAllModels, showLongHorizon }) {
   return (
     <tr className="benchmark-row">
       <td className="left asset-cell sticky-col benchmark-sticky">
@@ -273,7 +276,8 @@ function BenchmarkRow({ a, showAllModels }) {
       )}
       <VarEsCell varValue={a.var_tgarch} esValue={a.es_tgarch} className={`benchmark-cell col-models ${showAllModels ? "" : "group-start"}`} />
       <VarEsCell varValue={a.var_evt}    esValue={a.es_evt}    className="benchmark-cell col-models group-end" />
-      <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="benchmark-cell col-yr group-start group-end" neutral />
+      <VarEsCell varValue={a.monthly_p5} esValue={a.monthly_worst} className={`benchmark-cell col-yr group-start ${showLongHorizon ? "" : "group-end"}`} neutral />
+      {showLongHorizon && <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="benchmark-cell col-yr group-end" neutral />}
       <AlphaCell value={a.tail_index} className="benchmark-cell" />
       {showAllModels && (
         <>
@@ -289,7 +293,7 @@ function BenchmarkRow({ a, showAllModels }) {
 // A single asset row. Extracted from the body map so it can be reused for
 // the pinned look-through fund-reference row in the footer (see below) —
 // same columns, same formatting, just rendered in a different slot.
-function AssetRow({ a, portfolioWeights, disclosedWeights, fundTicker, showAllModels, isFundReference = false }) {
+function AssetRow({ a, portfolioWeights, disclosedWeights, fundTicker, showAllModels, showLongHorizon, isFundReference = false }) {
   const wt = portfolioWeights?.[a.ticker];
   // For look-through baskets we also surface the holding's weight as a
   // fraction of the fund (pre-normalization), so users see at a glance that
@@ -340,7 +344,8 @@ function AssetRow({ a, portfolioWeights, disclosedWeights, fundTicker, showAllMo
       )}
       <VarEsCell varValue={a.var_tgarch}  esValue={a.es_tgarch}  className={`col-models ${showAllModels ? "" : "group-start"}`} />
       <VarEsCell varValue={a.var_evt}     esValue={a.es_evt}     className="col-models group-end" />
-      <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="col-yr group-start group-end" neutral />
+      <VarEsCell varValue={a.monthly_p5} esValue={a.monthly_worst} className={`col-yr group-start ${showLongHorizon ? "" : "group-end"}`} neutral />
+      {showLongHorizon && <VarEsCell varValue={a.var_yr_10pct} esValue={a.es_yr_10pct} className="col-yr group-end" neutral />}
       <AlphaCell value={a.tail_index} />
       {showAllModels && (
         <>
@@ -362,6 +367,10 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
   // still run on all five; this toggle just controls what's surfaced
   // in the snapshot table.
   const [showAllModels, setShowAllModels] = useState(false);
+  // Longer-horizon group (monthly 21-day downside + YearVaR), collapsed by
+  // default so the daily-focused snapshot stays uncluttered. Expand to surface
+  // the PM-decision horizon between the 1-day desk number and the 1-year VaR.
+  const [showLongHorizon, setShowLongHorizon] = useState(false);
 
   // NOTE: keep the two state updates as separate, top-level calls. Nesting
   // setSortDir inside a setSortKey updater makes the updater impure, so React's
@@ -448,7 +457,33 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
                 {!showAllModels && <span className="var-superheader-hint">+3 models</span>}
               </button>
             </th>
-            <th colSpan={showAllModels ? 5 : 3} aria-hidden="true" />
+            <th
+              colSpan={showLongHorizon ? 2 : 1}
+              className="col-yr group-start group-end var-superheader"
+            >
+              <button
+                type="button"
+                className="col-group-toggle"
+                onClick={() => setShowLongHorizon((v) => !v)}
+                aria-expanded={showLongHorizon}
+                title={showLongHorizon
+                  ? "Collapse — hide the 1-year VaR"
+                  : "Expand — show the 1-year VaR beside the monthly downside"}
+              >
+                {showLongHorizon ? "−" : "+"}
+              </button>
+              <button
+                type="button"
+                className="var-superheader-label"
+                onClick={() => setShowLongHorizon((v) => !v)}
+                tabIndex={-1}
+                aria-hidden="true"
+              >
+                Longer horizon
+                {!showLongHorizon && <span className="var-superheader-hint">+1yr</span>}
+              </button>
+            </th>
+            <th colSpan={showAllModels ? 4 : 2} aria-hidden="true" />
           </tr>
           <tr>
             <Th col="name"  label="Asset"   className="left sticky-col" {...sp} />
@@ -464,7 +499,10 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
             )}
             <ThWithTip col="varTgarch" label="tGARCH" tip={TIPS.tgarch} className={`num col-models ${showAllModels ? "" : "group-start"}`} {...sp} />
             <ThWithTip col="varEvt"    label="EVT"    tip={TIPS.evt}    className="num col-models group-end" {...sp} />
-            <ThWithTip col="varYr"     label="YearVaR (10%)" tip={TIPS.YearVaR} className="num col-yr group-start group-end" {...sp} />
+            <ThWithTip col="monthly" label="Monthly" tip={TIPS.monthly} className={`num col-yr group-start ${showLongHorizon ? "" : "group-end"}`} {...sp} />
+            {showLongHorizon && (
+              <ThWithTip col="varYr" label="YearVaR (10%)" tip={TIPS.YearVaR} className="num col-yr group-end" {...sp} />
+            )}
             <ThWithTip col="alpha"     label={<span style={{textTransform:"none"}}>Tail α</span>} tip={TIPS.alpha} className="num" {...sp} />
             {showAllModels && (
               <>
@@ -481,10 +519,10 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
               plan vs its benchmark, so the headline comparison is visible without
               scrolling). */}
           {portfolio && (
-            <PortfolioRow a={portfolio} portfolioLabel={portfolioLabel} showAllModels={showAllModels} topRollup benchmarkBelow={!!benchmark} />
+            <PortfolioRow a={portfolio} portfolioLabel={portfolioLabel} showAllModels={showAllModels} showLongHorizon={showLongHorizon} topRollup benchmarkBelow={!!benchmark} />
           )}
           {benchmark && (
-            <BenchmarkRow a={benchmark} showAllModels={showAllModels} />
+            <BenchmarkRow a={benchmark} showAllModels={showAllModels} showLongHorizon={showLongHorizon} />
           )}
           {sorted.map((a) => (
             <AssetRow
@@ -493,7 +531,7 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
               portfolioWeights={portfolioWeights}
               disclosedWeights={disclosedWeights}
               fundTicker={fundTicker}
-              showAllModels={showAllModels}
+              showAllModels={showAllModels} showLongHorizon={showLongHorizon}
             />
           ))}
         </tbody>
@@ -506,7 +544,7 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
               portfolioWeights={portfolioWeights}
               disclosedWeights={disclosedWeights}
               fundTicker={fundTicker}
-              showAllModels={showAllModels}
+              showAllModels={showAllModels} showLongHorizon={showLongHorizon}
               isFundReference
             />
           </tfoot>

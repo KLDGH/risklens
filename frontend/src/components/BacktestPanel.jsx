@@ -4,9 +4,9 @@ import "./BacktestPanel.css";
 
 const TIPS = {
   exceptions:
-    "Number of trading days in the 504-day evaluation window where the actual loss exceeded the model's daily VaR forecast.",
+    "Number of trading days in the out-of-sample evaluation window where the actual loss exceeded the model's daily VaR forecast.",
   expected:
-    "Expected exceptions at 1% confidence: 504 × 0.01 ≈ 5.04 days.",
+    "Expected exceptions at 1% confidence = number of evaluation days × 0.01.",
   rate:
     "Observed exception rate. At 1% confidence, the unbiased target is 1.00%. Higher means the model under-estimates tail risk; lower means the model is too conservative.",
   kupiec:
@@ -62,19 +62,27 @@ export default function BacktestPanel({ data, portfolioLabel }) {
   if (!data || data.length === 0) {
     return (
       <div className="backtest-empty">
-        Insufficient history to run a 504-day backtest on this portfolio's models.
+        Insufficient history to backtest this portfolio's models.
       </div>
     );
   }
 
+  const evalDates = data[0]?.eval_dates ?? [];
+  const nDays = evalDates.length;
+  const winStart = evalDates[0]?.slice(0, 7);
+  const winEnd = evalDates[evalDates.length - 1]?.slice(0, 7);
+  const windowLabel = winStart && winEnd ? `${winStart} to ${winEnd}` : "";
+  const expectedExc = data[0]?.expected ?? +(nDays * 0.01).toFixed(1);
+
   return (
     <div className="backtest-panel">
       <div className="backtest-summary">
-        Backtested over the most recent <strong>504</strong> trading days of{" "}
-        <strong>{portfolioLabel}</strong>'s daily portfolio returns. Each
-        forecast uses a strict 1000-day rolling lookback before the day being
-        tested (out-of-sample). Expected exceptions at 1% confidence:{" "}
-        <strong>5.04</strong>.
+        Backtested over <strong>{nDays.toLocaleString()}</strong> out-of-sample
+        trading days{windowLabel ? <> (<strong>{windowLabel}</strong>)</> : ""} of{" "}
+        <strong>{portfolioLabel}</strong>'s daily portfolio returns — the full
+        history its holdings support. Each forecast uses a strict 1000-day rolling
+        lookback before the day being tested (out-of-sample). Expected exceptions
+        at 1% confidence: <strong>{expectedExc}</strong>.
       </div>
 
       <div className="backtest-table-wrap">
@@ -149,29 +157,29 @@ export default function BacktestPanel({ data, portfolioLabel }) {
         significantly above 1% — the model is missing tails and you should
         weight EVT-style estimates more heavily in this regime.{" "}
         <span className="verdict-over">OVER-CONSERV</span> means the rate is
-        significantly below 1% — the model is too pessimistic, which is
-        "safe" from a risk-management standpoint but indicates calibration
-        drift worth knowing about.{" "}
+        significantly below 1% — the model overstates risk; conservative, but a
+        calibration drift to note.{" "}
         <span className="verdict-clustered">CLUSTERED</span> means exceptions
         bunch together rather than appearing independently — a sign of
-        time-varying volatility the model isn't capturing. The panel reveals
+        time-varying volatility the model isn't capturing. The panel shows
         each model's behavior in the recent regime, not whether the model is
-        "good" or "bad" in general.
+        good or bad in general.
       </div>
 
       <div className="backtest-interpretation">
         <strong>Why EWMA tends to show UNDER-EST.</strong> EWMA assumes
         normal-distribution tails, but real returns have fat tails (excess
         kurtosis), so it systematically misses the far tail at 1% confidence.
-        That is canonical; every quant textbook covers it. The current 504-day
-        window also spans 2022's dual-asset selloff and the 2025 tariff shock,
-        an above-average-stress regime that widens the gap. EVT makes the
+        That is canonical; every quant textbook covers it. The evaluation window
+        spans several stress regimes — the 2022 dual-asset selloff, the 2025
+        tariff shock, and (for holdings with long-enough history) the 2020 COVID
+        crash — an above-average-stress sample that widens the gap. EVT makes the
         opposite trade: it fits the tail directly, so it tends to run
-        OVER-CONSERV. That split, the Gaussian model under-estimating and the
-        tail model over-conservative, is the literature's predicted result
-        rather than a methodology bug, and it is exactly why the snapshot shows
-        multiple models instead of one. Lean on EVT for tail sizing in fat-tail
-        regimes, and on the conditional-vol models for everyday forecasting.
+        OVER-CONSERV. That split — the Gaussian model under-estimating and the
+        tail model over-conservative — is the expected result, not a bug, and is
+        why the snapshot shows multiple models instead of one. Use EVT for tail
+        sizing in fat-tail regimes, and the conditional-vol models for everyday
+        forecasting.
       </div>
 
       {(() => {
@@ -190,7 +198,13 @@ export default function BacktestPanel({ data, portfolioLabel }) {
           }
         }
 
-        const calData = evalDates.map((date) => ({
+        // The calendar is a single-row week grid (~52 weeks fits the panel);
+        // cap it to the most recent year so every cell is visible without
+        // clipping. The stats table above uses the full window.
+        const CAL_DAYS = 252;
+        const calWindow = evalDates.slice(-CAL_DAYS);
+        const calClipped = evalDates.length > calWindow.length;
+        const calData = calWindow.map((date) => ({
           date,
           count: flaggedBy[date]?.length ?? 0,
           models: flaggedBy[date] ?? [],
@@ -199,16 +213,16 @@ export default function BacktestPanel({ data, portfolioLabel }) {
         return (
           <div className="exception-calendar-section">
             <div className="exception-calendar-label">
-              VaR exception calendar — each cell is one trading day in the eval
-              window; intensity = how many of the {data.length} models flagged that day as a
-              VaR breach. Solid clusters of red are the Christoffersen test made
-              visual.
+              VaR exception calendar{calClipped ? <> — <strong>most recent year</strong> ({CAL_DAYS} trading days; the table above covers the full {evalDates.length.toLocaleString()}-day window)</> : ""}; each cell is one trading
+              day, intensity = how many of the {data.length} models flagged it as a
+              VaR breach. Clusters of red show the breach-clustering the
+              Christoffersen test measures.
             </div>
             <CalendarHeatmap
               data={calData}
               valueKey="count"
               colorFn={(count) => exceptionColor(count, data.length)}
-              cellSize={14}
+              cellSize={11}
               formatHover={(c) =>
                 c.count === 0 ? (
                   <><strong>{c.date}</strong> · no exceptions</>

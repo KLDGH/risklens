@@ -60,7 +60,7 @@ const CustomTooltip = ({ active, payload }) => {
     corr >= 0.65 ? "High — diversification strained"
     : corr >= 0.5 ? "Elevated — assets moving together"
     : corr >= 0.35 ? "Normal — typical market correlation"
-    : "Low — strong diversification benefit";
+    : "Low — high diversification benefit";
   return (
     <div className="chart-tooltip">
       <div className="tt-year">{d?.date}</div>
@@ -126,7 +126,7 @@ export default function CorrelationChart({ data }) {
             seen in a crisis. A portfolio watching only VIX would have read
             "moderate" stress; the same portfolio watching correlation would have
             seen the worst diversification breakdown shown here. Vol-driven
-            episodes hammer single-asset risk; correlation-driven episodes hammer
+            episodes raise single-asset risk; correlation-driven episodes reduce
             the diversification benefit between assets.
           </p>
         </div>

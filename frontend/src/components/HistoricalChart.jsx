@@ -147,10 +147,10 @@ export default function HistoricalChart({ data }) {
             <strong>15%</strong> by mid-year, well before the year's full{" "}
             <strong>38%</strong> loss had been booked. In March <strong>2020</strong>,
             it spiked above <strong>10%</strong> within weeks and fell back under{" "}
-            <strong>3%</strong> by September. The model captures regime shifts in real
-            time; annual returns only confirm what has already happened. The VIX
-            line — the market's own forward-looking volatility estimate — tends to lead
-            realized risk at major turning points.
+            <strong>3%</strong> by September. The model moves with regime shifts as they
+            happen; annual returns only confirm them after the fact. The VIX
+            line (implied volatility from options) tends to lead
+            realized risk.
           </p>
         </div>
       )}
@@ -204,7 +204,7 @@ export default function HistoricalChart({ data }) {
                   "Min daily risk": "Lowest EWMA VaR recorded that year — the calmest day's risk estimate.",
                   "Max daily risk": "Highest EWMA VaR recorded that year — the most stressed day's risk estimate.",
                   "Loss for year": "Total annual return when negative. Only drawn for down years.",
-                  "Avg VIX": "Annual average VIX (CBOE Volatility Index) — the market's forward-looking fear gauge. Right axis. Spikes signal stress being priced into options markets.",
+                  "Avg VIX": "Annual average VIX (CBOE Volatility Index), implied volatility from S&P 500 options. Right axis. Higher = more volatility priced into options.",
                 };
                 return (
                   <span

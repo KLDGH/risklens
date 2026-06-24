@@ -276,8 +276,10 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
     print("  Computing portfolio risk history...")
     risk_history = compute_portfolio_risk_history(prices_long, weights)
 
-    # Backtesting — Kupiec UC + Christoffersen IC tests over last 504 days
-    print("  Backtesting VaR models on portfolio (504-day eval, 1000-day lookback)...")
+    # Backtesting — Kupiec UC + Christoffersen IC tests over the max available
+    # out-of-sample window (each portfolio's own span, limited by its youngest
+    # holding's inception + the 1000-day lookback).
+    print("  Backtesting VaR models on portfolio (max-available eval, 1000-day lookback)...")
     backtests = backtest_portfolio_var(prices_long, weights)
 
     result = {
@@ -709,8 +711,7 @@ def main():
 
             # --- Rolling factor loadings over time — the medium-horizon
             #     analog of the single-snapshot regression. Catches style
-            #     drift on the 1-2 year cycle that long-horizon PMs
-            #     actually care about (vs the daily detectors above).
+            #     drift on the 1-2 year cycle (vs the daily detectors above).
             try:
                 rolling = compute_rolling_ff_loadings(
                     rets, ff_factors,

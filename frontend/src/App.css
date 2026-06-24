@@ -32,6 +32,22 @@
   color: var(--accent);
 }
 
+.logo-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.app-version {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
 .subtitle {
   font-size: 12px;
   color: var(--text-dim);
@@ -432,6 +448,32 @@
   margin: 2px 0 4px;
 }
 .legend-twolayer strong { color: var(--text); font-weight: 600; }
+
+/* PM-facing monthly downside callout — portfolio-level, above the per-asset table */
+.monthly-downside {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 4px 16px 14px;
+  padding: 10px 14px;
+  background: var(--bg2);
+  border-left: 3px solid var(--accent);
+  border-radius: 3px;
+}
+.monthly-downside .md-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.monthly-downside .md-body {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.55;
+}
+.monthly-downside .md-neg { color: var(--red); font-weight: 700; font-variant-numeric: tabular-nums; }
+.monthly-downside .md-note { color: var(--text-dim); font-size: 12px; }
 
 /* Leading caption that scopes the color key to the daily-VaR columns.
    Rendered as a small-caps label so it reads as "here's what these colors

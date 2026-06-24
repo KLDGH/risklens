@@ -1,6 +1,6 @@
 # RiskLens — FAQ
 
-Common questions from demos and reviews. Organized for a PM audience: what does it tell me, what does it not tell me, how does it compare to systems I already use.
+Common questions from demos and reviews. Organized as: what it tells you, what it doesn't, how it compares to existing systems.
 
 > **Quick legal note**: nothing in this FAQ is investment advice. The dashboard is an open-source educational project; figures shown are produced by publicly-known statistical methods on public data and should not drive investment, hedging, or position-sizing decisions. Full disclaimers in [`LEGAL.md`](./LEGAL.md).
 
@@ -9,19 +9,19 @@ Common questions from demos and reviews. Organized for a PM audience: what does 
 ## At a glance
 
 **What is this, in one sentence?**
-A transparent, daily-refresh risk dashboard that runs five VaR models, a Fama-French factor regression, anomaly detectors, and historical + hypothetical stress tests across a configurable book — with the full methodology in the open instead of behind a vendor license.
+A daily-refresh risk dashboard that runs five VaR models, a Fama-French factor regression, anomaly detectors, and historical + hypothetical stress tests across a configurable book, with the methodology in the open.
 
 **What is it not?**
-Not a signal generator, not a trading system, not a vendor replacement. It's a monitoring + research tool that surfaces *how* risk is changing and *which model assumptions are at risk of breaking*, not where prices are heading next.
+Not a signal generator, not a trading system, not a vendor replacement. It's a monitoring and research tool that surfaces how risk is changing and which model assumptions may break, not where prices are heading.
 
 **How do I use it day-to-day?**
 - **Position sizing reference** — if BTC VaR is $12 on $100, a bad day costs 12% of notional. Sanity-check whether that fits your sizing.
-- **Regime awareness** — multiple holdings at 90%+ risk-percentile simultaneously is a macro stress signal building.
+- **Regime awareness** — multiple holdings at 90%+ risk-percentile simultaneously indicates building macro stress.
 - **Pre-event diligence** — before a known catalyst, look at the corresponding stress-test card to see how the book is exposed.
-- **Model-disagreement diagnostic** — when EVT diverges sharply from EWMA, you're being told the tail is fatter than your normal-distribution intuition assumes. Time to weight EVT-style estimates more heavily.
+- **Model-disagreement diagnostic** — when EVT diverges sharply from EWMA, the tail is fatter than a normal-distribution model assumes. Weight EVT-style estimates more heavily.
 
 **What would have helped historically?**
-Mixed. Risk-percentile would have been elevated going into late 2007 and Feb 2020 — vol was building before the crashes. But VaR is procyclical: it spikes during the crash, not weeks ahead. The correlation chart and Sector Spotlight detectors are the more genuinely leading indicators. The honest answer: VaR tells you *how bad things are*, not how bad they're about to get.
+Mixed. Risk-percentile would have been elevated going into late 2007 and Feb 2020 — vol was building before the crashes. But VaR is procyclical: it spikes during the crash, not weeks ahead. The correlation chart and Sector Spotlight detectors are the more leading indicators. VaR tells you how bad things are, not how bad they're about to get.
 
 ---
 
@@ -30,7 +30,7 @@ Mixed. Risk-percentile would have been elevated going into late 2007 and Feb 202
 ### The risk table
 
 **Why five VaR columns?**
-The disagreement *is* the signal. EWMA assumes normal innovations and reacts fast; GARCH-t adds heavy tails; EVT explicitly models the loss tail with a Generalized Pareto fit. When the spread is wide — usually EVT pulling high — the asset has fat-tail behavior the others miss. A single number hides this. The "Range" column makes the spread explicit.
+The spread across models is itself informative. EWMA assumes normal innovations and reacts fast; GARCH-t adds heavy tails; EVT explicitly models the loss tail with a Generalized Pareto fit. When the spread is wide — usually EVT pulling high — the asset has fat-tail behavior the others miss. The "Range" column shows the spread.
 
 **Why 1-day VaR?**
 Convention, and it matches the liquidity assumption for liquid ETFs. Basel originally standardized on 10-day (scaling 1-day by √10) but the industry mostly works in 1-day and scales when needed. Multi-period VaR is a known gap in this build — see *What's missing* below.
@@ -42,10 +42,10 @@ On the worst 1% of trading days historically, you'd lose *at least* this many do
 VaR = where the bad days start. ES (also called CVaR) = how bad on average once you're past that threshold. ES is always larger. Regulators now prefer ES (Basel III/IV) because it describes the *shape* of the tail, not just its starting point.
 
 **Where do the Low / Elevated / High color thresholds come from?**
-Pragmatic rules of thumb, not a regulatory standard. Calibrated for daily 1% VaR on liquid ETFs: diversified US equity ~1.5–2.5%, sectors 2–3%, individual stocks 3–5%, crypto 5%+. The **Risk gauge** (percentile rank vs the asset's own 2-year history) is the more rigorous metric on this page — it's self-calibrating per asset.
+Pragmatic rules of thumb, not a regulatory standard. Calibrated for daily 1% VaR on liquid ETFs: diversified US equity ~1.5–2.5%, sectors 2–3%, individual stocks 3–5%, crypto 5%+. The **Risk gauge** (percentile rank vs the asset's own 2-year history) is self-calibrating per asset.
 
 **What does the Risk gauge mean?**
-The most actionable number in the table. Percentile rank of today's EWMA VaR vs the trailing 504 days of EWMA VaR for that specific asset. 85% = this asset is more volatile right now than it has been on 85% of recent days. Bitcoin at 5% VaR might be perfectly normal; SPY at 5% VaR would be extreme — the gauge accounts for this.
+Percentile rank of today's EWMA VaR vs the trailing 504 days of EWMA VaR for that specific asset. 85% = this asset is more volatile right now than it has been on 85% of recent days. Bitcoin at 5% VaR might be perfectly normal; SPY at 5% VaR would be extreme — the gauge accounts for this.
 
 **What's the arrow next to the Risk gauge?**
 5-day VaR trend. ↑ red = building; ↓ green = easing.
@@ -54,7 +54,7 @@ The most actionable number in the table. Percentile rank of today's EWMA VaR vs 
 Hill estimator on the return series. Lower = fatter tails. Broad equity indices typically sit around 3–4. Individual names and crypto often come in at 2–3. Below 3 indicates meaningfully more tail risk than a normal-distribution model would price in.
 
 **What is Comp VaR?**
-Component VaR — each holding's contribution to portfolio daily VaR via the EWMA covariance matrix. Numbers sum to the portfolio's EWMA VaR exactly (by construction). Negative = the holding is a *hedge* in the current regime (TLT and GLD often show negative in equity-heavy books). This is the same decomposition risk teams use to decide what to trim, add, or hedge.
+Component VaR — each holding's contribution to portfolio daily VaR via the EWMA covariance matrix. Numbers sum to the portfolio's EWMA VaR exactly (by construction). Negative = the holding is a *hedge* in the current regime (TLT and GLD often show negative in equity-heavy books). This decomposition shows which holdings drive portfolio VaR and which offset it.
 
 ### Portfolio modes
 
@@ -70,18 +70,18 @@ Swaps the entire risk snapshot between five different book definitions:
 When you toggle, the asset rows, weights, portfolio summary, scenarios, backtests, and risk trajectory all rebuild against the selected book.
 
 **Why model active ETFs (CGGO/DWLD) via their holdings instead of just their NAV?**
-NAV-based risk gives you one number per day. Look-through gives you per-name VaR, per-name component VaR, and a Fama-French factor decomposition that shows *why* the fund moves the way it does. The fund's own ETF appears as a final reference row in the table so you can compare basket-aggregate vs actual-NAV (the difference is the manager's discretionary trading effect plus expense ratio).
+NAV-based risk gives you one number per day. Look-through gives per-name VaR, per-name component VaR, and a Fama-French factor decomposition of the fund's return drivers. The fund's own ETF appears as a final reference row in the table so you can compare basket-aggregate vs actual-NAV (the difference is the manager's discretionary trading effect plus expense ratio).
 
 **The basket only models top-25 — what about the long tail?**
 For CGGO the top 25 cover ~52% of fund weight; for DWLD ~83%. The coverage caveat is surfaced as a yellow callout on the Fund Holdings panel. Modeling the full ~100 (CGGO) or ~40 (DWLD) names would be possible but adds noisy international-listing fetches with limited marginal value — the top 25 capture the manager's actual concentrated bets.
 
 **Why two TDFs at the same vintage?**
-The cleanest passive-vs-active comparison in the industry. Same risk profile (~90/10 equity/bonds), very different construction. The interesting reveal is in the stress tests: topline P&L numbers similar, but the contribution bars tell different stories. Capital Group's growth fund (AGTHX) gets hit harder than VTI in the AI Bubble scenario because active growth concentrates in mega-cap tech.
+A passive-vs-active comparison at the same vintage. Same risk profile (~90/10 equity/bonds), different construction. In the stress tests, topline P&L is similar but the contribution bars differ. Capital Group's growth fund (AGTHX) gets hit harder than VTI in the AI Bubble scenario because active growth concentrates in mega-cap tech.
 
 ### Model validation (backtesting)
 
 **What is the panel showing?**
-Out-of-sample backtests of all five VaR models. For each day in the last 504, the model gets only the prior 1,000 days to forecast that day's 1% VaR. Then we count exceptions (days the actual loss exceeded the forecast) and run two formal tests.
+Out-of-sample backtests of all five VaR models, over each portfolio's full available out-of-sample window (every trading day after the initial 1,000-day lookback, bounded by the youngest holding's inception — so the flagship books span ~8 years and several crises, while data-light funds get a shorter window). For each day the model gets only the prior 1,000 days to forecast that day's 1% VaR. Then we count exceptions (days the actual loss exceeded the forecast) and run two formal tests.
 
 **Kupiec test:** does the actual exception rate match 1%? Null = rates equal. χ²(1).
 **Christoffersen test:** do exceptions cluster? Null = exceptions independent. χ²(1).
@@ -96,12 +96,12 @@ Out-of-sample backtests of all five VaR models. For each day in the last 504, th
 | **CLUSTERED** | Rate may be fine but exceptions group. Time-varying vol the model isn't capturing. |
 
 **What's the panel telling me, big picture?**
-Each model has a *known* calibration drift in a specific direction. EWMA chronically under-estimates tails — that's why EVT exists. EVT chronically over-estimates — that's why HS exists. HS captures both but reacts slowly — that's why EWMA exists. The five-model approach is *justified by* their individually-knowable failure modes; the validation panel makes those drifts statistically visible instead of asking you to take them on faith.
+Each model has a *known* calibration drift in a specific direction. EWMA chronically under-estimates tails — that's why EVT exists. EVT chronically over-estimates — that's why HS exists. HS captures both but reacts slowly — that's why EWMA exists. The five-model approach is justified by their individually-knowable failure modes; the validation panel makes those drifts statistically visible.
 
 ### Stress tests
 
 **Historical vs hypothetical?**
-Historical (grey badge) replays actual price data — 100% data-driven, no assumptions. Hypothetical (amber badge) applies analyst-estimated shock vectors per asset. The visual distinction matters because historical numbers are reproducible facts; hypothetical numbers are explicit forward-looking judgments, not forecasts.
+Historical (grey badge) replays actual price data — 100% data-driven, no assumptions. Hypothetical (amber badge) applies analyst-estimated shock vectors per asset. Historical numbers are reproducible; hypothetical numbers are forward-looking judgments, not forecasts.
 
 **How are the shock vectors estimated?**
 By informed analyst judgment, looking at directional exposures. For a Taiwan invasion: semis hit hard (QQQ ~−22% from TSMC/NVDA exposure), Asian EM heavily exposed (EEM ~−22%), gold and Treasuries rally on flight to safety. Exact numbers are illustrative — *relative sensitivity across holdings* matters more than the absolute %s. The vectors live in `backend/risk_engine.py::HYPOTHETICAL_SCENARIOS` and are editable in one place.
@@ -113,7 +113,7 @@ Some tickers didn't exist during all scenarios (BTC pre-2014, CGGO pre-2022). Th
 Because in 2022 there was no hedge. Stocks AND bonds both sold off. The 60/40 portfolio's traditional defense — bonds rallying when stocks fall — broke completely. The bond allocation didn't help any of the three portfolios. Taiwan and Recession scenarios show much bigger cross-mode differences because in those, the bond allocation matters.
 
 **What's the "Probability outlook" section?**
-Curated external probability sources, plus one live computation where the methodology is rock-solid (NY Fed yield-curve recession probability — Estrella-Trubin 2006 probit on the 10Y−3M spread, refreshed every run). For Taiwan / Iran / AI Bubble we deliberately don't synthesize a single number — we link to Polymarket, Metaculus, CSIS wargames, CBOE SKEW, Shiller CAPE. Showing "Taiwan invasion: 14%" with no source is vibes wearing the costume of quant.
+Curated external probability sources, plus one live computation where the methodology is rock-solid (NY Fed yield-curve recession probability — Estrella-Trubin 2006 probit on the 10Y−3M spread, refreshed every run). For Taiwan / Iran / AI Bubble we don't synthesize a single number — we link to Polymarket, Metaculus, CSIS wargames, CBOE SKEW, Shiller CAPE. A single sourceless probability would be unsupported.
 
 ---
 
@@ -129,16 +129,16 @@ For each year back to 1928: the calmest day's risk (green), the most stressed da
 VIX is forward-looking — it reflects what options traders are paying to hedge over the next 30 days. Our VaR models are backward-looking. When VIX spikes above our EWMA estimates, the market is pricing in more stress than recent realized history suggests. That divergence is the signal.
 
 **Why is 2022 the correlation chart's peak and not the GFC?**
-The most counterintuitive finding in the dataset. In the GFC, equities crashed but Treasuries and gold rallied — flight-to-safety kept average cross-asset correlation moderate. In 2022, the Fed's aggressive hiking cycle caused stocks AND bonds to sell off simultaneously — the 60/40 hedge broke. Correlation hit 0.70, the highest in the series. **The correlation-breakdown problem is most dangerous in inflation/rate shocks, not equity crashes.**
+In the GFC, equities crashed but Treasuries and gold rallied, keeping average cross-asset correlation moderate. In 2022, the Fed's aggressive hiking cycle caused stocks AND bonds to sell off simultaneously — the 60/40 hedge broke. Correlation hit 0.70, the highest in the series. **The correlation-breakdown problem is most dangerous in inflation/rate shocks, not equity crashes.**
 
 **Why a multi-window correlation chart?**
-Same stock-bond question at three rolling-window lengths simultaneously: 20-day (fast), 60-day (medium), 252-day (slow). When the 20-day diverges sharply from the 252-day, you're seeing a recent regime change *before* longer-horizon measures register it. A "Recent intensification" callout fires when the gap exceeds 0.15. Four bond proxies are toggleable (AGG / TLT / IEF / LQD) because if the regime is real it should show across all four; if only one shows it, the signal is narrower than implied.
+Same stock-bond question at three rolling-window lengths simultaneously: 20-day (fast), 60-day (medium), 252-day (slow). When the 20-day diverges sharply from the 252-day, a recent regime change is showing before longer-horizon measures register it. A "Recent intensification" callout fires when the gap exceeds 0.15. Four bond proxies are toggleable (AGG / TLT / IEF / LQD) because if the regime is real it should show across all four; if only one shows it, the signal is narrower than implied.
 
 **Why intraday correlation rather than daily?**
-Statistical power per unit time. A daily-data correlation chart is a smoothed 60-day rolling average — by the time it shifts decisively, the regime has been live for a month. Intraday gives many observations *per day*, so each daily intraday correlation value is statistically meaningful on its own. A run of consecutive same-sign days becomes a sharp regime-shift indicator: 22 consecutive positive days has roughly (0.5)²² ≈ 1-in-4-million odds under a null of zero true correlation. That's a categorical signal, not noise.
+Statistical power per unit time. A daily-data correlation chart is a smoothed 60-day rolling average — by the time it shifts decisively, the regime has been live for a month. Intraday gives many observations *per day*, so each daily intraday correlation value is statistically meaningful on its own. A run of consecutive same-sign days becomes a sharp regime-shift indicator: 22 consecutive positive days has roughly (0.5)²² ≈ 1-in-4-million odds under a null of zero true correlation.
 
 **What's the QMLE toggle on the intraday chart?**
-A noise-robust correlation estimator (Aït-Sahalia, Fan & Xiu 2010 polarization on Xiu 2010 univariate QMLE). Standard realized correlation can be biased by bid-ask bounce and microstructure noise; QMLE explicitly models that noise as MA(1) and recovers the latent integrated correlation. For SPY/TLT at 5–15m bars the difference is small (~0.05) because both are highly liquid — the QMLE option is a "show your work" benchmark confirming the regime story is robust to estimator choice. It would matter more at 1-minute or for illiquid pairs.
+A noise-robust correlation estimator (Aït-Sahalia, Fan & Xiu 2010 polarization on Xiu 2010 univariate QMLE). Standard realized correlation can be biased by bid-ask bounce and microstructure noise; QMLE explicitly models that noise as MA(1) and recovers the latent integrated correlation. For SPY/TLT at 5–15m bars the difference is small (~0.05) because both are highly liquid — the QMLE option is a benchmark confirming the result is robust to estimator choice. It would matter more at 1-minute or for illiquid pairs.
 
 ---
 
@@ -167,13 +167,13 @@ Each ETF's exposures to the six standard equity factors — Market, SMB (size), 
 Barra is licensed (~$50–500k/year). Fama-French + Carhart momentum is the open-data, peer-reviewed, free alternative used as a baseline at most institutional quant shops. The output is conceptually the same as Barra-style attribution: factor loadings, factor-explained variance, idiosyncratic risk, alpha. Less sophisticated (no industry-within-country granularity, no proprietary covariance shrinkage), but legitimate and auditable. Data from the Ken French Data Library, fetched daily.
 
 **What's interesting about the R² across sectors?**
-The spread itself tells a story. XLK (Tech) is 93% factor-driven — almost no idiosyncratic risk. XLU (Utilities) is only 30% factor-driven — utilities march to their own (rates) drum. XLF and KRE both load heavily on Market + Value + Size (small-cap tilt in KRE), exactly as theory predicts for financials. Toggle through the tickers and you can read off each sector's exposure profile in 30 seconds.
+The spread itself tells a story. XLK (Tech) is 93% factor-driven — almost no idiosyncratic risk. XLU (Utilities) is only 30% factor-driven — utilities march to their own (rates) drum. XLF and KRE both load heavily on Market + Value + Size (small-cap tilt in KRE), exactly as theory predicts for financials. Toggle through the tickers to read each sector's exposure profile.
 
 ---
 
 ## Limits and what's missing
 
-**What's the honest comparison to Bloomberg PORT / MSCI Barra / FactSet?**
+**How does this compare to Bloomberg PORT / MSCI Barra / FactSet?**
 Methodology coverage is comparable for what's implemented (five VaR models with disagreement surfaced, EVT, formal backtesting, component VaR, historical + hypothetical scenarios, factor regression). The actual gaps:
 
 1. **Factor model is FF-Carhart, not Barra-class.** No industry-within-country granularity, no proprietary covariance shrinkage, no daily refit of factor loadings, no factor-tilt risk model. Adequate for a sector ETF deep-dive; not what an institutional risk team would run as their daily attribution.
@@ -182,7 +182,7 @@ Methodology coverage is comparable for what's implemented (five VaR models with 
 4. **Single-data-source dependency.** All prices from Yahoo Finance via yfinance. No vendor data, no enterprise reliability guarantees, no audit trail.
 5. **Operational risk surface is small.** Personal project. No SOC 2, no SLAs, no DR plan, no logging/alerting infrastructure.
 
-What's deliberately on offer instead: full methodology transparency in the open, configurable portfolio definitions you can change yourself, every metric attributable back to a peer-reviewed reference.
+What it offers instead: methodology in the open, configurable portfolio definitions, every metric attributable to a peer-reviewed reference.
 
 **Does anyone actually build their own factor model, or do most firms use Barra?**
 Most firms buy. Long-only asset managers, mutual funds, pensions, insurance — they license Barra, Axioma, or similar. Vendor models are good enough, regulator/auditor comfort is built in, and a ground-up build costs more than it's worth.
@@ -223,7 +223,7 @@ Refresh on user cadence by dropping a new sponsor-disclosed xlsx/csv in `ext-dat
 Yes for everything except the GARCH fitting (uses the `arch` Python library) and the OLS solve in the factor regression (numpy). Historical simulation, EWMA, EVT (Hill estimator + Generalized Pareto fit), risk-percentile gauge, exception counting, Kupiec/Christoffersen tests, scenario aggregation, component VaR via EWMA covariance, Page CUSUM, intraday QMLE polarization — all implemented directly in `backend/risk_engine.py` and `backend/factor_models.py`.
 
 **Why are the GARCH backtests cached?**
-504-day rolling refits of GARCH-t and GJR-t take seconds-to-minutes per portfolio. Daily refresh doesn't need to recompute them — backtest verdicts are a methodology check, not a current-state metric. They're cached in `backend/cache/garch_backtests.json` and regenerated on demand via `RISKLENS_FULL_BACKTEST=1 python backend/run.py`.
+Multi-year rolling refits of GARCH-t and GJR-t (one MLE fit per day over each portfolio's full out-of-sample window) take seconds-to-minutes per portfolio. Daily refresh doesn't need to recompute them — backtest verdicts are a methodology check, not a current-state metric. They're cached in `backend/cache/garch_backtests.json` and regenerated on demand via `RISKLENS_FULL_BACKTEST=1 python backend/run.py`.
 
 **Can I add my own portfolio?**
 Yes — `backend/run.py` has a `PORTFOLIO_MODES` dict. Add a key with your tickers and weights, the pipeline runs everything against the new mode automatically. No frontend changes needed; the toggle picks it up.
