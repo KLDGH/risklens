@@ -1,6 +1,19 @@
 import HoverTip from "./HoverTip.jsx";
 import "./RiskBar.css";
 
+// Risk-gauge color: calm -> elevated -> stressed, as three discrete bands.
+// A continuous green->yellow->red gradient is unworkable on the cream light
+// theme (yellow washes out; darkening it turns the calm-to-mid range into muddy
+// olive that's indistinguishable from green). Instead we reuse the app's own
+// palette bands — the same green / amber / red as the "Low / Elevated / High"
+// VaR legend — which are theme-aware (readable on both cream and dark) and
+// clearly distinct. Bar length still encodes the exact percentile.
+function riskColor(level) {
+  if (level < 0.40) return "var(--green)";
+  if (level < 0.75) return "var(--yellow)";
+  return "var(--red)";
+}
+
 function TipContent({ pct, color, trend, exceptionRate, exceptionCount }) {
   const trendLabel = trend === "up"
     ? "↑ Rising — EWMA VaR has been climbing over the last 5 trading days"
@@ -13,7 +26,7 @@ function TipContent({ pct, color, trend, exceptionRate, exceptionCount }) {
       ? "EWMA is likely underestimating tail risk. Weight EVT estimates more heavily."
       : exceptionRate > 1.5
       ? "Slight underestimation. Model is reasonable but EVT may be more accurate."
-      : "Model well-calibrated. EWMA estimates are reliable for this asset."
+      : "Model well-calibrated. EWMA estimates are well-calibrated for this asset."
     : null;
 
   return (
@@ -36,8 +49,7 @@ function TipContent({ pct, color, trend, exceptionRate, exceptionCount }) {
 
 export default function RiskBar({ level, trend, exceptionRate, exceptionCount }) {
   const pct = Math.round(level * 100);
-  const hue = Math.round(120 - level * 120);
-  const color = `hsl(${hue}, 85%, 52%)`;
+  const color = riskColor(level);
 
   const trendIcon  = trend === "up" ? "↑" : trend === "down" ? "↓" : null;
   const trendColor = trend === "up" ? "var(--red)" : "var(--green)";

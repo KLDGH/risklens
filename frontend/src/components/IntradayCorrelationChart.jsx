@@ -227,10 +227,10 @@ export default function IntradayCorrelationChart({ data }) {
             <strong>Red = positive correlation</strong>: stocks and bonds moved
             the same direction that day.{" "}
             <strong>Green = negative correlation</strong>: they moved in opposite
-            directions. The strongest signal is the <strong>streak</strong> — a
-            run of consecutive same-sign days is a sharper sign that the
-            stock-bond correlation has genuinely flipped than the smoothed 60-day
-            daily-data correlation chart above.
+            directions. The <strong>streak</strong> is the clearest signal — a
+            run of consecutive same-sign days indicates the stock-bond
+            correlation has flipped more sharply than the smoothed 60-day
+            daily-data chart above.
           </p>
           <p style={{ marginTop: 8 }}>
             <strong>Why two sampling intervals?</strong> 5-minute bars give 78
@@ -243,8 +243,8 @@ export default function IntradayCorrelationChart({ data }) {
           </p>
           <p style={{ marginTop: 8 }}>
             <strong>Calendar vs bar view.</strong> Calendar makes streak
-            patterns visually obvious — solid blocks of one color tell the
-            regime story at a glance. Bar makes individual-day magnitudes more
+            patterns visually obvious — solid blocks of one color show the
+            regime. Bar makes individual-day magnitudes more
             comparable. Same data, two views.
           </p>
 
@@ -280,8 +280,8 @@ export default function IntradayCorrelationChart({ data }) {
               small-sample variance issues at our N (26 obs at 15m, 78 at 5m),
               so per-day QMLE values are noisier than naive even though the
               <em>average</em> bias is small. The streak/regime structure on
-              high-conviction days is preserved across estimators — that
-              robustness check is the main reason this toggle exists.
+              strong-signal days is preserved across estimators, which is the
+              robustness check this toggle provides.
             </p>
           )}
           {hasQmle && (

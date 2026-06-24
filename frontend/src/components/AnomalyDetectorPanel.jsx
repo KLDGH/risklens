@@ -201,11 +201,11 @@ export function FactorRegressionPanel({ model }) {
     varianceShare: "Same idea as R² expressed as % of variance (R² × 100). 'Variance from factors' = how much of the total daily-return variance the factor model explains.",
     factor: "The risk factor being measured. Each is a published long-short portfolio constructed by Ken French (Dartmouth). Hover the row label below for a plain-English description of what each factor actually measures.",
     loading: "OLS regression coefficient β. Interpretation: a 1% return in this factor's portfolio corresponds to a β·1% return in the asset, holding the other factors constant. Positive = moves with the factor; negative = moves opposite.",
-    ci: "95% confidence interval for the loading, computed via paired bootstrap (500 case-resampled OLS refits, percentile method). Tells you how precisely the β is pinned down: a narrow interval means the data strongly constrain the loading; a wide interval — especially one that straddles zero — means the apparent β could plausibly be much larger, much smaller, or even the opposite sign. The bootstrap is robust to heteroskedasticity (daily returns are obviously not homoskedastic), so these CIs are usually wider and more honest than analytical OLS standard errors during volatile sub-windows.",
+    ci: "95% confidence interval for the loading, computed via paired bootstrap (500 case-resampled OLS refits, percentile method). Tells you how precisely the β is pinned down: a narrow interval means the data strongly constrain the loading; a wide interval — especially one that straddles zero — means the apparent β could plausibly be much larger, much smaller, or even the opposite sign. The bootstrap is robust to heteroskedasticity (daily returns are obviously not homoskedastic), so these CIs are usually wider than analytical OLS standard errors during volatile sub-windows.",
     tstat: "t-statistic = β / standard-error(β). Measures how confident we are that the true loading isn't zero. Rule of thumb: |t| > 2 means the coefficient is statistically meaningful (about 95% confidence). |t| > 3 is strongly meaningful.",
     pvalue: "Probability of seeing this t-statistic by chance if the true loading were actually zero. Lower = stronger evidence the asset has real exposure to this factor. Convention: p < 0.05 is 'significant', p < 0.001 is 'very significant'.",
     sig: "Significance stars: *** = p<0.001 (very strong), ** = p<0.01 (strong), * = p<0.05 (significant). No star = the loading is statistically indistinguishable from zero — don't read too much into the β value. Non-significant rows are dimmed.",
-    alpha: "Intercept of the regression. The average daily excess return (after subtracting risk-free rate) left over once all six factor exposures are accounted for. A statistically significant alpha (with stars) means the asset is earning a return that no combination of these factors can explain — historically a rare and noteworthy outcome.",
+    alpha: "Intercept of the regression. The average daily excess return (after subtracting risk-free rate) left over once all six factor exposures are accounted for. A statistically significant alpha (with stars) means the asset is earning a return that no combination of these factors can explain.",
     totalVol: "Sample standard deviation of this asset's daily returns over the 252-day window, annualized via √252, expressed in percent.",
     factorVol: "Volatility explained by the six factors. Computed as σ_total × √R². Tells you how much of the asset's day-to-day risk comes from systematic factor exposures.",
     idioVol: "Idiosyncratic / asset-specific volatility — the part of risk that's NOT explained by the factor model. Computed as σ_total × √(1 − R²). For an individual stock this captures company-specific news, earnings surprises, etc.",
@@ -442,12 +442,11 @@ export function ThematicExposurePanel({ thematic }) {
       </div>
 
       <div className="fr-footnote">
-        Thematic baskets map directly to narrative risk drivers (oil
-        shock, regional-banking stress, duration, China exposure) rather
-        than to abstract academic factor returns. Reads more naturally for
-        a PM thinking in narrative risk terms. The FF panel above and
-        this thematic panel are complementary — FF for academic rigor,
-        thematic for interpretive narrative.
+        Thematic baskets map to risk drivers (oil shock,
+        regional-banking stress, duration, China exposure) rather than to
+        academic factor returns. The FF panel above and this thematic
+        panel are complementary — FF for the standard factor set,
+        thematic for sector/narrative exposures.
       </div>
     </div>
   );
@@ -630,8 +629,8 @@ export function RollingFactorLoadingsPanel({ rolling }) {
         Lookback: {rolling.lookback_years} years.
         Time range: {rolling.first_date} → {rolling.last_date}.
         A drift flag does not imply something is wrong — it identifies factors
-        worth investigating, e.g., a fund that bought as quality-growth might
-        be drifting toward value or losing its profitability tilt.
+        to investigate, e.g., a fund bought as quality-growth drifting toward
+        value or losing its profitability tilt.
       </div>
     </div>
   );
@@ -993,8 +992,8 @@ export function AnomalySignalsPanel({ view, ticker }) {
         <strong style={{ color: DETECTOR_COLORS.garch_resid }}>GARCH residual</strong>{" "}
         flags days the conditional volatility model didn't anticipate. A
         date hitting multiple detectors is a stronger signal than any one
-        detector firing alone — disagreement among detectors is the signal,
-        same principle as the VaR table on the Portfolio Risk tab.
+        detector firing alone — same principle as the multi-model VaR table
+        on the Portfolio Risk tab.
       </div>
     </div>
   );

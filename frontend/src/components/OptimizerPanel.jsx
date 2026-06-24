@@ -254,7 +254,7 @@ export default function OptimizerPanel({ opt }) {
 
       {/* ---- caveats ---- */}
       <details className="opt-caveats">
-        <summary>Method &amp; honest limitations ({opt.caveats.length})</summary>
+        <summary>Method &amp; limitations ({opt.caveats.length})</summary>
         <ul>{opt.caveats.map((cav, i) => <li key={i}>{cav}</li>)}</ul>
       </details>
     </div>

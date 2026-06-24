@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
  */
 
 const DARK = {
+  mode:       "dark",
   bg:         "#141821",
   bg2:        "#1c222c",
   bg3:        "#232a37",
@@ -36,6 +37,7 @@ const DARK = {
 };
 
 const LIGHT = {
+  mode:       "light",
   bg:         "#f5efe0",
   bg2:        "#ede5d0",
   bg3:        "#e0d6bc",

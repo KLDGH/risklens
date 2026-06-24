@@ -153,7 +153,7 @@ def _paired_bootstrap_betas(
     heteroskedasticity — daily equity returns are obviously not
     homoskedastic, so the analytical OLS SEs systematically understate
     estimator variance during volatile sub-windows. The bootstrap CIs
-    are wider and more honest in those regimes.
+    are wider and better calibrated in those regimes.
 
     B=500 is enough for stable 95% percentile bounds at our problem
     size (~250 obs, ~6 factors); doubling to 1000 changes the displayed
@@ -305,12 +305,11 @@ def compute_rolling_ff_loadings(
     regression on the trailing `window` days of returns. Return the time
     series of loadings + R² over the last `lookback_years`.
 
-    Why this matters for a PM/PIO at a long-horizon shop:
-      A single FF regression tells you the *current* factor exposure
-      profile of an asset. Whether the asset is still doing what it was
-      bought to do depends on whether those exposures have shifted over
-      months-to-years — the cycle horizon at which sector rotations,
-      style regimes, and thesis drift actually play out.
+    What this adds over a single regression:
+      A single FF regression gives the *current* factor exposure
+      profile. Whether exposures have shifted over months-to-years
+      shows sector rotation, style-regime, and drift effects a
+      snapshot misses.
 
     A "style drift" alert is computed per factor: if the most recent
     loading is more than 1 standard deviation from its mean across the
@@ -412,9 +411,9 @@ def compute_rolling_ff_loadings(
 #
 # Why this exists alongside the Fama-French regression:
 #   FF/Carhart factors (Mkt-Rf, SMB, HML, RMW, CMA, MOM) are academically
-#   rigorous but interpretively abstract. Telling a PM "your stock has
-#   +0.4 HML loading" is less actionable than "your stock has +0.6
-#   oil-shock exposure." Banks (Goldman, Morgan Stanley, JPM) publish
+#   rigorous but interpretively abstract. A "+0.4 HML loading" is harder
+#   to map to a narrative than a "+0.6 oil-shock exposure." Banks
+#   (Goldman, Morgan Stanley, JPM) publish
 #   thematic "factor baskets" (oil exposure, China exposure, regional-
 #   banking-stress) that map directly to narrative risk drivers. Those
 #   baskets are mostly proprietary but their character can be approximated

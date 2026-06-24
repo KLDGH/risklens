@@ -342,9 +342,8 @@ def _normalize(df: pd.DataFrame, fund_ticker: str) -> dict:
 
     total_weight = sum(h["weight"] for h in holdings)
 
-    # Concentration stats — quants will look for these and the visual
-    # contrast between concentrated (CGGO, DWLD) and broad (DFAX) funds is
-    # most legible when surfaced numerically alongside the holdings list.
+    # Concentration stats — top-10/top-25 weight sums quantify the
+    # contrast between concentrated (CGGO, DWLD) and broad (DFAX) funds.
     top10 = round(sum(h["weight"] for h in holdings[:10]), 4)
     top25 = round(sum(h["weight"] for h in holdings[:25]), 4)
 

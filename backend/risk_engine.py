@@ -15,9 +15,9 @@ from scenario_config import (
 )
 
 # Reference indices shown on each scenario card, so a portfolio's return has
-# context (is -25% in the GFC good or bad?). Equity yardsticks an equity PM
-# actually uses: cap-weighted S&P 500, the growth/tech-tilted Nasdaq 100, and
-# the equal-weight S&P 500 (market breadth vs the mega-caps). QQQ carries a
+# context (is -25% in the GFC good or bad?). Equity reference indices:
+# cap-weighted S&P 500, the growth/tech-tilted Nasdaq 100, and the
+# equal-weight S&P 500 (market breadth vs the mega-caps). QQQ carries a
 # `tech` sector tag, so it also reacts harder than the S&P in tech-led shock
 # scenarios; RSP is broad large-cap (no sector tilt), so under category shocks
 # it tracks the S&P and the divergence shows up on the historical cards.
@@ -216,10 +216,9 @@ def var_year_t(returns: np.ndarray, q: float = 0.10) -> tuple[float, float] | No
     lost (e.g. 23.5 = "10% chance of losing more than $23.50 over
     1 year on a $100 position").
 
-    Default q=0.10 is the consumer-friendly framing: "10% chance of
-    losing more than X% over the next year." For comparison, q=0.05
-    would give the "1-in-20 year" loss; q=0.01 the "1-in-100 year."
-    All three are legitimate; 10% is the most-asked-by-PMs.
+    Default q=0.10 reads as "10% chance of losing more than X% over
+    the next year." For comparison, q=0.05 gives the "1-in-20 year"
+    loss; q=0.01 the "1-in-100 year." All three are legitimate.
     """
     rets = returns[~np.isnan(returns)]
     # Strip exact-zero returns. These are forward-fill artifacts produced
@@ -484,15 +483,23 @@ def compute_asset_risk(ticker: str, returns: pd.Series, prices: pd.Series) -> di
     var_evt, es_evt = var_es_evt(window_rets)
     alpha = tail_index_hill(window_rets)
 
-    # 1-year 10% VaR — Student-t parametric scaling. Consumer- and
-    # long-horizon-PM-friendly multi-year-horizon risk number. Pros want
-    # 1-day VaR; PMs and individuals reading the dashboard tend to think
-    # in 1-year terms ("10% chance of losing more than X% next year").
+    # 1-year 10% VaR via Student-t parametric scaling (σ·√252). Longer-horizon
+    # framing: 10% probability of a one-year loss exceeding X%.
     yr_result = var_year_t(returns.values, q=0.10)
     if yr_result is not None:
         var_yr, es_yr, yr_nu = yr_result
     else:
         var_yr, es_yr, yr_nu = None, None, None
+
+    # Monthly (21 trading-day) empirical downside: 5th percentile and worst of the
+    # rolling 21-day return distribution (no √t / iid scaling). None when < ~3yr history.
+    mr = returns[returns.index.dayofweek < 5] if hasattr(returns.index, "dayofweek") else returns
+    if len(mr) >= 21 + 750:
+        cum21 = (np.exp(mr.rolling(21).sum()) - 1.0).dropna()
+        monthly_p5    = round(float(np.percentile(cum21, 5)) * 100, 2)
+        monthly_worst = round(float(cum21.min()) * 100, 2)
+    else:
+        monthly_p5 = monthly_worst = None
 
     mean_var = round(float(np.mean([var_hs, var_ewma, var_garch, var_tgarch, var_evt])), 4)
 
@@ -528,7 +535,10 @@ def compute_asset_risk(ticker: str, returns: pd.Series, prices: pd.Series) -> di
         "es_tgarch": round(es_tgarch, 4),
         "var_evt": round(var_evt, 4),
         "es_evt": round(es_evt, 4),
-        # 1-year 10% VaR/ES — consumer-friendly multi-year horizon framing
+        # Monthly (21-day) empirical downside
+        "monthly_p5":    monthly_p5,
+        "monthly_worst": monthly_worst,
+        # 1-year 10% VaR/ES — annual-horizon downside
         "var_yr_10pct": var_yr,
         "es_yr_10pct":  es_yr,
         "yr_nu":        yr_nu,    # Student-t degrees of freedom estimated
@@ -814,7 +824,7 @@ def _verdict_from_tests(rate: float, p: float, kp, cp, alpha: float = 0.05) -> s
 def backtest_portfolio_var(
     prices: pd.DataFrame,
     weights: dict,
-    eval_window: int = 504,
+    eval_window: int = None,   # None = use the max out-of-sample window the data supports
     lookback: int = WINDOW,
     p: float = P,
 ) -> list[dict]:
@@ -837,12 +847,21 @@ def backtest_portfolio_var(
     norm_w = raw_w / raw_w.sum()
 
     sub = prices[avail].dropna()
-    if len(sub) < eval_window + lookback + 10:
-        return []
-
     ret_df = np.log(sub / sub.shift(1)).dropna()
     port_rets_series = pd.Series(ret_df.values @ norm_w, index=ret_df.index)
-    if len(port_rets_series) < eval_window + lookback:
+    # Restrict to weekday trading days. When a 7-day asset (e.g. BTC) is mixed
+    # with 5-day ETFs, weekend rows survive via forward-fill; dropping them keeps
+    # the backtest on genuine trading days (and a consistent 1000-day ~= 4-year
+    # lookback) for every portfolio. No-op for all-ETF/stock portfolios.
+    port_rets_series = port_rets_series[port_rets_series.index.dayofweek < 5]
+    n_obs = len(port_rets_series)
+
+    # Default to the longest out-of-sample window the trading-day data supports.
+    # The series starts at the youngest holding's inception, so each portfolio
+    # gets its own honest max window (no fixed 504-day cap).
+    if eval_window is None:
+        eval_window = n_obs - lookback - 1
+    if eval_window < 30 or n_obs < eval_window + lookback:
         return []
 
     # Restrict to last (lookback + eval_window) so the rolling backtest is fast
@@ -902,7 +921,7 @@ def backtest_portfolio_garch(
     prices: pd.DataFrame,
     weights: dict,
     asymmetric: bool = False,
-    eval_window: int = 504,
+    eval_window: int = None,   # None = use the max out-of-sample window the data supports
     lookback: int = WINDOW,
     p: float = P,
 ) -> dict:
@@ -928,12 +947,16 @@ def backtest_portfolio_garch(
     norm_w = raw_w / raw_w.sum()
 
     sub = prices[avail].dropna()
-    if len(sub) < eval_window + lookback + 10:
-        return None
-
     ret_df = np.log(sub / sub.shift(1)).dropna()
     port_rets_series = pd.Series(ret_df.values @ norm_w, index=ret_df.index)
-    if len(port_rets_series) < eval_window + lookback:
+    # Match backtest_portfolio_var: weekday trading days only, then default to
+    # the max out-of-sample window the data supports so GARCH/GJR are evaluated
+    # over the same span as HS/EWMA/EVT.
+    port_rets_series = port_rets_series[port_rets_series.index.dayofweek < 5]
+    n_obs = len(port_rets_series)
+    if eval_window is None:
+        eval_window = n_obs - lookback - 1
+    if eval_window < 30 or n_obs < eval_window + lookback:
         return None
 
     eval_series = port_rets_series.iloc[-(lookback + eval_window):]
@@ -1041,10 +1064,9 @@ def nyfed_recession_probability(spread_pct: float) -> float:
 #   applied to the QMLE-cleaned IV of each of X, Y, X+Y, X-Y.
 #
 # For SPY × TLT at 5m / 15m bars the SNR is high (~5–15× for SPY, ~2–4×
-# for TLT) so the noise correction is small (typically |Δρ| ≤ 0.05). We
-# expose this as a "show your work" benchmark so the audience can verify
-# the regime signal is robust to estimator choice. QMLE earns its keep
-# at finer sampling (1m/tick) or on illiquid pairs.
+# for TLT) so the noise correction is small (typically |Δρ| ≤ 0.05).
+# Provided as a robustness cross-check on the naive estimate. QMLE
+# matters more at finer sampling (1m/tick) or on illiquid pairs.
 # ---------------------------------------------------------------------------
 def _qmle_iv(returns: np.ndarray) -> tuple[float, str]:
     """
@@ -1249,8 +1271,8 @@ def compute_multi_window_correlation(
 # ---------------------------------------------------------------------------
 # Univariate anomaly detection (Anomaly Detector tab)
 #
-# Four detectors run on a single ticker's return series, each answering a
-# slightly different question — disagreement between them is the signal:
+# Four detectors run on a single ticker's return series, each flagging a
+# different anomaly type; they can disagree on the same day:
 #
 #   1. Standardized z-score (rolling 60d mean/std).
 #      Catches outsized single-day moves. Flag |z| >= 3.

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { version as APP_VERSION } from "../package.json";
 import RiskTable from "./components/RiskTable.jsx";
 import HistoricalChart from "./components/HistoricalChart.jsx";
 import CorrelationChart from "./components/CorrelationChart.jsx";
@@ -306,7 +307,7 @@ export default function App() {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams();
     if (activeTab && activeTab !== "portfolio") params.set("tab", activeTab);
-    if (mode && mode !== "aor") params.set("portfolio", mode);
+    if (mode && mode !== "hypothetical") params.set("portfolio", mode);
     if (selectedTicker && activeTab === "anomaly") {
       params.set("ticker", selectedTicker);
     }
@@ -352,7 +353,10 @@ export default function App() {
     <div className="app">
       <header className="header">
         <div className="header-left">
-          <span className="logo">RISK<span className="logo-accent">LENS</span></span>
+          <div className="logo-row">
+            <span className="logo">RISK<span className="logo-accent">LENS</span></span>
+            <span className="app-version" title="App version">v{APP_VERSION}</span>
+          </div>
         </div>
         {data && (
           <div className="generated-at">
@@ -508,7 +512,7 @@ export default function App() {
             question="How risky is each asset today vs. its own recent history?"
             description={
               <>
-                Your at-a-glance read on every holding: which positions are running hot, and the loss to expect on a bad day (worst 1%, as a % of the position). The <span className="desc-accent">five shaded VaR columns</span> are meant to disagree — when they spread apart (usually EVT pulling high), that name's tail is fatter than standard models assume, and that gap is the signal, not noise. The EWMA-vs-GARCH gap is the heavy-tail premium you're carrying in the name. Sort by the Risk gauge to surface what's most stretched against its own 2-year range. (Per-model definitions live in each column's ⓘ.)
+                Every holding's risk: which positions are running hot, and the loss to expect on a bad day (worst 1%, as a % of the position). The <span className="desc-accent">five shaded VaR columns</span> often disagree — when they spread apart (usually EVT pulling high), that name's tail is fatter than standard models assume. The EWMA-vs-GARCH gap is the heavy-tail premium on the name. Sort by the Risk gauge to rank by percentile vs each asset's own 2-year range. (Per-model definitions live in each column's ⓘ.)
               </>
             }
           >
@@ -548,7 +552,7 @@ export default function App() {
             id="risk-trajectory"
             title="Portfolio Risk Trajectory"
             question="How has the portfolio's daily risk moved over time?"
-            description="How the portfolio's daily risk has risen and fallen over time, so today's reading has context: near a calm-regime floor, or climbing toward crisis levels. The line is EWMA VaR, which is fast-reacting and cheap enough to recompute every trading day across the full history; that's also why its level runs a little below the heavy-tailed models in the snapshot above. Spikes mark known shocks, and the slow decay after each shows how fast that regime resolved. History reaches back as far as the portfolio's youngest holding allows."
+            description="The portfolio's daily risk over time, for context on today's reading. The line is EWMA VaR, which is fast-reacting and cheap enough to recompute every trading day across the full history; that's also why its level runs a little below the heavy-tailed models in the snapshot above. Spikes mark known shocks; the decay after each shows how fast that regime resolved. History reaches back as far as the portfolio's youngest holding allows."
           >
             <PortfolioRiskChart data={portfolio.risk_history} portfolioLabel={portfolio.label} />
           </Section>
@@ -558,7 +562,7 @@ export default function App() {
             id="model-validation"
             title="VaR Model Validation"
             question="Are these risk models well-calibrated?"
-            description="Can you trust the VaR numbers above? This is their out-of-sample report card (HS, EWMA, EVT). For each of the last 504 days the model saw only the prior 1000 days, forecast that day's 1% VaR, and we checked it against what actually happened. Kupiec asks: did losses breach VaR roughly 1% of the time, as promised? Christoffersen asks: did breaches cluster — the tell of a model blind to fast-changing risk? Passing both means the snapshot above is well-calibrated for this portfolio; failing flags which model to discount."
+            description="Out-of-sample calibration of the VaR numbers above, across all five models. For each day in this portfolio's full available out-of-sample window the model saw only the prior 1000 days, forecast that day's 1% VaR, and we checked it against what actually happened — so the longer a fund's history, the more crises the test spans. Kupiec asks: did losses breach VaR roughly 1% of the time, as promised? Christoffersen asks: did breaches cluster, which indicates a model missing fast-changing risk? Passing both means the snapshot is well-calibrated for this portfolio; failing flags which model to discount."
           >
             <BacktestPanel data={portfolio.backtests} portfolioLabel={portfolio.label} />
           </Section>
@@ -568,7 +572,7 @@ export default function App() {
             id="stress-tests"
             title="Historical Stress Tests & Scenarios"
             question="How would the portfolio handle past crises and plausible shocks?"
-            description="What happens to this portfolio when markets break. Two kinds of test: real crises replayed from history (data-driven), and forward-looking shocks you can't observe yet but should be sized for (assumption-driven). Each card shows total P&L plus the holdings that hurt — or hedged — the most, so you can see where the damage concentrates before it happens and what's actually diversifying you."
+            description="Portfolio P&L under stress. Two kinds of test: real crises replayed from history (data-driven), and forward-looking shocks (assumption-driven). Each card shows total P&L plus the holdings that contributed most loss or gain, so you can see which positions concentrate the loss and which diversify."
           >
             <ScenarioPanel
               scenarios={portfolio.scenarios}
@@ -587,7 +591,7 @@ export default function App() {
             id="sp500-history"
             title="S&P 500 Historical Risk"
             question="How does today's equity stress compare to history?"
-            description="Where today's equity risk sits in the long arc of market history. Each bar is the span of modeled daily-loss estimates for that year — tall bars are crisis years (2008, 2020), short bars are the calm stretches. Use it to gut-check whether the current regime is historically benign or already stretched before you read too much into a quiet snapshot."
+            description="Today's equity risk versus the historical range. Each bar is the span of modeled daily-loss estimates for that year — tall bars are crisis years (2008, 2020), short bars are calm years. Use it to compare the current regime against history."
           >
             <HistoricalChart data={data.sp500_history} />
           </Section>
@@ -597,7 +601,7 @@ export default function App() {
             id="correlation"
             title="Cross-Asset Correlation"
             question="Is diversification still working across asset classes?"
-            description="Is diversification actually working right now? When cross-asset correlations climb toward 1, the positions you hold to offset each other stop doing so — and your real portfolio risk is higher than any single holding's VaR implies. Rising correlation is the quiet way a diversified book turns into a concentrated one."
+            description="Whether diversification is working. When cross-asset correlations climb toward 1, offsetting positions stop offsetting, and portfolio risk is higher than any single holding's VaR implies. Rising correlation reduces the diversification benefit between holdings."
           >
             <CorrelationChart data={data.correlation_history} />
           </Section>
@@ -607,7 +611,7 @@ export default function App() {
             id="multi-window-corr"
             title="Stock-Bond Correlation Across Time Scales"
             question="Has the stock-bond relationship shifted recently?"
-            description="Do your bonds still hedge your equities — and is that relationship shifting? Stock-bond correlation at three window lengths at once. The 20-day line catches regime changes early; the 252-day line is the slow annual baseline. When the fast line breaks away from the slow one, the hedge is changing before standard measures notice — the 2022 flip to positive correlation (bonds and stocks falling together) is the cautionary case every balanced book felt. Toggle the bond proxy to see whether it holds across the curve."
+            description="Whether bonds still hedge equities, and whether that is shifting. Stock-bond correlation at three window lengths at once. The 20-day line catches regime changes early; the 252-day line is the slow annual baseline. When the fast line breaks away from the slow one, the relationship is changing before longer windows register it — the 2022 flip to positive correlation (bonds and stocks falling together) is the reference case. Toggle the bond proxy to see whether it holds across the curve."
           >
             <MultiWindowCorrelationChart data={data.multi_window_corr} />
           </Section>
@@ -621,7 +625,7 @@ export default function App() {
             id="intraday-corr"
             title="Intraday Stock-Bond Correlation"
             question="Is the very recent regime different from the daily-data picture?"
-            description="The earliest warning on the stock-bond hedge. Each bar is a single day's SPY-TLT correlation built from intraday bars, so one day's reading already means something — no 60-day smoothing lag to wait out. A run of same-sign days flags a regime shift days to weeks before the daily-data chart above can confirm it. Last 60 trading days only (free intraday data via yfinance)."
+            description="The fastest read on the stock-bond relationship. Each bar is a single day's SPY-TLT correlation built from intraday bars, so each day is a standalone estimate with no 60-day smoothing lag. A run of same-sign days flags a regime shift days to weeks before the daily-data chart above confirms it. Last 60 trading days only (intraday data via yfinance)."
           >
             <IntradayCorrelationChart data={data.intraday_corr_history} />
           </Section>
@@ -666,7 +670,7 @@ export default function App() {
                 id="sector-thematic"
                 title="Thematic Risk Exposures"
                 question="Which narrative risk drivers actually move it?"
-                description="Regression against a panel of sector/thematic ETF baskets that each proxy a real-world risk driver (oil shock, regional-banking stress, duration, China sensitivity). Non-market loadings are computed on market-orthogonalized basket residuals, so they read as exposure beyond plain market beta — more actionable than abstract academic factor loadings."
+                description="Regression against a panel of sector/thematic ETF baskets that each proxy a risk driver (oil shock, regional-banking stress, duration, China sensitivity). Non-market loadings are computed on market-orthogonalized basket residuals, so they read as exposure beyond plain market beta."
               >
                 <ThematicExposurePanel thematic={view.thematic_exposures} />
               </Section>
@@ -674,7 +678,7 @@ export default function App() {
                 id="sector-factor-drift"
                 title="Factor Loadings Over Time"
                 question="Is it still doing what it was bought to do?"
-                description="Rolling 252-day factor loadings stepped monthly over the last ~5 years, one mini-chart per factor with its long-run mean. A loading drifting more than 1σ from its own long-run mean is flagged as style drift — the months-to-years horizon at which sector rotations and thesis drift play out."
+                description="Rolling 252-day factor loadings stepped monthly over the last ~5 years, one mini-chart per factor with its long-run mean. A loading drifting more than 1σ from its own long-run mean is flagged as style drift. Months-to-years horizon."
               >
                 <RollingFactorLoadingsPanel rolling={view.factor_model_rolling} />
               </Section>
@@ -682,7 +686,7 @@ export default function App() {
                 id="sector-anomalies"
                 title="Anomaly Detection"
                 question="When did it behave abnormally — and do the detectors agree?"
-                description="Three detectors on a shared timeline over the closing-price series: standardized z-score flags outsized single days, Page CUSUM catches sustained mean shifts, and GARCH-residual outliers flag days the conditional-vol model didn't anticipate. A date hitting multiple detectors is the strong signal — disagreement between them is informative."
+                description="Three detectors on a shared timeline over the closing-price series: standardized z-score flags outsized single days, Page CUSUM catches sustained mean shifts, and GARCH-residual outliers flag days the conditional-vol model didn't anticipate. A date hitting multiple detectors is a stronger signal than one detector alone."
               >
                 <AnomalySignalsPanel view={view} ticker={ticker} />
               </Section>
