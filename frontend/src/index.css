@@ -22,6 +22,7 @@
   --red:         #d96464;
   --accent:      #d97706;
   --accent-soft: #f59e0b;
+  --frp-specific: #6f9fbf;   /* factor-risk panel: stock-specific segment — cool steel-blue against the warm accent */
   /* Hypothetical-scenario card palette — used to differentiate the
      "analyst-shock-vector" scenario cards from the data-driven historical
      ones. Warm amber-tinted variant of the panel chrome. */
@@ -69,6 +70,7 @@
   --red:         #b53e3e;
   --accent:      #b85a1f;   /* slightly darker burnt orange for legibility on cream */
   --accent-soft: #d97706;   /* lighter sibling for highlights */
+  --frp-specific: #3f88a6;  /* factor-risk panel: stock-specific segment — cool steel-blue against the warm accent */
   /* Hypothetical-scenario light-theme equivalents — warm amber tint on
      cream rather than dark amber on near-black. */
   --hypo-bg:            #faecc6;

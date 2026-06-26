@@ -290,6 +290,444 @@ def fit_ff_carhart(
     }
 
 
+def compute_orthogonal_factor_cascade(
+    returns: pd.Series,
+    factors: pd.DataFrame,
+    order: list | None = None,
+    lookback: int = 252,
+) -> dict | None:
+    """
+    Sequential (Gram-Schmidt) orthogonalization of the FF5 + Momentum factors,
+    then regress excess returns on the orthogonalized set.
+
+    Why, alongside the standard OLS regression (fit_ff_carhart):
+      The factors are correlated — the market overlaps everything; HML, RMW and
+      CMA overlap each other. Plain OLS still returns a loading per factor, but
+      the shared variance inflates the standard errors (the wide CIs on a name
+      like XLE) and makes each factor's marginal contribution ambiguous: the
+      betas trade off against one another.
+
+      The cascade fixes an order (default: Mkt-RF, SMB, HML, RMW, CMA, MOM),
+      orthogonalizes each factor against the ones before it, and regresses on
+      the orthogonal set. Because the regressors are now uncorrelated:
+        - each loading is unambiguous (no multicollinearity inflation)
+        - R² decomposes additively — factor k contributes exactly its own
+          incremental variance, and the pieces sum to the model R² with no
+          overlap and no double-counting
+        - the result is auditable: you read off how much NEW variance each
+          factor explains beyond the factors above it
+
+    Tradeoff (disclosed): the decomposition is ORDER-DEPENDENT. The first
+    factor absorbs all the variance it shares with later ones, so the loadings
+    read as "marginal beyond the factors above," not standalone betas. For raw
+    symmetric exposures the OLS view is the right one; this is the clean
+    variance attribution that sits next to it.
+
+    Returns None if the aligned series is too short.
+    """
+    cols = order or FACTOR_COLS
+    df = factors[FACTOR_COLS + ["RF"]].copy()
+    aligned = returns.to_frame("R").join(df, how="inner").dropna().tail(lookback)
+    n = len(aligned)
+    if n < 60:
+        return None
+
+    y_raw = aligned["R"].to_numpy() - aligned["RF"].to_numpy()   # excess return
+    y = y_raw - y_raw.mean()                                      # centered
+    F = np.column_stack([aligned[c].to_numpy() for c in cols])   # n x k
+    F = F - F.mean(axis=0, keepdims=True)                        # center factors
+    k = F.shape[1]
+
+    # Modified Gram-Schmidt: Q[:, j] = part of F[:, j] orthogonal to F[:, <j].
+    Q = np.zeros_like(F)
+    for j in range(k):
+        v = F[:, j].copy()
+        for i in range(j):
+            qi = Q[:, i]
+            denom = float(qi @ qi)
+            if denom > 0:
+                v = v - (float(qi @ v) / denom) * qi
+        Q[:, j] = v
+
+    var_y = float(y @ y) / (n - 1)
+    if var_y <= 0:
+        return None
+
+    # Orthogonal regressors → each loading is independent of the others.
+    # Incremental variance share of factor j = corr(y, Q_j)^2 (the part of the
+    # model R² that factor j alone adds). With orthogonal Q these sum to R².
+    sigma2_eps_full = None
+    cascade = []
+    cum_r2 = 0.0
+    resid = y.copy()
+    for j in range(k):
+        qj = Q[:, j]
+        qq = float(qj @ qj)
+        if qq <= 1e-18:
+            beta_j = 0.0
+            incr_r2 = 0.0
+        else:
+            beta_j = float(qj @ y) / qq            # loading on orthogonalized factor
+            incr_r2 = (beta_j ** 2) * qq / float(y @ y)   # share of total variance
+            resid = resid - beta_j * qj
+        cum_r2 += incr_r2
+        cascade.append({
+            "factor":          cols[j],
+            "label":           FACTOR_LABELS[cols[j]],
+            "step":            j + 1,
+            "ortho_loading":   round(beta_j, 4),
+            "incr_var_pct":    round(100.0 * incr_r2, 2),    # NEW variance explained, beyond prior
+            "cumulative_r2_pct": round(100.0 * cum_r2, 2),
+        })
+
+    model_r2 = cum_r2
+    # Share of EXPLAINED variance (sums to 100 across factors) — the intuitive
+    # "of what the factors explain, how it splits" read.
+    for c in cascade:
+        c["share_of_explained_pct"] = (
+            round(100.0 * (c["incr_var_pct"] / 100.0) / model_r2, 1) if model_r2 > 0 else None
+        )
+
+    rss = float(resid @ resid)
+    df_resid = n - k - 1
+    alpha = float(y_raw.mean())   # intercept ~ mean excess (factors centered)
+
+    return {
+        "model":               "FF5 + Momentum orthogonal cascade (sequential / Gram-Schmidt)",
+        "lookback_days":       int(n),
+        "first_date":          aligned.index[0].strftime("%Y-%m-%d"),
+        "last_date":           aligned.index[-1].strftime("%Y-%m-%d"),
+        "order":               list(cols),
+        "model_r2_pct":        round(100.0 * model_r2, 2),
+        "alpha_daily_pct":     round(alpha * 100, 4),
+        "alpha_annualized_pct": round(alpha * 252 * 100, 2),
+        "cascade":             cascade,
+        "notes": [
+            "Each factor's incr_var_pct is the NEW share of return variance it "
+            "explains beyond the factors above it; the steps sum to the model R² "
+            "with no overlap.",
+            "Order-dependent (default market-first): the first factor absorbs the "
+            "variance it shares with later ones. Loadings are marginal-beyond-prior, "
+            "not standalone betas — the OLS view holds the symmetric exposures.",
+        ],
+    }
+
+
+def compute_factor_risk_decomposition(
+    returns: pd.DataFrame,
+    weights: dict,
+    factors: pd.DataFrame,
+    names: dict | None = None,
+    lookback: int = 252,
+) -> dict | None:
+    """
+    Split a stock-basket portfolio's risk into systematic factor risk vs.
+    stock-specific (idiosyncratic) risk via the FF5 + Momentum factor risk
+    model:
+
+        Sigma  =  B Sigma_f Bᵀ  +  D
+
+      B        holdings x factors loading matrix (per-name OLS, excess returns)
+      Sigma_f  factor return covariance (daily, sample)
+      D        diagonal of per-name residual variances (idiosyncratic)
+
+    Portfolio variance under the model:
+        var_model = (Bᵀw)ᵀ Sigma_f (Bᵀw)  +  sum_i w_i^2 D_ii
+                  = systematic_var          +  specific_var
+
+    Every contribution returned sums to its total exactly (Euler allocation):
+      - per holding: factor-risk and stock-specific contributions to model var
+      - per factor:  each factor's share of systematic var (net loading Bᵀw)
+
+    The stock-specific share per holding answers "is this name's risk in the
+    book shared factor exposure or its own residual" — the second is where a
+    manager's name-specific positioning shows up.
+
+    Diagonal D assumes uncorrelated residuals; `model_capture_pct` reports
+    how much of the realized portfolio variance the diagonal model reproduces,
+    so the size of that assumption is visible rather than hidden. Equity
+    factors only — intended for individual-stock baskets.
+
+    Returns None if fewer than 2 holdings overlap the factor history for the
+    requested window, or the model variance is degenerate.
+    """
+    avail = [t for t in weights if t in returns.columns and weights.get(t, 0) > 0]
+    if len(avail) < 2:
+        return None
+
+    raw_w = np.array([weights[t] for t in avail], dtype=float)
+    if raw_w.sum() <= 0:
+        return None
+    w = raw_w / raw_w.sum()
+    N = len(avail)
+
+    F = factors[FACTOR_COLS + ["RF"]].copy()
+    panel = returns[avail].join(F, how="inner").dropna().tail(lookback)
+    if len(panel) < 60:
+        return None
+    n = len(panel)
+
+    Fm = panel[FACTOR_COLS].to_numpy()           # n x 6
+    rf = panel["RF"].to_numpy()                  # n
+    Sigma_f = np.cov(Fm, rowvar=False, ddof=1)   # 6 x 6 (PSD)
+
+    X = np.column_stack([np.ones(n), Fm])        # n x 7 (intercept + factors)
+    k = X.shape[1]
+    if n - k < 5:
+        return None
+
+    n_factors = len(FACTOR_COLS)
+    B        = np.zeros((N, n_factors))
+    idio_var = np.zeros(N)
+    r2       = np.zeros(N)
+    excess   = np.zeros((n, N))
+
+    for i, t in enumerate(avail):
+        y = panel[t].to_numpy() - rf             # excess return
+        excess[:, i] = y
+        beta, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
+        e = y - X @ beta
+        B[i]        = beta[1:]
+        idio_var[i] = float(e @ e) / (n - k)     # unbiased residual variance
+        tss = float(((y - y.mean()) ** 2).sum())
+        r2[i] = (1.0 - float(e @ e) / tss) if tss > 0 else 0.0
+
+    # Portfolio net factor exposure and systematic variance.
+    net_beta = B.T @ w                            # Bᵀw  (6-vector)
+    Sf_nb    = Sigma_f @ net_beta                 # Sigma_f (Bᵀw)
+    systematic_var = float(net_beta @ Sf_nb)      # (Bᵀw)ᵀ Sigma_f (Bᵀw)
+
+    # Idiosyncratic (diagonal-D) variance.
+    idio_contrib   = (w ** 2) * idio_var          # per-holding w_i^2 D_ii
+    specific_var   = float(idio_contrib.sum())
+
+    model_var = systematic_var + specific_var
+    if model_var <= 0:
+        return None
+
+    # Realized portfolio excess variance — diagnostic for the diagonal-D gap.
+    port_excess  = excess @ w
+    realized_var = float(np.var(port_excess, ddof=1))
+
+    # Per-holding systematic contribution (Euler on systematic_var):
+    #   c_i = w_i (B Sigma_f Bᵀ w)_i ,  sum_i c_i = systematic_var
+    syst_marg    = B @ Sf_nb                       # (B Sigma_f Bᵀ w)_i
+    syst_contrib = w * syst_marg
+
+    # Per-factor systematic contribution (Euler on factors):
+    #   f_k = netbeta_k (Sigma_f netbeta)_k ,  sum_k f_k = systematic_var
+    factor_contrib = net_beta * Sf_nb
+
+    def ann(v: float) -> float:
+        return round(float(np.sqrt(max(0.0, v) * 252.0) * 100.0), 2)
+
+    def share(num: float, den: float) -> float | None:
+        return round(float(100.0 * num / den), 1) if den not in (0, 0.0) else None
+
+    holdings_out = []
+    for i, t in enumerate(avail):
+        own = float(syst_contrib[i] + idio_contrib[i])    # contrib to model_var
+        holdings_out.append({
+            "ticker":               t,
+            "name":                 (names or {}).get(t, t),
+            "weight_pct":           round(float(w[i]) * 100.0, 2),
+            "r_squared":            round(float(r2[i]), 4),
+            "factor_contrib_pct":   share(float(syst_contrib[i]), model_var),
+            "specific_contrib_pct": share(float(idio_contrib[i]), model_var),
+            "total_contrib_pct":    share(own, model_var),
+            "specific_share_pct":   share(float(idio_contrib[i]), own) if own > 0 else None,
+        })
+    holdings_out.sort(key=lambda h: (h["total_contrib_pct"] or 0.0), reverse=True)
+
+    factors_out = []
+    for j, fc in enumerate(FACTOR_COLS):
+        factors_out.append({
+            "factor":          fc,
+            "label":           FACTOR_LABELS[fc],
+            "net_beta":        round(float(net_beta[j]), 4),
+            "var_contrib_pct": share(float(factor_contrib[j]), systematic_var),
+            "of_total_pct":    share(float(factor_contrib[j]), model_var),
+        })
+    factors_out.sort(key=lambda f: abs(f["var_contrib_pct"] or 0.0), reverse=True)
+
+    return {
+        "model":                          "FF5 + Momentum factor risk model (Sigma = B Sigma_f Bᵀ + D)",
+        "lookback_days":                  int(n),
+        "first_date":                     panel.index[0].strftime("%Y-%m-%d"),
+        "last_date":                      panel.index[-1].strftime("%Y-%m-%d"),
+        "n_holdings":                     int(N),
+        "systematic_vol_annualized_pct":  ann(systematic_var),
+        "specific_vol_annualized_pct":    ann(specific_var),
+        "model_total_vol_annualized_pct": ann(model_var),
+        "realized_total_vol_annualized_pct": ann(realized_var),
+        "systematic_share_pct":           share(systematic_var, model_var),
+        "specific_share_pct":             share(specific_var, model_var),
+        "model_capture_pct":              share(model_var, realized_var),
+        "holdings":                       holdings_out,
+        "factors":                        factors_out,
+        "notes": [
+            "Variance split into shared factor exposure (B Sigma_f Bᵀ) and "
+            "stock-specific residual (diagonal D). Excess returns vs. the daily "
+            "risk-free rate; vols annualized.",
+            "Diagonal D assumes uncorrelated residuals. model_capture_pct is the "
+            "share of realized portfolio variance the diagonal model reproduces; "
+            "under 100% means residuals co-move, over 100% means they offset.",
+            "This is a variance decomposition, not the headline VaR — the VaR "
+            "columns use the full empirical/EWMA covariance, not a factor model.",
+        ],
+    }
+
+
+def compute_factor_risk_bridge(
+    returns: pd.DataFrame,
+    weights: dict,
+    factors: pd.DataFrame,
+    max_window: int = 252,
+    min_window: int = 90,
+) -> dict | None:
+    """
+    Attribute the CHANGE in a stock basket's modeled risk between two adjacent
+    windows ("then" vs "now") to its drivers — a risk bridge.
+
+    Holding the basket's weights fixed at the current disclosure (historical
+    weights aren't observable), the FF5 + Momentum factor risk model gives the
+    modeled variance in each window:
+
+        var = (Bᵀw)ᵀ Sigma_f (Bᵀw) + sum_i w_i^2 D_ii   (systematic + specific)
+
+    The change var_now - var_then splits cleanly into three additive pieces
+    (sequential / Type-I attribution):
+
+      exposure     ΔB     the basket's net factor loadings drifted (style drift)
+      factor_vol   ΔSigma_f  the factors themselves grew or calmed (regime)
+      specific     ΔD     stock-specific (idiosyncratic) variance changed
+
+      exposure + factor_vol = Δ systematic ;  + specific = Δ total   (exact)
+
+    This is pure ex-post explanation of a past move — not a forecast.
+
+    Windows: two adjacent, equal, non-overlapping blocks of length
+    min(n_total/2, max_window). Returns None if that length is below
+    min_window (too little history to compare — e.g. very young baskets).
+    """
+    avail = [t for t in weights if t in returns.columns and weights.get(t, 0) > 0]
+    if len(avail) < 2:
+        return None
+    raw_w = np.array([weights[t] for t in avail], dtype=float)
+    if raw_w.sum() <= 0:
+        return None
+    w = raw_w / raw_w.sum()
+    N = len(avail)
+
+    panel = returns[avail].join(factors[FACTOR_COLS + ["RF"]], how="inner").dropna()
+    n_total = len(panel)
+    win = min(n_total // 2, max_window)
+    if win < min_window:
+        return None
+
+    now  = panel.tail(win)
+    then = panel.iloc[-2 * win:-win]
+
+    def block(sub: pd.DataFrame):
+        """Per-window factor block: net beta, factor cov, idiosyncratic variances."""
+        Fm = sub[FACTOR_COLS].to_numpy()
+        rf = sub["RF"].to_numpy()
+        Sigma_f = np.cov(Fm, rowvar=False, ddof=1)
+        X = np.column_stack([np.ones(len(sub)), Fm])
+        k = X.shape[1]
+        B = np.zeros((N, len(FACTOR_COLS)))
+        idio = np.zeros(N)
+        for i, t in enumerate(avail):
+            y = sub[t].to_numpy() - rf
+            beta, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
+            e = y - X @ beta
+            B[i] = beta[1:]
+            idio[i] = float(e @ e) / (len(sub) - k)
+        return B, Sigma_f, idio
+
+    B0, Sf0, D0 = block(then)
+    B1, Sf1, D1 = block(now)
+
+    nb0, nb1 = B0.T @ w, B1.T @ w
+    sys_then = float(nb0 @ Sf0 @ nb0)
+    sys_now  = float(nb1 @ Sf1 @ nb1)
+    idio_then = float((w ** 2) @ D0)
+    idio_now  = float((w ** 2) @ D1)
+    var_then = sys_then + idio_then
+    var_now  = sys_now + idio_now
+    if var_then <= 0 or var_now <= 0:
+        return None
+
+    # Sequential attribution: exposure shift at the OLD factor cov, then the
+    # factor-vol shift at the NEW exposure. exposure + factor_vol = Δsystematic.
+    d_exposure  = float(nb1 @ Sf0 @ nb1) - sys_then
+    d_factorvol = sys_now - float(nb1 @ Sf0 @ nb1)
+    d_specific  = idio_now - idio_then
+    d_total     = var_now - var_then
+
+    def ann(v: float) -> float:
+        return round(float(np.sqrt(max(0.0, v) * 252.0) * 100.0), 2)
+
+    vol_then = ann(var_then)
+    vol_now  = ann(var_now)
+    d_vol    = round(vol_now - vol_then, 2)
+
+    # Allocate the net vol change across the three drivers in proportion to
+    # their share of the variance change (vol isn't additive; this is an
+    # approximate, sign-consistent split that sums to d_vol exactly).
+    def vol_points(dv: float) -> float | None:
+        if abs(d_total) < 1e-18:
+            return None
+        return round(d_vol * (dv / d_total), 2)
+
+    comp_defs = [
+        ("exposure",   "Factor-exposure drift",     d_exposure),
+        ("factor_vol", "Factor-volatility regime",  d_factorvol),
+        ("specific",   "Stock-specific risk",       d_specific),
+    ]
+    components = [
+        {
+            "key":        key,
+            "label":      label,
+            "delta_var":  dv,
+            "vol_points": vol_points(dv),
+            "share_pct":  (round(100.0 * dv / d_total, 1) if abs(d_total) >= 1e-18 else None),
+            "direction":  "raised" if dv > 0 else ("lowered" if dv < 0 else "flat"),
+        }
+        for key, label, dv in comp_defs
+    ]
+    dominant = max(components, key=lambda c: abs(c["delta_var"]))["key"]
+
+    return {
+        "model":          "Factor risk change attribution (now vs prior window)",
+        "n_holdings":     int(N),
+        "window_days":    int(win),
+        "then_first_date": then.index[0].strftime("%Y-%m-%d"),
+        "then_last_date":  then.index[-1].strftime("%Y-%m-%d"),
+        "now_first_date":  now.index[0].strftime("%Y-%m-%d"),
+        "now_last_date":   now.index[-1].strftime("%Y-%m-%d"),
+        "vol_then_pct":   vol_then,
+        "vol_now_pct":    vol_now,
+        "delta_vol_pct":  d_vol,
+        "systematic_then_vol_pct": ann(sys_then),
+        "systematic_now_vol_pct":  ann(sys_now),
+        "specific_then_vol_pct":   ann(idio_then),
+        "specific_now_vol_pct":    ann(idio_now),
+        "components":     components,
+        "dominant":       dominant,
+        "notes": [
+            "Weights held at the current disclosure — this isolates the change "
+            "in factor exposures and volatilities, not rebalancing (historical "
+            "basket weights aren't observable).",
+            "exposure + factor_vol + stock-specific sum to the total variance "
+            "change exactly. Vol points are an approximate split of the net vol "
+            "move (vol isn't additive across drivers); they sum to the net.",
+            "Two adjacent " + str(win) + "-day windows. Short windows are "
+            "noisier — read the direction, not the third decimal.",
+        ],
+    }
+
+
 def compute_rolling_ff_loadings(
     returns: pd.Series,
     factors: pd.DataFrame,

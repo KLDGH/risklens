@@ -9,6 +9,8 @@ import PortfolioRiskChart from "./components/PortfolioRiskChart.jsx";
 import BacktestPanel from "./components/BacktestPanel.jsx";
 import ScenarioPanel from "./components/ScenarioPanel.jsx";
 import FundDisclosurePanel from "./components/FundDisclosurePanel.jsx";
+import FactorRiskPanel from "./components/FactorRiskPanel.jsx";
+import FactorRiskBridgePanel from "./components/FactorRiskBridgePanel.jsx";
 import {
   SectorSelector,
   RiskProfileCard,
@@ -547,6 +549,26 @@ export default function App() {
             />
           </Section>
         )}
+        {activeTab === "portfolio" && portfolio?.factor_risk_decomposition && (
+          <Section
+            id="factor-risk"
+            title="Factor Risk Decomposition"
+            question="How much of the basket's risk is shared factor exposure vs. stock-specific?"
+            description="The basket's risk split into systematic factor risk (the FF5 + Momentum exposure the whole book carries together) and stock-specific residual (each name's return left unexplained by those factors). Per holding, the stock-specific share is the part of its risk that is its own, not shared factor beta — where name-level positioning sits. A variance decomposition, separate from the VaR columns above."
+          >
+            <FactorRiskPanel data={portfolio.factor_risk_decomposition} />
+          </Section>
+        )}
+        {activeTab === "portfolio" && portfolio?.factor_risk_bridge && (
+          <Section
+            id="factor-risk-bridge"
+            title="Risk Change Attribution"
+            question="Why did the basket's modeled risk move?"
+            description="The change in the basket's modeled volatility between the prior window and now, split into its drivers: factor-exposure drift (the book's net loadings shifted), factor-volatility regime (the factors themselves grew or calmed), and stock-specific change. Weights are held at the current disclosure, so this isolates the risk-model drivers, not rebalancing. Ex-post explanation of a past move, not a forecast."
+          >
+            <FactorRiskBridgePanel data={portfolio.factor_risk_bridge} />
+          </Section>
+        )}
         {activeTab === "portfolio" && portfolio?.risk_history?.length > 0 && (
           <Section
             id="risk-trajectory"
@@ -664,7 +686,7 @@ export default function App() {
                 question="Which systematic factors drive its returns?"
                 description="Fama-French 5 + Carhart momentum regression on the ETF's daily excess returns — an open-data substitute for a Barra-style multi-factor decomposition. Per-factor loadings with bootstrapped 95% CIs, t-stats and significance, plus R², alpha, and the total/factor/idiosyncratic volatility decomposition."
               >
-                <FactorRegressionPanel model={view.factor_model} />
+                <FactorRegressionPanel model={view.factor_model} cascade={view.factor_model_cascade} />
               </Section>
               <Section
                 id="sector-thematic"
