@@ -185,7 +185,7 @@ const FF_FACTOR_DESCRIPTIONS = {
     "Momentum — Carhart (1997) extension. Daily return of a portfolio that's long recent winners and short recent losers, ranked on trailing 12-month return excluding the most recent month. Positive loading = chases winners (momentum-following); negative = mean-reversion (buys losers, sells winners). Momentum has been a robust factor across markets and decades.",
 };
 
-export function FactorRegressionPanel({ model }) {
+export function FactorRegressionPanel({ model, cascade }) {
   if (!model) return null;
   const sig = (p) =>
       p < 0.001 ? "***"
@@ -209,6 +209,11 @@ export function FactorRegressionPanel({ model }) {
     totalVol: "Sample standard deviation of this asset's daily returns over the 252-day window, annualized via √252, expressed in percent.",
     factorVol: "Volatility explained by the six factors. Computed as σ_total × √R². Tells you how much of the asset's day-to-day risk comes from systematic factor exposures.",
     idioVol: "Idiosyncratic / asset-specific volatility — the part of risk that's NOT explained by the factor model. Computed as σ_total × √(1 − R²). For an individual stock this captures company-specific news, earnings surprises, etc.",
+    cascade: "Sequential (Gram-Schmidt) orthogonalization of the same six factors, in a fixed order (market first). Each factor is stripped of any overlap with the factors above it before being measured, so the regressors are uncorrelated and each one's contribution is unambiguous. The OLS table left of this gives symmetric exposures with overlapping CIs; the cascade gives a clean additive variance split. Both are correct — they answer different questions.",
+    cascadeLoading: "Loading on the orthogonalized factor — its effect after removing whatever it shares with the factors above it. Reads as 'marginal beyond the prior factors,' not a standalone β. The last factor's value equals its plain-OLS coefficient by construction.",
+    cascadeIncr: "NEW share of the asset's return variance this factor explains, beyond the factors above it. Because the orthogonalized factors don't overlap, these add up across the rows to the model R² — no double-counting.",
+    cascadeCum: "Running total of variance explained as each factor is added in sequence. The final row equals the model R² (same value as the OLS R²).",
+    cascadeOrder: "Order matters: the first factor (market) absorbs all the variance it shares with the others, so it tends to dominate. Reorder the sequence and the split shifts — this is a sequential / Type-I decomposition, by design.",
   };
 
   return (
@@ -320,6 +325,77 @@ export function FactorRegressionPanel({ model }) {
           σ²<sub>idio</sub> = σ²<sub>total</sub> × (1 − R²)
         </span>
       </div>
+
+      {cascade && cascade.cascade?.length > 0 && (
+        <div className="fr-cascade">
+          <div className="fr-cascade-head">
+            <span className="fr-cascade-title">
+              Sequential contribution — orthogonal cascade
+              <InfoTip text={TIPS.cascade} />
+            </span>
+            <span className="fr-cascade-sub">
+              market-first order; each factor measured after removing its overlap
+              with the ones above
+              <InfoTip text={TIPS.cascadeOrder} />
+            </span>
+          </div>
+          <table className="fr-table fr-cascade-table">
+            <thead>
+              <tr>
+                <th>Factor (in order)</th>
+                <th className="num">Seq. β <InfoTip text={TIPS.cascadeLoading} /></th>
+                <th className="num">New variance <InfoTip text={TIPS.cascadeIncr} /></th>
+                <th className="fr-cascade-bar-col">Share of explained</th>
+                <th className="num">Cumulative R² <InfoTip text={TIPS.cascadeCum} /></th>
+              </tr>
+            </thead>
+            <tbody>
+              {cascade.cascade.map((c) => (
+                <tr key={c.factor}>
+                  <td>
+                    <span className="fr-cascade-step">{c.step}</span>
+                    {c.label}
+                  </td>
+                  <td className="num">
+                    {c.ortho_loading >= 0 ? "+" : ""}
+                    {c.ortho_loading.toFixed(3)}
+                  </td>
+                  <td className="num">{c.incr_var_pct.toFixed(2)}%</td>
+                  <td className="fr-cascade-bar-col">
+                    <span className="fr-cascade-track">
+                      <span
+                        className="fr-cascade-fill"
+                        style={{
+                          width: `${Math.max(0, Math.min(100, c.share_of_explained_pct ?? 0))}%`,
+                        }}
+                      />
+                    </span>
+                    <span className="fr-cascade-pct">
+                      {c.share_of_explained_pct != null
+                        ? `${c.share_of_explained_pct.toFixed(0)}%`
+                        : "—"}
+                    </span>
+                  </td>
+                  <td className="num">{c.cumulative_r2_pct.toFixed(1)}%</td>
+                </tr>
+              ))}
+              <tr className="fr-cascade-total">
+                <td>Model total</td>
+                <td className="num">—</td>
+                <td className="num">{cascade.model_r2_pct.toFixed(1)}%</td>
+                <td className="fr-cascade-bar-col"></td>
+                <td className="num">{cascade.model_r2_pct.toFixed(1)}%</td>
+              </tr>
+            </tbody>
+          </table>
+          <div className="fr-cascade-foot">
+            Reads as "of the {cascade.model_r2_pct.toFixed(0)}% the factors explain,
+            how it splits." The orthogonalized factors don't overlap, so New
+            variance sums to the model R². Order-dependent — the OLS table above
+            holds the symmetric, standalone exposures.
+          </div>
+        </div>
+      )}
 
       <div className="fr-footnote">
         Significance: <code>***</code> p&lt;0.001 &middot; <code>**</code> p&lt;0.01 &middot; <code>*</code> p&lt;0.05.
@@ -1023,7 +1099,7 @@ export default function AnomalyDetectorPanel({ views, selectedTicker, onTickerCh
     <div className="anomaly-panel">
       <SectorSelector views={views} ticker={ticker} setTicker={setTicker} view={view} />
       <RiskProfileCard profile={view.risk_profile} ticker={ticker} />
-      <FactorRegressionPanel model={view.factor_model} />
+      <FactorRegressionPanel model={view.factor_model} cascade={view.factor_model_cascade} />
       <ThematicExposurePanel thematic={view.thematic_exposures} />
       <RollingFactorLoadingsPanel rolling={view.factor_model_rolling} />
       <AnomalySignalsPanel view={view} ticker={ticker} />

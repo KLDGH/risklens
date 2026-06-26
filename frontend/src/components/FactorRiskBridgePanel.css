@@ -1,0 +1,140 @@
+.frb-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---- headline: then -> now vol ---- */
+.frb-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.frb-vols {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.frb-vol {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.frb-vol-now {
+  color: var(--text-bright);
+}
+
+.frb-arrow {
+  font-size: 20px;
+  color: var(--text-dim);
+}
+
+.frb-delta {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-left: 4px;
+}
+
+.frb-windows {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* direction colors — raised = warm accent, lowered = cool steel-blue.
+   Neutral direction cue, no good/bad connotation. */
+.frb-pos { color: var(--accent); font-weight: 600; }
+.frb-neg { color: var(--frp-specific); font-weight: 600; }
+
+/* ---- table ---- */
+.frb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.frb-table thead th {
+  padding: 8px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.frb-table thead th.left { text-align: left; }
+.frb-table thead th.frb-bar-col { text-align: center; width: 42%; }
+
+.frb-table .left { text-align: left; }
+.frb-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.frb-table tbody tr { border-bottom: 1px solid var(--border); }
+.frb-table tbody td { padding: 10px 12px; color: var(--text); }
+
+.frb-net td {
+  border-top: 1px solid var(--border);
+  border-bottom: none;
+  font-weight: 700;
+}
+
+/* ---- diverging bar ---- */
+.frb-bar-col { width: 42%; }
+
+.frb-track {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 120px;
+  height: 12px;
+  background: var(--bg3);
+  border-radius: 2px;
+}
+
+.frb-center {
+  position: absolute;
+  left: 50%;
+  top: -1px;
+  bottom: -1px;
+  width: 1px;
+  background: var(--border);
+}
+
+.frb-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 2px;
+}
+
+.frb-fill-pos { background: var(--accent); }
+.frb-fill-neg { background: var(--frp-specific); }
+
+/* ---- narrative + footnote ---- */
+.frb-narrative {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.frb-foot {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  line-height: 1.55;
+}

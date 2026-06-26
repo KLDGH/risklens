@@ -372,6 +372,92 @@
   font-style: normal;
 }
 
+/* ---------- Orthogonal cascade companion table ---------- */
+.fr-cascade {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fr-cascade-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.fr-cascade-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.fr-cascade-sub {
+  font-size: 10.5px;
+  font-style: italic;
+  color: var(--text-dim);
+}
+
+.fr-cascade-step {
+  display: inline-block;
+  min-width: 16px;
+  margin-right: 8px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.fr-cascade-bar-col {
+  width: 30%;
+  white-space: nowrap;
+}
+
+.fr-cascade-track {
+  display: inline-block;
+  width: calc(100% - 46px);
+  min-width: 70px;
+  height: 9px;
+  background: var(--bg3);
+  border-radius: 2px;
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.fr-cascade-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.fr-cascade-pct {
+  display: inline-block;
+  width: 38px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+}
+
+.fr-cascade-total td {
+  border-top: 1px solid var(--border);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.fr-cascade-foot {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.5;
+}
+
 /* ---------- Thematic Exposure Panel ----------
    Sibling to .factor-regression-panel — same structural CSS, different
    accent treatment. Visually distinguished by a violet left-border vs

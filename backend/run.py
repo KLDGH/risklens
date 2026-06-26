@@ -27,7 +27,8 @@ from scenario_config import report_scenario_coverage, assert_all_mapped
 from factor_models import (
     fetch_ff_carhart_daily, fit_ff_carhart, compute_beta,
     compute_rolling_ff_loadings, compute_thematic_exposures,
-    THEMATIC_BASKETS,
+    compute_factor_risk_decomposition, compute_orthogonal_factor_cascade,
+    compute_factor_risk_bridge, THEMATIC_BASKETS,
 )
 from reference_values import (
     get_references_for_ticker, get_factor_reference,
@@ -206,7 +207,8 @@ def compute_portfolio_row(returns: pd.DataFrame, weights: dict, name: str,
 
 def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
                  prices_long: pd.DataFrame, mode_cfg: dict,
-                 spy_rets: pd.Series = None, benchmark: tuple = None) -> dict:
+                 spy_rets: pd.Series = None, benchmark: tuple = None,
+                 ff_factors: pd.DataFrame = None) -> dict:
     """Compute everything needed for one portfolio mode."""
     tickers  = mode_cfg["tickers"]
     names    = mode_cfg["names"]
@@ -291,6 +293,34 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
         "risk_history": risk_history,
         "backtests":    backtests,
     }
+
+    # Factor risk decomposition — split the basket's risk into systematic
+    # (shared FF5 + Momentum factor exposure) vs. stock-specific residual,
+    # per holding. Only for individual-stock look-through baskets: equity
+    # factors don't describe bond/commodity ETF books, so "stock-specific"
+    # is only a meaningful manager-expression read for stock baskets.
+    if mode_cfg.get("is_active_fund_spotlight") and ff_factors is not None:
+        print("  Computing factor risk decomposition (systematic vs stock-specific)...")
+        try:
+            decomp = compute_factor_risk_decomposition(
+                returns_10y, weights, ff_factors,
+                names=mode_cfg.get("names"), lookback=252,
+            )
+            if decomp:
+                result["factor_risk_decomposition"] = decomp
+        except Exception as e:
+            print(f"  WARNING: factor risk decomposition failed ({e})")
+
+        # Risk change attribution — how the basket's modeled vol moved between
+        # the prior window and now, split into exposure drift / factor-vol
+        # regime / stock-specific. None when history is too short (e.g. DWLD).
+        print("  Computing factor risk bridge (risk change attribution)...")
+        try:
+            bridge = compute_factor_risk_bridge(returns_10y, weights, ff_factors)
+            if bridge:
+                result["factor_risk_bridge"] = bridge
+        except Exception as e:
+            print(f"  WARNING: factor risk bridge failed ({e})")
 
     # Policy-benchmark comparison row — an analyst-chosen proxy run through the
     # same engine as the portfolio total, surfaced as a muted row beneath it.
@@ -447,11 +477,25 @@ def main():
     # the per-sector factor views). Computed once here, reused throughout.
     spy_rets = compute_log_returns(prices_long[["SPY"]])["SPY"].dropna()
 
+    # Fetch the Fama-French + Momentum factors once, up front: used both by the
+    # per-portfolio factor risk decomposition (below) and the per-sector factor
+    # regressions on the Anomaly tab (further down). If the live download fails
+    # we fall back to the cached copy (see factor_models.py).
+    print("Fetching Fama-French + Momentum daily factors...")
+    try:
+        ff_factors = fetch_ff_carhart_daily()
+        print(f"    {len(ff_factors)} rows, latest {ff_factors.index[-1].date()}")
+    except Exception as e:
+        print(f"  WARNING: factor data unavailable ({e}); factor models will be omitted")
+        ff_factors = None
+
     # Compute each portfolio mode
     portfolios = {}
     for key, cfg in PORTFOLIO_MODES.items():
         print(f"\n=== Mode: {cfg['label']} ===")
-        portfolios[key] = compute_mode(prices_10y, returns_10y, prices_long, cfg, spy_rets=spy_rets, benchmark=BENCHMARKS.get(key))
+        portfolios[key] = compute_mode(prices_10y, returns_10y, prices_long, cfg,
+                                       spy_rets=spy_rets, benchmark=BENCHMARKS.get(key),
+                                       ff_factors=ff_factors)
         # Echo flags so the frontend knows which modes need the holdings panel
         if cfg.get("is_active_fund_spotlight"):
             portfolios[key]["is_active_fund_spotlight"] = True
@@ -626,18 +670,9 @@ def main():
     # (the open-data substitute for a Barra-style attribution).
     print("\nComputing univariate anomaly views for sector ETFs...")
 
-    # spy_rets (SPY daily returns) already computed before the portfolio loop;
-    # reused here for the per-ticker beta-vs-market calc.
-
-    # Fetch the Fama-French + Momentum factors once. If the live download
-    # fails we fall back to the cached copy (see factor_models.py).
-    print("  Fetching Fama-French + Momentum daily factors...")
-    try:
-        ff_factors = fetch_ff_carhart_daily()
-        print(f"    {len(ff_factors)} rows, latest {ff_factors.index[-1].date()}")
-    except Exception as e:
-        print(f"  WARNING: factor data unavailable ({e}); factor models will be omitted")
-        ff_factors = None
+    # spy_rets (SPY daily returns) and ff_factors (Fama-French + Momentum) were
+    # both fetched before the portfolio loop; reused here for the per-ticker
+    # beta-vs-market calc and the per-sector factor regressions.
 
     anomaly_views = {"tickers": [], "names": {}, "data": {}}
     for tkr in ANOMALY_TICKERS:
@@ -708,6 +743,16 @@ def main():
                     view["factor_model"] = fmodel
             except Exception as e:
                 print(f"  WARNING: {tkr} factor model failed ({e})")
+
+            # --- Orthogonal factor cascade — sequential (market-first)
+            #     decomposition that resolves the OLS multicollinearity into a
+            #     clean additive variance split. Companion to the OLS table.
+            try:
+                cascade = compute_orthogonal_factor_cascade(rets, ff_factors, lookback=252)
+                if cascade:
+                    view["factor_model_cascade"] = cascade
+            except Exception as e:
+                print(f"  WARNING: {tkr} factor cascade failed ({e})")
 
             # --- Rolling factor loadings over time — the medium-horizon
             #     analog of the single-snapshot regression. Catches style
