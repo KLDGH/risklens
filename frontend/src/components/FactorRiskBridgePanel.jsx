@@ -1,4 +1,4 @@
-import HoverTip from "./HoverTip.jsx";
+import InfoTip from "./InfoTip.jsx";
 import "./FactorRiskBridgePanel.css";
 
 /**
@@ -69,7 +69,7 @@ export default function FactorRiskBridgePanel({ data }) {
               <tr key={c.key}>
                 <td className="left">
                   {c.label}
-                  <HoverTip text={TIPS[c.key] ?? ""} />
+                  <InfoTip text={TIPS[c.key] ?? ""} />
                 </td>
                 <td className={"num " + (pos ? "frb-pos" : "frb-neg")}>
                   {vp(c.vol_points)}
@@ -89,7 +89,7 @@ export default function FactorRiskBridgePanel({ data }) {
           <tr className="frb-net">
             <td className="left">
               Net change
-              <HoverTip text={TIPS.net} />
+              <InfoTip text={TIPS.net} />
             </td>
             <td className={"num " + (down ? "frb-neg" : "frb-pos")}>
               {vp(data.delta_vol_pct)}

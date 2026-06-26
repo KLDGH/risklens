@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import HoverTip from "./HoverTip.jsx";
+import InfoTip from "./InfoTip.jsx";
 import "./FactorRiskPanel.css";
 
 /**
@@ -71,7 +71,7 @@ function SortTh({ col, label, tip, className, sortKey, sortDir, onSort }) {
       <span className="th-inner">
         {label}
         <SortIcon col={col} sortKey={sortKey} sortDir={sortDir} />
-        {tip && <HoverTip text={tip} />}
+        {tip && <InfoTip text={tip} />}
       </span>
     </th>
   );
@@ -143,7 +143,7 @@ export default function FactorRiskPanel({ data }) {
             <td className="left">
               <span className="frp-key frp-key-systematic" />
               Systematic (shared factor)
-              <HoverTip text={TIPS.systematic} />
+              <InfoTip text={TIPS.systematic} />
             </td>
             <td className="num frp-stat-strong">{pct(sysShare)}</td>
             <td className="num">{data.systematic_vol_annualized_pct}%</td>
@@ -152,7 +152,7 @@ export default function FactorRiskPanel({ data }) {
             <td className="left">
               <span className="frp-key frp-key-specific" />
               Stock-specific (residual)
-              <HoverTip text={TIPS.specific} />
+              <InfoTip text={TIPS.specific} />
             </td>
             <td className="num frp-stat-strong">{pct(specShare)}</td>
             <td className="num">{data.specific_vol_annualized_pct}%</td>
@@ -165,7 +165,7 @@ export default function FactorRiskPanel({ data }) {
           <tr>
             <td className="left">
               Realized
-              <HoverTip text={TIPS.capture} />
+              <InfoTip text={TIPS.capture} />
             </td>
             <td className="num text-dim">—</td>
             <td className="num">{data.realized_total_vol_annualized_pct}%</td>
@@ -193,11 +193,11 @@ export default function FactorRiskPanel({ data }) {
               <th className="left">Factor</th>
               <th className="num">
                 Net loading
-                <HoverTip text={TIPS.netBeta} />
+                <InfoTip text={TIPS.netBeta} />
               </th>
               <th className="num">
                 Share of systematic
-                <HoverTip text={TIPS.factorShare} />
+                <InfoTip text={TIPS.factorShare} />
               </th>
               <th className="bar-col"></th>
             </tr>
@@ -260,7 +260,7 @@ export default function FactorRiskPanel({ data }) {
               />
               <th className="bar-col">
                 Factor / specific
-                <HoverTip text={TIPS.split} />
+                <InfoTip text={TIPS.split} />
               </th>
               <SortTh
                 col="specShare"

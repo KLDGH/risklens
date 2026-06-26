@@ -11,6 +11,9 @@ import ScenarioPanel from "./components/ScenarioPanel.jsx";
 import FundDisclosurePanel from "./components/FundDisclosurePanel.jsx";
 import FactorRiskPanel from "./components/FactorRiskPanel.jsx";
 import FactorRiskBridgePanel from "./components/FactorRiskBridgePanel.jsx";
+import PerformancePanel from "./components/PerformancePanel.jsx";
+import RegimeAlphaPanel from "./components/RegimeAlphaPanel.jsx";
+import SkillLuckPanel from "./components/SkillLuckPanel.jsx";
 import {
   SectorSelector,
   RiskProfileCard,
@@ -33,9 +36,12 @@ import "./App.css";
 //                for backwards-compat; user-facing label is "Sector
 //                Spotlight".)
 const TABS = [
-  { id: "portfolio", label: "Portfolio Risk" },
-  { id: "market",    label: "Market Context" },
-  { id: "anomaly",   label: "Sector Spotlight" },
+  { id: "portfolio",   label: "Portfolio Risk" },
+  // `badge` flags the tab as early-stage in the selector. Swap "alpha" for
+  // "preview"/"beta" (or remove) when the tab graduates.
+  { id: "performance", label: "Performance & Skill", badge: "alpha" },
+  { id: "market",      label: "Market Context" },
+  { id: "anomaly",     label: "Sector Spotlight" },
   // Optimizer tab hidden for now (its "reference book" benchmark concept is being
   // reconciled with a consistent app-wide benchmark treatment). Component, data,
   // and render block are all kept intact — re-add this entry + "optimizer" to
@@ -231,7 +237,7 @@ export default function App() {
     };
   };
   const initialParams = readUrlParams();
-  const VALID_TABS = ["portfolio", "market", "anomaly"];  // "optimizer" hidden for now
+  const VALID_TABS = ["portfolio", "performance", "market", "anomaly"];  // "optimizer" hidden for now
 
   const [mode, setMode] = useState(initialParams.portfolio || "hypothetical");
   const [activeTab, setActiveTab] = useState(
@@ -370,13 +376,14 @@ export default function App() {
 
       {data && (
         <nav className="tab-bar">
-          {TABS.map(({ id, label }) => (
+          {TABS.map(({ id, label, badge }) => (
             <button
               key={id}
               className={`tab-btn ${activeTab === id ? "active" : ""}`}
               onClick={() => setActiveTab(id)}
             >
               {label}
+              {badge && <span className="tab-badge">{badge}</span>}
             </button>
           ))}
           <button
@@ -466,10 +473,11 @@ export default function App() {
         </nav>
       )}
 
-      {/* Portfolio mode toggle + legend are scoped to Tab 1 — they don't
-          apply to market-context charts (reference data) or to the
-          anomaly-detector single-asset view. */}
-      {activeTab === "portfolio" && portfolio && (
+      {/* Portfolio mode toggle + legend are scoped to the portfolio-aware tabs
+          (Portfolio Risk + Performance & Skill) — they don't apply to
+          market-context charts (reference data) or to the anomaly-detector
+          single-asset view. */}
+      {(activeTab === "portfolio" || activeTab === "performance") && portfolio && (
         <div className="mode-bar">
           <div className="mode-toggle-row">
             <span className="mode-toggle-label">
@@ -602,6 +610,63 @@ export default function App() {
               comparisons={scenarioComparisons}
               currentMode={mode}
             />
+          </Section>
+        )}
+        {/* =============================================================
+            TAB — Performance & Skill
+            Risk-adjusted return, regime-conditional alpha, skill vs luck.
+            All return-series analytics (no holdings/forecasts needed).
+            ============================================================= */}
+        {activeTab === "performance" && (
+          <div className="alpha-banner">
+            <span className="alpha-tag">ALPHA</span>
+            <span>
+              This tab is <strong>experimental / early-stage</strong> — the most
+              interpretive corner of RiskLens. The skill read-outs
+              (regime-conditional alpha, the luck bootstrap, Probabilistic
+              Sharpe) are rough-cut rules of thumb on short return histories from
+              public data. Read them as <strong>directional, not precise</strong>,
+              and sanity-check against your own judgment.
+            </span>
+          </div>
+        )}
+        {activeTab === "performance" && portfolio && !portfolio?.performance && (
+          <div className="state-msg">
+            No performance view for this portfolio — it needs a benchmark and at
+            least a year of common history. Try CGGO, AOR, or the Hypothetical book.
+          </div>
+        )}
+        {activeTab === "performance" && portfolio?.performance && (
+          <Section
+            id="perf-ratios"
+            title="Risk-Adjusted Performance"
+            question="Is the portfolio paid for the risk it takes?"
+            description="Risk-adjusted return versus the policy benchmark. The Information Ratio is the headline — annualized active return per unit of tracking error — alongside Sharpe, Sortino, and Calmar. Below, the batting-average family splits skill into consistency (how often the book beats its benchmark) and magnitude (how big the wins are versus the losses)."
+          >
+            <PerformancePanel
+              data={portfolio.performance.metrics}
+              meta={portfolio.performance}
+            />
+          </Section>
+        )}
+        {activeTab === "performance" && portfolio?.performance?.regime_alpha && (
+          <Section
+            id="perf-regime"
+            title="Alpha by Market Regime"
+            question="Does the edge survive when risk gets expensive?"
+            description="The same active return, split by the benchmark's volatility regime — calm, normal, and stressed thirds of the history. A single Information Ratio averages over all conditions; this shows whether the alpha is a calm-market phenomenon that fades under stress, a crisis premium that only appears when volatility spikes, or an edge that holds throughout. Something a static performance number can't tell you."
+          >
+            <RegimeAlphaPanel data={portfolio.performance.regime_alpha} />
+          </Section>
+        )}
+        {activeTab === "performance" && portfolio?.performance?.skill_vs_luck && (
+          <Section
+            id="perf-skill"
+            title="Skill vs. Luck"
+            question="How much of this record could luck alone produce?"
+            description="A track record is a small sample, so part of any result is noise. This bootstraps thousands of zero-skill histories from the book's own active returns (true edge removed) and shows the distribution of Information Ratios luck alone yields, with the real result marked. The Probabilistic Sharpe Ratio and the t-stat add the analytic view — and the years-to-significance figure is a sobering reminder of how long a record must run before its skill is statistically real."
+          >
+            <SkillLuckPanel data={portfolio.performance.skill_vs_luck} />
           </Section>
         )}
         {/* =============================================================

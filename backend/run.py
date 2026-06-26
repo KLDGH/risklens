@@ -30,6 +30,7 @@ from factor_models import (
     compute_factor_risk_decomposition, compute_orthogonal_factor_cascade,
     compute_factor_risk_bridge, THEMATIC_BASKETS,
 )
+from performance import compute_performance_skill
 from reference_values import (
     get_references_for_ticker, get_factor_reference,
 )
@@ -336,6 +337,21 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
         else:
             missing = [t for t in bm_weights if t not in returns_10y.columns]
             print(f"  Skipping benchmark row — missing data for {missing}")
+
+    # Performance & skill — risk-adjusted ratios, regime-conditional alpha, and
+    # the skill-vs-luck bootstrap, all measured against the policy benchmark.
+    # Pure return-series analytics (no holdings/forecasts), so it runs on any
+    # mode with a benchmark and >= 1yr of common history.
+    if benchmark:
+        print("  Computing performance & skill (vs benchmark)...")
+        try:
+            perf = compute_performance_skill(returns_10y, weights, benchmark)
+            if perf:
+                result["performance"] = perf
+            else:
+                print("    Skipped — no benchmark match or insufficient history")
+        except Exception as e:
+            print(f"  WARNING: performance & skill failed ({e})")
 
     # Systematic portfolio construction — only for modes flagged optimizable.
     if mode_cfg.get("optimizable") and spy_rets is not None:

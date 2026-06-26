@@ -1,0 +1,276 @@
+/* ============================================================
+   Performance & Skill tab — shared styles for the three panels
+   (PerformancePanel, RegimeAlphaPanel, SkillLuckPanel)
+   ============================================================ */
+
+.pf-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* sign coloring */
+.pf-pos { color: var(--green); }
+.pf-neg { color: var(--red); }
+.pf-dim { color: var(--text-dim); }
+
+/* ---- stat cards ---- */
+.pf-cards,
+.pf-shape {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pf-card {
+  flex: 1 1 0;
+  min-width: 130px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pf-card-strong {
+  border-left: 3px solid var(--accent);
+}
+
+.pf-card-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.pf-card-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-bright);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.pf-card-sub {
+  font-size: 10.5px;
+  color: var(--text-dim);
+}
+
+/* conditional value coloring + plain-language rating */
+.pf-card-value.pf-good { color: var(--green); }
+.pf-card-value.pf-bad  { color: var(--red); }
+
+.pf-rating {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+.pf-rating-good { color: var(--green); }
+.pf-rating-mid  { color: var(--text-dim); }
+.pf-rating-bad  { color: var(--red); }
+
+.pf-verdict {
+  font-weight: 600;
+}
+.pf-verdict-good { color: var(--green); }
+.pf-verdict-mid  { color: var(--yellow); }
+.pf-verdict-weak { color: var(--red); }
+
+/* ---- comparison table ---- */
+.pf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.pf-table thead th {
+  padding: 8px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+  text-align: right;
+  white-space: nowrap;
+}
+.pf-table thead th.left { text-align: left; }
+.pf-table .left { text-align: left; }
+.pf-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.pf-table tbody tr { border-bottom: 1px solid var(--border); }
+.pf-table tbody tr:last-child { border-bottom: none; }
+.pf-table tbody td { padding: 9px 12px; color: var(--text); }
+.pf-row-active td {
+  border-top: 1px solid var(--border);
+  font-weight: 600;
+}
+
+/* ---- regime grid (the hero) ---- */
+.pf-regime-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.pf-regime {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--border);
+  border-radius: 4px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pf-regime-calm     { border-top-color: var(--frp-specific); }
+.pf-regime-normal   { border-top-color: var(--yellow); }
+.pf-regime-stressed { border-top-color: var(--accent); }
+
+.pf-regime-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pf-regime-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-bright);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.pf-regime-meta {
+  font-size: 10.5px;
+  color: var(--text-dim);
+}
+
+.pf-regime-active {
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  margin-top: 2px;
+}
+.pf-regime-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pf-regime-bar {
+  position: relative;
+  height: 10px;
+  background: var(--bg2);
+  border-radius: 2px;
+  margin: 4px 0 2px;
+}
+.pf-regime-center {
+  position: absolute;
+  left: 50%;
+  top: -1px;
+  bottom: -1px;
+  width: 1px;
+  background: var(--border);
+}
+.pf-regime-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 2px;
+}
+.pf-fill-pos { background: var(--green); }
+.pf-fill-neg { background: var(--red); }
+
+.pf-regime-stats {
+  display: flex;
+  gap: 18px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.pf-regime-stats strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.pf-regime-narrative {
+  font-size: 12.5px;
+  color: var(--text);
+  line-height: 1.6;
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+}
+
+/* ---- skill-vs-luck histogram ---- */
+.pf-hist-head {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-bright);
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+}
+
+.pf-hist {
+  width: 100%;
+  max-width: 800px;     /* a comfortable figure — not full-bleed, not tiny */
+  height: auto;
+  display: block;
+  margin: 4px auto 0;   /* center as a focused figure */
+}
+.pf-hist-obs-label {
+  fill: var(--accent);
+  font-size: 9.5px;
+  font-weight: 600;
+  font-family: var(--font, inherit);
+}
+.pf-hist-luck-label {
+  fill: var(--frp-specific);
+  font-size: 9.5px;
+  font-weight: 500;
+  font-family: var(--font, inherit);
+}
+.pf-hist-tick {
+  fill: var(--text-dim);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font, inherit);
+}
+.pf-hist-axis {
+  fill: var(--text-dim);
+  font-size: 8.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-family: var(--font, inherit);
+}
+
+.pf-hist-caption {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.6;
+}
+.pf-hist-caption strong { color: var(--text-bright); }
+
+/* ---- footnote ---- */
+.pf-foot {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  line-height: 1.6;
+}
+.pf-foot strong { color: var(--text); font-style: normal; }
+
+@media (max-width: 720px) {
+  .pf-regime-grid { grid-template-columns: 1fr; }
+}
