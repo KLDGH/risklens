@@ -527,6 +527,18 @@ def compute_factor_risk_decomposition(
     holdings_out = []
     for i, t in enumerate(avail):
         own = float(syst_contrib[i] + idio_contrib[i])    # contrib to model_var
+        # The factor/specific split is a clean 0-100% partition only when both
+        # pieces are non-negative over a non-trivial base. A defensive name can
+        # carry a *negative* systematic contribution (its factor exposure hedges
+        # the book), which pushes the specific share past 100%; a near-zero
+        # contributor makes the ratio blow up on a vanishing denominator. In
+        # both cases the share isn't meaningful — report "—" rather than a
+        # misleading number. These are always immaterial contributors.
+        clean_split = (
+            float(syst_contrib[i]) >= 0.0
+            and float(idio_contrib[i]) >= 0.0
+            and own > 1e-3 * model_var
+        )
         holdings_out.append({
             "ticker":               t,
             "name":                 (names or {}).get(t, t),
@@ -535,7 +547,7 @@ def compute_factor_risk_decomposition(
             "factor_contrib_pct":   share(float(syst_contrib[i]), model_var),
             "specific_contrib_pct": share(float(idio_contrib[i]), model_var),
             "total_contrib_pct":    share(own, model_var),
-            "specific_share_pct":   share(float(idio_contrib[i]), own) if own > 0 else None,
+            "specific_share_pct":   share(float(idio_contrib[i]), own) if clean_split else None,
         })
     holdings_out.sort(key=lambda h: (h["total_contrib_pct"] or 0.0), reverse=True)
 

@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react";
 import HoverTip from "./HoverTip.jsx";
 import "./FactorRiskPanel.css";
 
@@ -31,7 +32,7 @@ const TIPS = {
   split:
     "How this holding's risk contribution divides between shared factor exposure (left) and its own stock-specific residual (right).",
   specShare:
-    "Stock-specific share of this holding's own contribution. High means the name's risk in this book is mostly its own, not shared factor exposure.",
+    "Stock-specific share of this holding's own contribution. High means the name's risk in this book is mostly its own, not shared factor exposure. Shown as — for names whose factor exposure offsets the book (no clean 0-100% split) or that contribute negligible variance.",
 };
 
 function pct(v, d = 1) {
@@ -42,12 +43,73 @@ function signed(v, d = 3) {
   return v >= 0 ? `+${v.toFixed(d)}` : v.toFixed(d);
 }
 
+// Sort accessors for the per-holding table. Nulls sort to the bottom in
+// descending order (the default), which keeps low-R² foreign listings from
+// floating to the top on a missing value.
+const HOLDING_SORT = {
+  ticker: (h) => h.ticker ?? "",
+  weight: (h) => h.weight_pct ?? -Infinity,
+  rsq: (h) => h.r_squared ?? -Infinity,
+  total: (h) => h.total_contrib_pct ?? -Infinity,
+  specShare: (h) => h.specific_share_pct ?? -Infinity,
+};
+
+function SortIcon({ col, sortKey, sortDir }) {
+  if (sortKey !== col) return <span className="sort-icon inactive">⇅</span>;
+  return (
+    <span className="sort-icon active">{sortDir === "asc" ? "↑" : "↓"}</span>
+  );
+}
+
+function SortTh({ col, label, tip, className, sortKey, sortDir, onSort }) {
+  return (
+    <th
+      className={`${className ?? ""} sortable`}
+      onClick={() => onSort(col)}
+      title="Click to sort"
+    >
+      <span className="th-inner">
+        {label}
+        <SortIcon col={col} sortKey={sortKey} sortDir={sortDir} />
+        {tip && <HoverTip text={tip} />}
+      </span>
+    </th>
+  );
+}
+
 export default function FactorRiskPanel({ data }) {
+  // Hooks must run before any early return. Default to total-risk descending,
+  // which preserves the backend's ranked order until the user sorts.
+  const [sortKey, setSortKey] = useState("total");
+  const [sortDir, setSortDir] = useState("desc");
+  const handleSort = useCallback(
+    (col) => {
+      if (col === sortKey) {
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      } else {
+        setSortKey(col);
+        setSortDir(col === "ticker" ? "asc" : "desc");
+      }
+    },
+    [sortKey],
+  );
+
   if (!data || !data.holdings?.length) return null;
 
   const sysShare = data.systematic_share_pct ?? 0;
   const specShare = data.specific_share_pct ?? 0;
   const capture = data.model_capture_pct;
+
+  const sortedHoldings = [...data.holdings].sort((a, b) => {
+    const fn = HOLDING_SORT[sortKey] ?? HOLDING_SORT.total;
+    const av = fn(a);
+    const bv = fn(b);
+    if (typeof av === "string") {
+      return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+    }
+    return sortDir === "asc" ? av - bv : bv - av;
+  });
+  const hsp = { sortKey, sortDir, onSort: handleSort };
 
   return (
     <div className="factor-risk-panel">
@@ -174,36 +236,52 @@ export default function FactorRiskPanel({ data }) {
         <table className="frp-table">
           <thead>
             <tr>
-              <th className="left">Holding</th>
-              <th className="num">
-                Weight
-                <HoverTip text={TIPS.weight} />
-              </th>
-              <th className="num">
-                R²
-                <HoverTip text={TIPS.rsq} />
-              </th>
-              <th className="num">
-                Total risk
-                <HoverTip text={TIPS.totalContrib} />
-              </th>
+              <SortTh col="ticker" label="Holding" className="left" {...hsp} />
+              <SortTh
+                col="weight"
+                label="Weight"
+                tip={TIPS.weight}
+                className="num"
+                {...hsp}
+              />
+              <SortTh
+                col="rsq"
+                label="R²"
+                tip={TIPS.rsq}
+                className="num"
+                {...hsp}
+              />
+              <SortTh
+                col="total"
+                label="Total risk"
+                tip={TIPS.totalContrib}
+                className="num"
+                {...hsp}
+              />
               <th className="bar-col">
                 Factor / specific
                 <HoverTip text={TIPS.split} />
               </th>
-              <th className="num">
-                Specific share
-                <HoverTip text={TIPS.specShare} />
-              </th>
+              <SortTh
+                col="specShare"
+                label="Specific share"
+                tip={TIPS.specShare}
+                className="num"
+                {...hsp}
+              />
             </tr>
           </thead>
           <tbody>
-            {data.holdings.map((h) => {
-              const factorPart = h.factor_contrib_pct ?? 0;
-              const specPart = h.specific_contrib_pct ?? 0;
+            {sortedHoldings.map((h) => {
+              // Only draw the split when it's a clean non-negative partition
+              // (the backend nulls specific_share_pct otherwise). Clamp to
+              // [0,100] so a stray negative piece can't render a broken bar.
+              const clean = h.specific_share_pct != null;
+              const factorPart = Math.max(0, h.factor_contrib_pct ?? 0);
+              const specPart = Math.max(0, h.specific_contrib_pct ?? 0);
               const denom = factorPart + specPart || 1;
-              const fw = (100 * factorPart) / denom;
-              const sw = (100 * specPart) / denom;
+              const fw = clean ? (100 * factorPart) / denom : 0;
+              const sw = clean ? (100 * specPart) / denom : 0;
               const hot = (h.specific_share_pct ?? 0) >= 50;
               return (
                 <tr key={h.ticker}>

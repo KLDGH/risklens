@@ -105,15 +105,16 @@
   font-style: italic;
 }
 
-/* ---- block headers ---- */
+/* ---- block headers (sub-sections within the panel) ---- */
 .frp-block-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--text);
-  padding-top: 4px;
-  border-top: 1px solid var(--border);
+  color: var(--text-bright);
+  margin-top: 8px;
+  padding: 2px 0 2px 10px;
+  border-left: 3px solid var(--accent);
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -159,6 +160,17 @@
 
 .frp-table thead th.left { text-align: left; }
 .frp-table thead th.bar-col { text-align: left; width: 28%; }
+
+/* sortable headers — match the main snapshot table's idiom */
+.frp-table thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.frp-table thead th.sortable:hover {
+  color: var(--text-bright);
+  background: rgba(127, 127, 127, 0.08);
+}
+.frp-table thead th.num .th-inner { justify-content: flex-end; }
 
 .frp-table .left { text-align: left; }
 .frp-table .num {
