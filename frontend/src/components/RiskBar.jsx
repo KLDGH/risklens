@@ -38,9 +38,9 @@ function TipContent({ pct, color, trend, exceptionRate, exceptionCount }) {
         {trendLabel}
       </div>
       {exceptionRate != null && (
-        <div style={{ borderTop: "1px solid #2a3441", paddingTop: 5, marginTop: 4 }}>
-          <div>EWMA VaR exceptions (2y): <span style={{ color: exceptionRate > 3 ? "#e53e3e" : exceptionRate > 1.5 ? "#f59e0b" : "#4ade80", fontWeight: 600 }}>{exceptionCount} days ({exceptionRate}%)</span></div>
-          <div style={{ color: "#8896aa", marginTop: 2 }}>Expected ~1%. {excInterpret}</div>
+        <div style={{ borderTop: "1px solid var(--border)", paddingTop: 5, marginTop: 4 }}>
+          <div>EWMA VaR exceptions (2y): <span style={{ color: exceptionRate > 3 ? "var(--red)" : exceptionRate > 1.5 ? "var(--yellow)" : "var(--green)", fontWeight: 600 }}>{exceptionCount} days ({exceptionRate}%)</span></div>
+          <div style={{ color: "var(--text-dim)", marginTop: 2 }}>Expected ~1%. {excInterpret}</div>
         </div>
       )}
     </div>

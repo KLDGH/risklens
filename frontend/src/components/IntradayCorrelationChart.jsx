@@ -378,7 +378,7 @@ export default function IntradayCorrelationChart({ data }) {
         </div>
       )}
 
-      <div style={{ fontSize: 11, color: "#4a5a6e", marginTop: 8, display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+      <div className="chart-foot" style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <span>
           Red = positive correlation (rates regime, diversification fails) ·
           Green = negative correlation (growth regime, diversification works)

@@ -142,6 +142,17 @@
   top: -1px;
 }
 
+/* Shared under-chart footnote — one idiom for every chart's axis/source note.
+   Matches the app-wide italic-dim footnote voice (panel footnotes are 10px;
+   charts get 11px for legibility over plot chrome). Always left-aligned. */
+.chart-foot {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--text-dim);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
 /* experimental-tab disclaimer banner */
 .alpha-banner {
   display: flex;

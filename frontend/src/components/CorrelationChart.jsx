@@ -235,7 +235,7 @@ export default function CorrelationChart({ data }) {
         </ResponsiveContainer>
       </div>
 
-      <div style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 8, textAlign: "right" }}>
+      <div className="chart-foot">
         Orange area = correlation (left axis, 0–1) · Violet line = VIX 60-day average (right axis, 0–90) · Crisis labels = 60-day window centered near peak stress
       </div>
     </div>
