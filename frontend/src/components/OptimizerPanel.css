@@ -1,9 +1,9 @@
 .opt-panel { display: flex; flex-direction: column; gap: 18px; }
 
 .opt-banner {
-  background: rgba(217, 119, 6, 0.08);
-  border: 1px solid rgba(217, 119, 6, 0.30);
-  border-left: 3px solid var(--accent);
+  background: var(--callout-amber-bg);
+  border: 1px solid var(--callout-amber-border);
+  border-left: 3px solid var(--yellow);
   border-radius: 4px;
   padding: 10px 14px;
   font-size: 11.5px;
@@ -73,9 +73,9 @@
   position: sticky; left: 0;
   background: var(--bg2);
 }
-.opt-table tbody tr { border-bottom: 1px solid rgba(0,0,0,0.05); }
+.opt-table tbody tr { border-bottom: 1px solid var(--wash-faint); }
 .opt-num { font-variant-numeric: tabular-nums; color: var(--text); }
-.opt-base-col { background: rgba(0,0,0,0.04); font-weight: 600; }
+.opt-base-col { background: var(--wash-faint); font-weight: 600; }
 .opt-fragile { opacity: 0.55; font-style: italic; }
 
 /* group sub-headers that split the table into reference frames */
@@ -140,7 +140,7 @@
 .opt-rc th { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); }
 .opt-rc th.num, .opt-rc td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .opt-rc td { padding: 4px 8px; color: var(--text); }
-.opt-rc tbody tr { border-bottom: 1px solid rgba(0,0,0,0.04); }
+.opt-rc tbody tr { border-bottom: 1px solid var(--wash-faint); }
 
 /* ---- caveats ---- */
 .opt-caveats { font-size: 11px; color: var(--text-dim); }

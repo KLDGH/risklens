@@ -72,16 +72,16 @@ const CustomTooltip = ({ active, payload, label }) => {
       <div className="tt-year">{label}</div>
       {event && <div className="tt-event">{event.label.replace(/\n/g, " ")}</div>}
       <div className="tt-row">
-        <span style={{ color: "#4ade80" }}>Min VaR</span>
+        <span style={{ color: "var(--green)" }}>Min VaR</span>
         <span>{d?.min_var?.toFixed(2)}%</span>
       </div>
       <div className="tt-row">
-        <span style={{ color: "#f59e0b" }}>Max VaR</span>
+        <span style={{ color: "var(--accent-soft)" }}>Max VaR</span>
         <span>{d?.max_var?.toFixed(2)}%</span>
       </div>
       {d?.annual_return_pct != null && (
         <div className="tt-row">
-          <span style={{ color: d.annual_return_pct < 0 ? "#e53e3e" : "#4ade80" }}>
+          <span style={{ color: d.annual_return_pct < 0 ? "var(--red)" : "var(--green)" }}>
             Annual ret
           </span>
           <span>{d.annual_return_pct > 0 ? "+" : ""}{d.annual_return_pct?.toFixed(1)}%</span>
@@ -89,7 +89,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       )}
       {d?.vix_avg != null && (
         <div className="tt-row">
-          <span style={{ color: "#a78bfa" }}>Avg VIX</span>
+          <span style={{ color: "var(--violet)" }}>Avg VIX</span>
           <span>{d.vix_avg?.toFixed(1)}</span>
         </div>
       )}
@@ -184,17 +184,17 @@ export default function HistoricalChart({ data }) {
               yAxisId="vix"
               orientation="right"
               domain={[0, 90]}
-              tick={{ fill: "#a78bfa", fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: c.violet, fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v) => v === 0 ? "" : `${v}`}
               width={28}
-              label={{ value: "VIX", angle: 90, position: "insideRight", fill: "#a78bfa", fontSize: 10, fontFamily: "JetBrains Mono, monospace", dx: 12 }}
+              label={{ value: "VIX", angle: 90, position: "insideRight", fill: c.violet, fontSize: 10, fontFamily: "JetBrains Mono, monospace", dx: 12 }}
             />
 
             <ReferenceLine y={0} yAxisId="left" stroke={c.axisLine} strokeWidth={1} />
 
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: c.cursor }} />
 
             <Legend
               verticalAlign="bottom"
@@ -227,10 +227,10 @@ export default function HistoricalChart({ data }) {
               />
             ))}
 
-            <Bar yAxisId="left" dataKey="min_var" name="Min daily risk" fill="#4ade80" opacity={0.85} maxBarSize={10} isAnimationActive={false} />
-            <Bar yAxisId="left" dataKey="max_var" name="Max daily risk" fill="#f59e0b" opacity={0.75} maxBarSize={10} isAnimationActive={false} />
-            <Bar yAxisId="left" dataKey="loss"    name="Loss for year"  fill="#e53e3e" opacity={0.9}  maxBarSize={10} isAnimationActive={false} />
-            <Line yAxisId="vix" type="monotone" dataKey="vix_avg" name="Avg VIX" stroke="#a78bfa" strokeWidth={1.5} dot={false} opacity={0.9} isAnimationActive={false} />
+            <Bar yAxisId="left" dataKey="min_var" name="Min daily risk" fill={c.green} opacity={0.85} maxBarSize={10} isAnimationActive={false} />
+            <Bar yAxisId="left" dataKey="max_var" name="Max daily risk" fill={c.accentSoft} opacity={0.75} maxBarSize={10} isAnimationActive={false} />
+            <Bar yAxisId="left" dataKey="loss"    name="Loss for year"  fill={c.red} opacity={0.9}  maxBarSize={10} isAnimationActive={false} />
+            <Line yAxisId="vix" type="monotone" dataKey="vix_avg" name="Avg VIX" stroke={c.violet} strokeWidth={1.5} dot={false} opacity={0.9} isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

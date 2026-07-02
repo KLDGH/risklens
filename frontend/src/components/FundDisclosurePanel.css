@@ -16,8 +16,8 @@
    weight without changing how a reader should interpret the numbers above),
    this callout is now the entire panel. */
 .fund-coverage-callout {
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.30);
+  background: var(--callout-amber-bg);
+  border: 1px solid var(--callout-amber-border);
   border-left: 3px solid var(--yellow);
   border-radius: 3px;
   padding: 10px 14px;

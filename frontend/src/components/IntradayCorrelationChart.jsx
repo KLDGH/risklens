@@ -17,18 +17,21 @@ import { useThemeColors } from "./useThemeColors";
 // Color scale for correlation cells/bars. Sign drives hue (red = rates regime,
 // green = growth regime). Magnitude drives opacity — strong correlations
 // look more saturated, weak ones look pale.
-function corrColor(c) {
-  if (c == null) return "rgba(255, 255, 255, 0.04)";  // empty cell
-  const intensity = Math.min(1, Math.abs(c));
+function corrColor(v, colors) {
+  if (v == null) {
+    // empty cell
+    return colors.mode === "light" ? "rgba(0, 0, 0, 0.05)" : "rgba(255, 255, 255, 0.04)";
+  }
+  const intensity = Math.min(1, Math.abs(v));
   const opacity = 0.18 + intensity * 0.78;  // baseline 0.18 → 0.96
-  return c >= 0
-    ? `rgba(229, 62, 62, ${opacity})`     // red, rates regime
-    : `rgba(0, 201, 122, ${opacity})`;    // green, growth regime
+  return v >= 0
+    ? `rgba(${colors.heatRedRgb}, ${opacity})`     // red, rates regime
+    : `rgba(${colors.heatGreenRgb}, ${opacity})`;  // green, growth regime
 }
 
-function barFill(c) {
-  if (c == null) return "#444";
-  return c >= 0 ? "#e53e3e" : "#00c97a";
+function barFill(v, colors) {
+  if (v == null) return colors.refLine;
+  return v >= 0 ? colors.red : colors.green;
 }
 
 const INTERVAL_LABELS = {
@@ -50,7 +53,7 @@ const BarTooltip = ({ active, payload, label, intervalLabel }) => {
     <div className="chart-tooltip">
       <div className="tt-year">{label}</div>
       <div className="tt-row">
-        <span style={{ color: c >= 0 ? "#e53e3e" : "#4ade80" }}>SPY-TLT corr</span>
+        <span style={{ color: c >= 0 ? "var(--red)" : "var(--green)" }}>SPY-TLT corr</span>
         <span>{c >= 0 ? "+" : ""}{c?.toFixed(3)}</span>
       </div>
       <div className="tt-row">
@@ -268,7 +271,7 @@ export default function IntradayCorrelationChart({ data }) {
             </p>
           )}
           {hasQmle && (
-            <p style={{ marginTop: 8, paddingLeft: 12, borderLeft: "2px solid #3a4554" }}>
+            <p style={{ marginTop: 8, paddingLeft: 12, borderLeft: "2px solid var(--border)" }}>
               <strong>Caveat at this granularity.</strong> QMLE earns its keep
               when noise variance is non-trivial relative to per-observation
               signal variance — typically 1-minute or tick data, or pairs with
@@ -308,13 +311,13 @@ export default function IntradayCorrelationChart({ data }) {
         <CalendarHeatmap
           data={series}
           valueKey="corr"
-          colorFn={(c) => corrColor(c)}
+          colorFn={(v) => corrColor(v, c)}
           cellSize={44}
           formatHover={(c) => (
             <>
               <strong>{c.date}</strong>
               {" · "}SPY-TLT correlation:{" "}
-              <strong style={{ color: c.corr >= 0 ? "#fca5a5" : "#86efac" }}>
+              <strong style={{ color: c.corr >= 0 ? "var(--red)" : "var(--green)" }}>
                 {c.corr >= 0 ? "+" : ""}{c.corr.toFixed(3)}
               </strong>
               {" · "}{c.n_obs} {intervalMeta.label} bars
@@ -363,14 +366,14 @@ export default function IntradayCorrelationChart({ data }) {
 
               <Tooltip
                 content={<BarTooltip intervalLabel={intervalMeta.label} />}
-                cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                cursor={{ fill: c.cursor }}
               />
 
-              <ReferenceLine y={0} stroke="#3a4554" strokeWidth={1.5} />
+              <ReferenceLine y={0} stroke={c.refLine} strokeWidth={1.5} />
 
               <Bar dataKey="corr" maxBarSize={18} isAnimationActive={false}>
                 {series.map((d, i) => (
-                  <Cell key={i} fill={barFill(d.corr)} fillOpacity={0.85} />
+                  <Cell key={i} fill={barFill(d.corr, c)} fillOpacity={0.85} />
                 ))}
               </Bar>
             </BarChart>

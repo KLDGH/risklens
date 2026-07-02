@@ -13,8 +13,9 @@ const SHORT = {
 };
 
 // Color per portfolio id (DOM + chart share these hexes).
+// "base" is intentionally absent: it resolves to the theme's text color via
+// colorFor() inside the component so it stays visible in both themes.
 const COLORS = {
-  base:            "#3a2f24",   // neutral (the strategy)
   gmv:             "#1898b7",   // teal
   erc:             "#2e6b34",   // green
   max_div:         "#7a5cc4",   // violet
@@ -67,6 +68,10 @@ function fmt(v, unit) {
 
 export default function OptimizerPanel({ opt }) {
   const c = useThemeColors();
+  // Theme-aware portfolio color: the reference book uses the theme text color
+  // (a static hex would be invisible in one of the two themes); variants keep
+  // their fixed hues.
+  const colorFor = (id) => (id === "base" ? c.text : COLORS[id]);
   const portfolios = [opt.base, ...opt.variants];
   const [selId, setSelId] = useState("pm_concentrated");
   const sel = opt.variants.find((v) => v.id === selId) || opt.variants[0];
@@ -84,7 +89,7 @@ export default function OptimizerPanel({ opt }) {
     const p = portfolios.find((x) => x.id === d.id);
     return (
       <div className="opt-charttip" style={{ background: c.bg2, border: `1px solid ${c.border}`, color: c.text }}>
-        <strong style={{ color: COLORS[d.id] }}>{p.label}</strong>
+        <strong style={{ color: colorFor(d.id) }}>{p.label}</strong>
         <div>vol {p.vol_ann}% · ret {p.return_ann}%</div>
         <div>Sharpe {p.sharpe} · TE {p.tracking_error}% · effN {p.eff_n}</div>
       </div>
@@ -144,10 +149,10 @@ export default function OptimizerPanel({ opt }) {
               <YAxis type="number" dataKey="ret" name="Return" unit="%"
                 tick={{ fill: c.axisTick, fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} axisLine={{ stroke: c.axisLine }} tickLine={{ stroke: c.axisLine }}
                 label={{ value: "Return (%, in-sample)", angle: -90, position: "left", fill: c.axisTick, fontSize: 11 }} />
-              <Tooltip content={<ChartTip />} cursor={{ strokeDasharray: "3 3", stroke: c.refLine }} />
+              <Tooltip content={<ChartTip />} cursor={{ strokeDasharray: "3 3", stroke: c.cursor }} />
               <Scatter name="frontier" data={frontierData} line={{ stroke: c.refLine, strokeWidth: 1.5 }} shape={frontierDot} legendType="none" />
               {portfolioPts.map((p) => (
-                <Scatter key={p.id} name={p.label} data={[p]} fill={COLORS[p.id]} shape={portMarker(COLORS[p.id], p.fragile, p.id === "base")} />
+                <Scatter key={p.id} name={p.label} data={[p]} fill={colorFor(p.id)} shape={portMarker(colorFor(p.id), p.fragile, p.id === "base")} />
               ))}
             </ScatterChart>
           </ResponsiveContainer>
@@ -155,7 +160,7 @@ export default function OptimizerPanel({ opt }) {
         <div className="opt-legend">
           {portfolioPts.map((p) => (
             <span key={p.id} className="opt-legend-item">
-              <span className="opt-dot" style={{ background: COLORS[p.id] }} />{p.label}{p.fragile ? " ⚠" : ""}
+              <span className="opt-dot" style={{ background: colorFor(p.id) }} />{p.label}{p.fragile ? " ⚠" : ""}
             </span>
           ))}
         </div>
@@ -170,7 +175,7 @@ export default function OptimizerPanel({ opt }) {
               <tr>
                 <th className="opt-metric-col">Metric</th>
                 {portfolios.map((p) => (
-                  <th key={p.id} className={`opt-col ${p.fragile ? "opt-fragile" : ""} ${p.id === "base" ? "opt-base-col" : ""}`} style={{ color: COLORS[p.id] }}>
+                  <th key={p.id} className={`opt-col ${p.fragile ? "opt-fragile" : ""} ${p.id === "base" ? "opt-base-col" : ""}`} style={{ color: colorFor(p.id) }}>
                     {SHORT[p.id] || p.label}{p.fragile ? " ⚠" : ""}
                   </th>
                 ))}

@@ -12,7 +12,7 @@ const fmtSigned = (n, digits = 1) =>
 function ContribTooltip({ ticker, ret, weightPct, contrib }) {
   return (
     <div>
-      <div style={{ fontWeight: 600, color: "#e8ecf2", marginBottom: 4 }}>
+      <div style={{ fontWeight: 600, color: "var(--text-bright)", marginBottom: 4 }}>
         {ticker}
       </div>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -33,7 +33,7 @@ function ContribTooltip({ ticker, ret, weightPct, contrib }) {
           justifyContent: "space-between",
           marginTop: 5,
           paddingTop: 5,
-          borderTop: "1px solid #3a4554",
+          borderTop: "1px solid var(--border)",
           fontWeight: 600,
         }}
       >
@@ -91,7 +91,7 @@ function ComparisonTooltip({ comparisons, currentMode, currentPnl }) {
       <div
         style={{
           fontWeight: 600,
-          color: "#e8ecf2",
+          color: "var(--text-bright)",
           marginBottom: 6,
           textTransform: "uppercase",
           letterSpacing: "0.05em",
@@ -122,7 +122,7 @@ function ComparisonTooltip({ comparisons, currentMode, currentPnl }) {
                   marginLeft: 6,
                   opacity: 0.55,
                   fontSize: 9,
-                  color: worse ? "#fca5a5" : "#86efac",
+                  color: worse ? "var(--red)" : "var(--green)",
                 }}
               >
                 ({sign}{Math.abs(delta).toFixed(1)}pp {worse ? "worse" : "better"})

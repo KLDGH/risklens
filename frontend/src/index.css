@@ -49,6 +49,18 @@
   /* Shared chart-tooltip overlay — semitransparent dark used to dim
      the chart underneath when a tooltip is active. */
   --tooltip-shadow:     rgba(0, 0, 0, 0.15);
+  /* Violet — the VIX / GARCH-residual / HML hue family. Deepened in the
+     light theme like every other semantic hue. */
+  --violet:             #a78bfa;
+  /* Neutral low-alpha washes for hovers, row hairlines, and column tints.
+     Mid-grey alpha so one value survives both themes (white-alpha washes
+     vanished on cream; black-alpha vanished on slate). */
+  --wash-faint:         rgba(127, 127, 127, 0.06);
+  --wash-hover:         rgba(127, 127, 127, 0.09);
+  /* Amber caveat-callout chrome (ALPHA banner, fund-coverage callout,
+     optimizer banner, drift alert) — one tint pair for the idiom. */
+  --callout-amber-bg:     rgba(245, 158, 11, 0.08);
+  --callout-amber-border: rgba(245, 158, 11, 0.30);
   --font: "JetBrains Mono", "Courier New", monospace;
 }
 
@@ -91,6 +103,11 @@
   --streak-growth-border:    rgba(75, 138, 90, 0.35);
   --streak-growth-color:     #2f6e3f;
   --tooltip-shadow:          rgba(0, 0, 0, 0.08);
+  --violet:                  #7a5cc4;   /* deepened for cream, like the other hues */
+  --wash-faint:              rgba(127, 127, 127, 0.06);
+  --wash-hover:              rgba(127, 127, 127, 0.09);
+  --callout-amber-bg:        rgba(245, 158, 11, 0.08);
+  --callout-amber-border:    rgba(245, 158, 11, 0.30);
 }
 
 body {

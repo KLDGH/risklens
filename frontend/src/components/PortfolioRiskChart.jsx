@@ -68,7 +68,7 @@ const CustomTooltip = ({ active, payload }) => {
     <div className="chart-tooltip">
       <div className="tt-year">{d?.date}</div>
       <div className="tt-row">
-        <span style={{ color: "#f59e0b" }}>Daily VaR (1%)</span>
+        <span style={{ color: "var(--accent-soft)" }}>Daily VaR (1%)</span>
         <span>{v?.toFixed(2)}%</span>
       </div>
       <div style={{ marginTop: 6, fontSize: 11, color: "var(--text-dim)", lineHeight: 1.4 }}>
@@ -165,41 +165,41 @@ export default function PortfolioRiskChart({ data, portfolioLabel }) {
               width={36}
             />
 
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(255,255,255,0.08)", strokeWidth: 1 }} />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: c.cursor, strokeWidth: 1 }} />
 
             {/* Reference threshold lines */}
             <ReferenceLine
               y={2.5}
-              stroke="#f0b429"
+              stroke={c.yellow}
               strokeDasharray="4 3"
               strokeOpacity={0.4}
-              label={{ value: "elevated", position: "insideRight", fill: "#f0b429", fontSize: 10, fontFamily: "JetBrains Mono, monospace", opacity: 0.7 }}
+              label={{ value: "elevated", position: "insideRight", fill: c.yellow, fontSize: 10, fontFamily: "JetBrains Mono, monospace", opacity: 0.7 }}
             />
             <ReferenceLine
               y={5}
-              stroke="#e53e3e"
+              stroke={c.red}
               strokeDasharray="4 3"
               strokeOpacity={0.4}
-              label={{ value: "high", position: "insideRight", fill: "#e53e3e", fontSize: 10, fontFamily: "JetBrains Mono, monospace", opacity: 0.7 }}
+              label={{ value: "high", position: "insideRight", fill: c.red, fontSize: 10, fontFamily: "JetBrains Mono, monospace", opacity: 0.7 }}
             />
 
             {/* Crisis annotations */}
-            {crisisLines.map((c) => (
+            {crisisLines.map((ev) => (
               <ReferenceLine
-                key={c.label}
-                x={c.date}
-                stroke="#f59e0b"
+                key={ev.label}
+                x={ev.date}
+                stroke={c.accentSoft}
                 strokeOpacity={0.45}
                 strokeWidth={1}
                 strokeDasharray="3 3"
-                label={<CrisisLabel label={c.label} color={crisisLabelColor} />}
+                label={<CrisisLabel label={ev.label} color={crisisLabelColor} />}
               />
             ))}
 
             <Area
               type="monotone"
               dataKey="var"
-              stroke="#f59e0b"
+              stroke={c.accentSoft}
               strokeWidth={1.5}
               fill="url(#riskFill)"
               dot={false}

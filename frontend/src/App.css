@@ -133,8 +133,8 @@
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--yellow);
-  background: rgba(245, 158, 11, 0.14);
-  border: 1px solid rgba(245, 158, 11, 0.40);
+  background: var(--callout-amber-bg);
+  border: 1px solid var(--callout-amber-border);
   border-radius: 3px;
   padding: 1px 4px;
   vertical-align: middle;
@@ -158,8 +158,8 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.30);
+  background: var(--callout-amber-bg);
+  border: 1px solid var(--callout-amber-border);
   border-left: 3px solid var(--yellow);
   border-radius: 3px;
   padding: 11px 16px;
