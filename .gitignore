@@ -17,7 +17,8 @@ frontend/public/data/risk_output.json
 # macOS
 .DS_Store
 
-# Editor
+# Editor / local agent tooling
 .idea/
 .vscode/
 *.swp
+.claude/
