@@ -54,7 +54,11 @@ export default function RegimeAlphaPanel({ data }) {
       <div className="pf-regime-grid">
         {regimes.map((r) => {
           const a = r.ann_active_pct ?? 0;
-          const w = Math.min(50, (Math.abs(a) / maxAbs) * 50);
+          // Left-anchored magnitude bar: length = |active| relative to the
+          // largest regime, so the biggest bar always fills the track. Sign is
+          // carried by color (and the signed number above) — a diverging bar
+          // with a subtle center line read as arbitrary fill (user feedback).
+          const w = Math.min(100, (Math.abs(a) / maxAbs) * 100);
           const pos = a >= 0;
           return (
             <div key={r.key} className={`pf-regime pf-regime-${r.key}`}>
@@ -69,10 +73,9 @@ export default function RegimeAlphaPanel({ data }) {
               </div>
               <div className="pf-regime-sub">annualized active return</div>
               <div className="pf-regime-bar">
-                <span className="pf-regime-center" />
                 <span
                   className={"pf-regime-fill " + (pos ? "pf-fill-pos" : "pf-fill-neg")}
-                  style={pos ? { left: "50%", width: `${w}%` } : { right: "50%", width: `${w}%` }}
+                  style={{ left: 0, width: `${w}%` }}
                 />
               </div>
               <div className="pf-regime-stats">

@@ -113,7 +113,7 @@
 
 .risk-table th.sortable:hover {
   color: var(--text-bright);
-  background: rgba(255,255,255,0.04);
+  background: rgba(127, 127, 127, 0.08);  /* theme-neutral wash (white rgba vanished on light) */
 }
 
 .th-inner {
@@ -128,7 +128,10 @@
 }
 
 .sort-icon.inactive {
-  opacity: 0.25;
+  /* 0.25 was effectively invisible — users couldn't tell columns sort at all
+     (direct user feedback). Keep it clearly quieter than the active arrow,
+     but present. */
+  opacity: 0.55;
 }
 
 .sort-icon.active {
@@ -410,9 +413,10 @@
 .benchmark-row {
   background: var(--portfolio-row-bg);
   border-bottom: 2px solid var(--accent);
-  opacity: 0.78;
+  /* No row-level opacity: it washed out the VaR traffic-light colors on the
+     two most important rows (direct user feedback). The tinted background +
+     dim ticker typography already mark it as a rollup row. */
 }
-.benchmark-row:hover { opacity: 1; }
 .benchmark-sticky { background: var(--portfolio-row-bg) !important; }
 .benchmark-ticker {
   color: var(--text-dim);
@@ -445,6 +449,6 @@
   font-style: italic;
 }
 
-.portfolio-cell {
-  opacity: 0.9;
-}
+/* .portfolio-cell opacity removed — it faded the portfolio row's VaR colors
+   below the individual assets' (direct user feedback). Class kept in markup
+   for targeting. */

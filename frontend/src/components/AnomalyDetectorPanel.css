@@ -747,6 +747,28 @@
   display: inline-block;
 }
 
+/* Per-direction line keys for two-series subpanels (CUSUM): a short line
+   sample, solid for up-shift, dashed for down-shift. */
+.detector-series-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-left: 2px;
+}
+
+.detector-line-key {
+  display: inline-block;
+  width: 14px;
+  border-top: 2px solid currentColor;
+  margin-left: 6px;
+}
+
+.detector-line-key.dashed {
+  border-top-style: dashed;
+}
+
 .detector-threshold {
   font-size: 10px;
   color: var(--text-dim);

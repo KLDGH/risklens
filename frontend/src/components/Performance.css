@@ -131,9 +131,11 @@
   flex-direction: column;
   gap: 6px;
 }
-.pf-regime-calm     { border-top-color: var(--frp-specific); }
+/* Regime tier = the app's established risk ramp (low/mid/high volatility),
+   not the accent/steel-blue pair (which means raised/lowered elsewhere). */
+.pf-regime-calm     { border-top-color: var(--green); }
 .pf-regime-normal   { border-top-color: var(--yellow); }
-.pf-regime-stressed { border-top-color: var(--accent); }
+.pf-regime-stressed { border-top-color: var(--red); }
 
 .pf-regime-head {
   display: flex;
@@ -172,14 +174,6 @@
   background: var(--bg2);
   border-radius: 2px;
   margin: 4px 0 2px;
-}
-.pf-regime-center {
-  position: absolute;
-  left: 50%;
-  top: -1px;
-  bottom: -1px;
-  width: 1px;
-  background: var(--border);
 }
 .pf-regime-fill {
   position: absolute;

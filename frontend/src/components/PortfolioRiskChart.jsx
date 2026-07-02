@@ -71,7 +71,7 @@ const CustomTooltip = ({ active, payload }) => {
         <span style={{ color: "#f59e0b" }}>Daily VaR (1%)</span>
         <span>{v?.toFixed(2)}%</span>
       </div>
-      <div style={{ marginTop: 6, fontSize: 11, color: "#8896aa", lineHeight: 1.4 }}>
+      <div style={{ marginTop: 6, fontSize: 11, color: "var(--text-dim)", lineHeight: 1.4 }}>
         {level}
       </div>
     </div>
@@ -209,7 +209,7 @@ export default function PortfolioRiskChart({ data, portfolioLabel }) {
         </ResponsiveContainer>
       </div>
 
-      <div style={{ fontSize: 11, color: "#4a5a6e", marginTop: 8, display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+      <div className="chart-foot" style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         {eventsBeforeWindow.length > 0 ? (
           <span>
             Earlier events not shown (data starts {data[0].date}): {eventsBeforeWindow.join(", ")}

@@ -18,13 +18,16 @@ import { useThemeColors } from "./useThemeColors";
 import InfoTip from "./InfoTip.jsx";
 
 // Color palette per detector — chosen so none collide with the amber
-// accent (which is reserved for primary UI). Each detector keeps a
-// distinct hue across the price-chart markers, the subpanel lines,
-// and the recent-anomaly chips.
+// accent (reserved for primary UI) OR the app's semantic hues: green/red
+// mean gain/loss and yellow means elevated risk, so detectors avoid all
+// three. (The old red-up / yellow-down CUSUM pair inverted the sign
+// language and the yellow was illegible on the light theme — direct user
+// feedback.) CUSUM is ONE detector with two directions, so both share a
+// single magenta; the down-shift line is dashed to tell them apart.
 const DETECTOR_COLORS = {
   zscore:      "#06b6d4",   // cyan
-  cusum_pos:   "#ef4444",   // red (positive drift = up)
-  cusum_neg:   "#facc15",   // yellow (negative drift = down)
+  cusum_pos:   "#ec4899",   // magenta — up-shift (solid line)
+  cusum_neg:   "#ec4899",   // magenta — down-shift (dashed line)
   garch_resid: "#a78bfa",   // violet
 };
 
@@ -727,6 +730,13 @@ function DetectorSubpanel({
       <div className="detector-label">
         <span className="detector-dot" style={{ background: color }} />
         {label}
+        {/* Two-series subpanels (CUSUM) key both directions: solid vs dashed. */}
+        {secondField && (
+          <span className="detector-series-keys">
+            <span className="detector-line-key" style={{ borderTopColor: color }} /> up-shift
+            <span className="detector-line-key dashed" style={{ borderTopColor: secondColor ?? color }} /> down-shift
+          </span>
+        )}
         <span className="detector-threshold">threshold ±{threshold}</span>
       </div>
       <div className="detector-chart">
@@ -781,6 +791,7 @@ function DetectorSubpanel({
                 dataKey={secondField}
                 stroke={secondColor}
                 strokeWidth={1.4}
+                strokeDasharray="5 3"
                 dot={false}
                 connectNulls
                 isAnimationActive={false}
@@ -948,7 +959,7 @@ function RecentAnomaliesList({ anomalies }) {
         {recent.map((a) => (
           <div key={a.date} className="anomaly-row">
             <div className="anomaly-date">{fmtDate(a.date)}</div>
-            <div className="anomaly-ret" style={{ color: a.ret_pct >= 0 ? "#86efac" : "#fca5a5" }}>
+            <div className="anomaly-ret" style={{ color: a.ret_pct >= 0 ? "var(--green)" : "var(--red)" }}>
               {a.ret_pct >= 0 ? "+" : ""}{a.ret_pct.toFixed(2)}%
             </div>
             <div className="anomaly-detectors">

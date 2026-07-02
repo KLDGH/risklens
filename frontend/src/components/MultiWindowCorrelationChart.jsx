@@ -257,7 +257,7 @@ export default function MultiWindowCorrelationChart({ data }) {
         </ResponsiveContainer>
       </div>
 
-      <div style={{ fontSize: 11, color: "#4a5a6e", marginTop: 8 }}>
+      <div className="chart-foot">
         When the 20-day line diverges above the 252-day line, you're seeing a regime change before slower measures register it.
       </div>
     </div>

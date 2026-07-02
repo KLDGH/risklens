@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import RiskBar from "./RiskBar.jsx";
 import InfoTip from "./InfoTip.jsx";
+import HoverTip from "./HoverTip.jsx";
 import "./RiskTable.css";
 
 // Build a multi-line sanity-check tooltip from the per-asset references
@@ -37,7 +38,7 @@ const TIPS = {
   tgarch:    "GJR-GARCH(1,1,1) with Student-t innovations. Top = VaR; bottom = ES. Two simultaneous corrections to vanilla GARCH: (1) GJR threshold term — negative shocks raise conditional variance more than equal-sized positive shocks, capturing the leverage effect; (2) Student-t innovations — heavy-tailed daily innovations matching empirical equity return kurtosis. The 't' in this column's name refers to BOTH: 'threshold' GARCH AND Student-t innovations. Falls back to EWMA if fitting fails.",
   evt:       "Extreme Value Theory. Top = VaR; bottom = ES. Fits a Generalized Pareto Distribution directly to the worst losses; best for fat-tailed assets like crypto.",
   consensus: "Simple average across all five VaR models. A rough consensus proxy — useful as a single reference number but not a coherent risk measure. Treat it as a heuristic.",
-  range:     "Range across all five VaR models (min – max). Tight = the models agree. Wide — usually EVT pulling high — means the asset's tail losses are more extreme than normal-distribution models capture.",
+  range:     "Spread = max − min across the five VaR models. Small = the models agree. Large — usually EVT pulling high — means the tail is fatter than normal-distribution models capture. Grey ≤1.5 · amber >1.5 · red >3. Hover a value for the full min–max range.",
   alpha:     "Hill tail index — estimated from the worst losses. Lower = fatter tails. Broad equity indices typically 3–4; individual stocks 2–4; gold and crypto often below 3; long treasuries can be surprisingly fat-tailed.",
   risk:      "Percentile rank of today's EWMA VaR vs the past 2 years of daily values for this asset. 100% = highest risk seen in 2 years.",
   compVar:   "Component VaR — this holding's contribution to the total portfolio VaR (parametric, EWMA covariance). Sum across all holdings equals the portfolio's EWMA VaR. Negative values indicate hedges (the holding's covariance with the rest of the portfolio reduces total risk).",
@@ -99,6 +100,10 @@ function ThWithTip({ col, label, tip, className, sortKey, sortDir, onSort }) {
   );
 }
 
+// Single spread number (max − min across the five models) instead of the old
+// "min – max" pair: the disagreement is the information, so surface it
+// directly (user feedback). Same risk tiering as the VaR cells; the full
+// range lives in the hover.
 function RangeCell({ values, className }) {
   const min = Math.min(...values);
   const max = Math.max(...values);
@@ -106,7 +111,19 @@ function RangeCell({ values, className }) {
   const color = spread > 3 ? "var(--red)" : spread > 1.5 ? "var(--yellow)" : "var(--text-dim)";
   return (
     <td className={`num range-cell ${className ?? ""}`} style={{ color }}>
-      {min.toFixed(2)}<span className="range-sep"> – </span>{max.toFixed(2)}
+      <HoverTip
+        content={
+          <div style={{ lineHeight: 1.6 }}>
+            <div>Model range: <strong>{min.toFixed(2)} – {max.toFixed(2)}</strong></div>
+            <div style={{ color: "var(--text-dim)", marginTop: 2 }}>
+              Spread ≤1.5 models agree · &gt;1.5 diverging · &gt;3 sharply diverging
+            </div>
+          </div>
+        }
+        width={230}
+      >
+        <span style={{ cursor: "default" }}>{spread.toFixed(2)}</span>
+      </HoverTip>
     </td>
   );
 }
@@ -507,7 +524,7 @@ export default function RiskTable({ assets, portfolioWeights, disclosedWeights, 
             {showAllModels && (
               <>
                 <ThWithTip col="consensus" label="Consensus"  tip={TIPS.consensus} className="num col-summary group-start" {...sp} />
-                <ThWithTip col="range"     label="Range"      tip={TIPS.range}     className="num col-summary" {...sp} />
+                <ThWithTip col="range"     label="Spread"     tip={TIPS.range}     className="num col-summary" {...sp} />
               </>
             )}
             <ThWithTip col="compVar"   label="Comp VaR"   tip={TIPS.compVar}   className={`num col-summary ${showAllModels ? "group-end" : "group-start group-end"}`} {...sp} />
