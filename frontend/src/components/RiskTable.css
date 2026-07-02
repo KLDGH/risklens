@@ -113,7 +113,7 @@
 
 .risk-table th.sortable:hover {
   color: var(--text-bright);
-  background: rgba(127, 127, 127, 0.08);  /* theme-neutral wash (white rgba vanished on light) */
+  background: var(--wash-hover);  /* theme-neutral wash (white rgba vanished on light) */
 }
 
 .th-inner {
@@ -203,7 +203,7 @@
 
 .risk-table th.col-summary,
 .risk-table td.col-summary {
-  background-color: rgba(255, 255, 255, 0.025);
+  background-color: var(--wash-faint);
 }
 
 /* Vertical separators at the edges of each group, to reinforce the visual

@@ -894,7 +894,7 @@ function PriceChartWithAnomalies({ series, anomalies, ticker }) {
                   cx={cx} cy={cy} r={r}
                   fill={payload.anomaly_color}
                   fillOpacity={0.85}
-                  stroke="#0d1526"
+                  stroke={c.bg}
                   strokeWidth={1}
                 />
               );

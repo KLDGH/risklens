@@ -51,6 +51,7 @@ const CrisisLabel = ({ viewBox, label, color = "#3a2f24" }) => {
 };
 
 const CustomTooltip = ({ active, payload }) => {
+  const c = useThemeColors();
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
   const corr = d?.avg_corr;
@@ -65,12 +66,12 @@ const CustomTooltip = ({ active, payload }) => {
     <div className="chart-tooltip">
       <div className="tt-year">{d?.date}</div>
       <div className="tt-row">
-        <span style={{ color: "#f59e0b" }}>Avg corr</span>
+        <span style={{ color: c.accentSoft }}>Avg corr</span>
         <span>{corrVal}</span>
       </div>
       {vix != null && (
         <div className="tt-row">
-          <span style={{ color: "#a78bfa" }}>VIX (60d avg)</span>
+          <span style={{ color: c.violet }}>VIX (60d avg)</span>
           <span>{vix.toFixed(1)}</span>
         </div>
       )}
@@ -171,26 +172,26 @@ export default function CorrelationChart({ data }) {
               orientation="right"
               domain={[0, 90]}
               tickFormatter={(v) => v === 0 ? "" : `${v}`}
-              tick={{ fill: "#a78bfa", fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
+              tick={{ fill: c.violet, fontSize: 10, fontFamily: "JetBrains Mono, monospace" }}
               tickLine={false}
               axisLine={false}
               width={28}
-              label={{ value: "VIX", angle: 90, position: "insideRight", fill: "#a78bfa", fontSize: 10, fontFamily: "JetBrains Mono, monospace", dx: 12 }}
+              label={{ value: "VIX", angle: 90, position: "insideRight", fill: c.violet, fontSize: 10, fontFamily: "JetBrains Mono, monospace", dx: 12 }}
             />
 
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(255,255,255,0.08)", strokeWidth: 1 }} />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: c.cursor, strokeWidth: 1 }} />
 
             {/* Warning threshold for correlation */}
             <ReferenceLine
               y={0.6}
               yAxisId="corr"
-              stroke="#f59e0b"
+              stroke={c.accentSoft}
               strokeDasharray="4 3"
               strokeOpacity={0.6}
               label={{
                 value: "diversification under stress",
                 position: "insideTopRight",
-                fill: "#f59e0b",
+                fill: c.accentSoft,
                 fontSize: 10,
                 fontFamily: "JetBrains Mono, monospace",
                 opacity: 0.8,
@@ -198,16 +199,16 @@ export default function CorrelationChart({ data }) {
             />
 
             {/* Crisis event lines — dimmed slate so they don't fight the data series */}
-            {crisisLines.map((c) => (
+            {crisisLines.map((ev) => (
               <ReferenceLine
-                key={c.label}
-                x={c.date}
+                key={ev.label}
+                x={ev.date}
                 yAxisId="corr"
-                stroke="#a78bfa"
+                stroke={c.violet}
                 strokeOpacity={0.40}
                 strokeWidth={1}
                 strokeDasharray="3 3"
-                label={<CrisisLabel label={c.label} color={crisisLabelColor} />}
+                label={<CrisisLabel label={ev.label} color={crisisLabelColor} />}
               />
             ))}
 
@@ -215,7 +216,7 @@ export default function CorrelationChart({ data }) {
               yAxisId="corr"
               type="monotone"
               dataKey="avg_corr"
-              stroke="#f59e0b"
+              stroke={c.accentSoft}
               strokeWidth={1.5}
               fill="url(#corrFill)"
               dot={false}
@@ -225,7 +226,7 @@ export default function CorrelationChart({ data }) {
               yAxisId="vix"
               type="monotone"
               dataKey="vix"
-              stroke="#a78bfa"
+              stroke={c.violet}
               strokeWidth={1.4}
               dot={false}
               opacity={0.9}

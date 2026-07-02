@@ -65,7 +65,7 @@
   border-radius: 3px;
   cursor: pointer;
   transition: outline 0.1s, transform 0.1s;
-  outline: 1px solid rgba(255, 255, 255, 0.04);
+  outline: 1px solid var(--wash-hover);
 }
 
 .cal-cell:hover,
@@ -120,6 +120,7 @@
   height: 12px;
   border-radius: 2px;
   display: inline-block;
+  outline: 1px solid var(--wash-hover);
 }
 
 .cal-legend-label {

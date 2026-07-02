@@ -1,5 +1,6 @@
 import HoverTip from "./HoverTip.jsx";
 import CalendarHeatmap from "./CalendarHeatmap.jsx";
+import { useThemeColors } from "./useThemeColors";
 import "./BacktestPanel.css";
 
 const TIPS = {
@@ -50,15 +51,19 @@ function modelDescription(model) {
 // Color cell by how many models flagged that day as an exception. More
 // models flagging the same day → stronger red, signals the day was
 // genuinely unusual regardless of model choice.
-function exceptionColor(count, totalModels) {
-  if (!count) return "rgba(255, 255, 255, 0.04)";
+function exceptionColor(count, totalModels, colors) {
+  if (!count) {
+    return colors.mode === "light" ? "rgba(0, 0, 0, 0.05)" : "rgba(255, 255, 255, 0.04)";
+  }
   const intensity = count / Math.max(1, totalModels);
   const opacity = 0.22 + intensity * 0.7;
-  return `rgba(229, 62, 62, ${opacity})`;
+  return `rgba(${colors.heatRedRgb}, ${opacity})`;
 }
 
 
 export default function BacktestPanel({ data, portfolioLabel }) {
+  const c = useThemeColors();
+
   if (!data || data.length === 0) {
     return (
       <div className="backtest-empty">
@@ -221,7 +226,7 @@ export default function BacktestPanel({ data, portfolioLabel }) {
             <CalendarHeatmap
               data={calData}
               valueKey="count"
-              colorFn={(count) => exceptionColor(count, data.length)}
+              colorFn={(count) => exceptionColor(count, data.length, c)}
               cellSize={11}
               formatHover={(c) =>
                 c.count === 0 ? (
@@ -229,7 +234,7 @@ export default function BacktestPanel({ data, portfolioLabel }) {
                 ) : (
                   <>
                     <strong>{c.date}</strong> · flagged by{" "}
-                    <strong style={{ color: "#fca5a5" }}>{c.count}</strong> of{" "}
+                    <strong style={{ color: "var(--red)" }}>{c.count}</strong> of{" "}
                     {data.length} models — {c.models.join(", ")}
                   </>
                 )

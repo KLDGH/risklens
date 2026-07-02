@@ -123,7 +123,7 @@
   font-size: 12px;
   min-width: 160px;
   color: var(--text);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--tooltip-shadow);
 }
 
 .tt-year {
@@ -163,14 +163,14 @@
 }
 
 .intraday-streak-callout.rates {
-  background: rgba(229, 62, 62, 0.10);
-  border: 1px solid rgba(229, 62, 62, 0.35);
+  background: var(--streak-rates-bg);
+  border: 1px solid var(--streak-rates-border);
   color: var(--streak-rates-color);
 }
 
 .intraday-streak-callout.growth {
-  background: rgba(0, 201, 122, 0.10);
-  border: 1px solid rgba(0, 201, 122, 0.35);
+  background: var(--streak-growth-bg);
+  border: 1px solid var(--streak-growth-border);
   color: var(--streak-growth-color);
 }
 

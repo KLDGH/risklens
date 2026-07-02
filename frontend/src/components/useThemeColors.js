@@ -34,6 +34,21 @@ const DARK = {
   axisTick:   "#7e8794",
   axisLine:   "#2e3744",
   refLine:    "#3a4554",
+  // Semantic hues — the SAME values as --green/--yellow/--red/--accent*
+  // in index.css, exposed here because Recharts can't read CSS vars.
+  // One red and one green app-wide; charts must not mint their own.
+  green:      "#5fb87b",
+  yellow:     "#d18548",
+  red:        "#d96464",
+  accent:     "#d97706",
+  accentSoft: "#f59e0b",
+  violet:     "#a78bfa",   // VIX / GARCH-residual / HML family
+  // Hover-cursor wash for Recharts <Tooltip cursor={{ fill: c.cursor }}>.
+  cursor:     "rgba(255, 255, 255, 0.06)",
+  // rgb() bases for alpha heat ramps (calendar cells, intraday bars):
+  // use `rgba(${c.heatGreenRgb}, a)` so ramps track the theme greens/reds.
+  heatGreenRgb: "95, 184, 123",
+  heatRedRgb:   "217, 100, 100",
 };
 
 const LIGHT = {
@@ -49,6 +64,15 @@ const LIGHT = {
   axisTick:   "#7a6b58",
   axisLine:   "#c9bd9f",
   refLine:    "#b8a87f",
+  green:      "#4b8a5a",
+  yellow:     "#b86a30",
+  red:        "#b53e3e",
+  accent:     "#b85a1f",
+  accentSoft: "#d97706",
+  violet:     "#7a5cc4",
+  cursor:     "rgba(0, 0, 0, 0.05)",
+  heatGreenRgb: "75, 138, 90",
+  heatRedRgb:   "181, 62, 62",
 };
 
 

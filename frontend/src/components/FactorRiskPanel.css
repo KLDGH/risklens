@@ -168,7 +168,7 @@
 }
 .frp-table thead th.sortable:hover {
   color: var(--text-bright);
-  background: rgba(127, 127, 127, 0.08);
+  background: var(--wash-hover);
 }
 .frp-table thead th.num .th-inner { justify-content: flex-end; }
 

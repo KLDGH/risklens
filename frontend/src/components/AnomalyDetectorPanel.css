@@ -278,7 +278,7 @@
 }
 
 .fr-table tbody tr {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--wash-faint);
 }
 
 .fr-table tbody tr:hover {
@@ -591,9 +591,9 @@
 
 /* Drift alert banner — yellow-bordered call-out with chips */
 .rfp-drift-banner {
-  background: rgba(245, 158, 11, 0.07);
-  border: 1px solid rgba(245, 158, 11, 0.30);
-  border-left: 3px solid var(--accent-soft);
+  background: var(--callout-amber-bg);
+  border: 1px solid var(--callout-amber-border);
+  border-left: 3px solid var(--yellow);
   border-radius: 3px;
   padding: 10px 14px;
   display: flex;
@@ -604,7 +604,7 @@
 .rfp-drift-title {
   font-size: 11px;
   font-weight: 600;
-  color: var(--accent-soft);
+  color: var(--yellow);
   letter-spacing: 0.02em;
 }
 
@@ -859,7 +859,7 @@
   padding: 2px 7px;
   border: 1px solid;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--wash-faint);
   white-space: nowrap;
 }
 
