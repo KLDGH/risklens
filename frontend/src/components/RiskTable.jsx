@@ -31,11 +31,11 @@ function buildReferenceTip(ticker, references) {
 const TIPS = {
   ret:       "Yesterday's log return for this asset.",
   monthly:   "Monthly (21 trading-day) empirical downside. Top: 5th percentile of overlapping 21-day returns. Bottom: worst 21-day return on record. From all available history; no √t scaling.",
-  YearVaR:   "1-year VaR at 10% confidence. The 10th-percentile worst loss expected over a 1-year horizon, as a % of the position. Computed via Student-t parametric scaling: fit Student-t degrees of freedom (ν) to daily returns, scale daily volatility by √252, then take the standardized t-quantile at q=0.10. This is an annualized parametric proxy, not a path simulation — and it falls back to a Normal tail when the Student-t fit degenerates (ν≤2) on very low-volatility series like aggregate bonds. Interpretation: '10% chance of losing more than X% over the next year.' A 1-year-horizon complement to the 1-day 1% VaR columns. Bottom number is the expected shortfall — average loss conditional on the loss exceeding VaR.",
+  YearVaR:   "1-year VaR at 10% confidence: the 10th-percentile worst loss over a 1-year horizon, as a % of position. Read it as '10% chance of losing more than X% this year.' Bottom number is expected shortfall — average loss when that threshold is breached.",
   hs:        "Historical Simulation. Top number = VaR (1% worst daily loss). Bottom number = ES (average loss across the worst 1%). Both drawn directly from the last 1000 trading days; no distribution assumption.",
   ewma:      "EWMA model. Top = VaR; bottom = ES. Computed with exponentially weighted volatility (λ=0.94) under a normal-distribution assumption. Recent days weigh more than older ones.",
-  garch:     "GARCH(1,1) with Student-t innovations. Top = VaR; bottom = ES. The conditional volatility process is GARCH(1,1); the innovation distribution is Student-t (degrees of freedom estimated per fit) rather than Normal. This matches the empirical kurtosis of daily equity returns and produces tail-VaR estimates ~30–60% larger than Normal-innovation GARCH at 99% confidence. The EWMA column to the left assumes Normal innovations, so the EWMA-vs-GARCH gap *is* the heavy-tail premium. Falls back to EWMA if fitting fails.",
-  tgarch:    "GJR-GARCH(1,1,1) with Student-t innovations. Top = VaR; bottom = ES. Two simultaneous corrections to vanilla GARCH: (1) GJR threshold term — negative shocks raise conditional variance more than equal-sized positive shocks, capturing the leverage effect; (2) Student-t innovations — heavy-tailed daily innovations matching empirical equity return kurtosis. The 't' in this column's name refers to BOTH: 'threshold' GARCH AND Student-t innovations. Falls back to EWMA if fitting fails.",
+  garch:     "GARCH(1,1) with Student-t innovations. Top = VaR; bottom = ES. Conditional volatility follows GARCH(1,1); heavy-tailed Student-t innovations match the kurtosis of daily equity returns. The gap versus the Normal-innovation EWMA column is the heavy-tail premium.",
+  tgarch:    "GJR-GARCH(1,1,1) with Student-t innovations. Top = VaR; bottom = ES. Adds two corrections to GARCH: a threshold term so negative shocks raise variance more than positive ones (leverage effect), plus heavy-tailed Student-t innovations. The 't' means both.",
   evt:       "Extreme Value Theory. Top = VaR; bottom = ES. Fits a Generalized Pareto Distribution directly to the worst losses; best for fat-tailed assets like crypto.",
   consensus: "Simple average across all five VaR models. A rough consensus proxy — useful as a single reference number but not a coherent risk measure. Treat it as a heuristic.",
   range:     "Spread = max − min across the five VaR models. Small = the models agree. Large — usually EVT pulling high — means the tail is fatter than normal-distribution models capture. Grey ≤1.5 · amber >1.5 · red >3. Hover a value for the full min–max range.",
@@ -231,7 +231,10 @@ function PortfolioRow({ a, portfolioLabel, showAllModels, showLongHorizon, topRo
   return (
     <tr className={`portfolio-row${topRollup ? " portfolio-row-top" : ""}${benchmarkBelow ? " has-benchmark-below" : ""}`}>
       <td className="left asset-cell sticky-col portfolio-sticky">
-        <span className="ticker portfolio-ticker">{portfolioLabel ?? "PORTFOLIO"}</span>
+        <span className="ticker portfolio-ticker">
+          {portfolioLabel ?? "PORTFOLIO"}
+          {weightTip ? <InfoTip text={weightTip} /> : null}
+        </span>
         <span className="name">{a.name}</span>
       </td>
       <td className="num price">

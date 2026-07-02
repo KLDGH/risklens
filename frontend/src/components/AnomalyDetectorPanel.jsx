@@ -280,7 +280,7 @@ export function FactorRegressionPanel({ model, cascade }) {
                   )}
                 </td>
                 <td className="num">
-                  <span style={{ color: l.beta >= 0 ? "var(--green)" : "var(--red)" }}>
+                  <span style={{ color: "var(--text-bright)" }}>
                     {l.beta >= 0 ? "+" : ""}{l.beta.toFixed(3)}
                   </span>
                 </td>
@@ -492,7 +492,7 @@ export function ThematicExposurePanel({ thematic }) {
               <td><strong>{l.basket}</strong>{l.is_market && <span className="thematic-mkt-tag"> · market</span>}</td>
               <td className="thematic-label-cell">{l.label}</td>
               <td className="num">
-                <span style={{ color: l.beta >= 0 ? "var(--green)" : "var(--red)" }}>
+                <span style={{ color: "var(--text-bright)" }}>
                   {l.beta >= 0 ? "+" : ""}{l.beta.toFixed(3)}
                 </span>
               </td>

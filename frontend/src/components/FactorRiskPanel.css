@@ -42,20 +42,6 @@
 .frp-seg-systematic { background: var(--accent); }
 .frp-seg-specific   { background: var(--frp-specific); }
 
-.frp-splitbar-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-  font-size: 11px;
-  color: var(--text-dim);
-}
-
-.frp-splitbar-legend > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .frp-key {
   display: inline-block;
   width: 10px;
@@ -65,10 +51,6 @@
 
 .frp-key-systematic { background: var(--accent); }
 .frp-key-specific   { background: var(--frp-specific); }
-
-.frp-capture {
-  font-style: italic;
-}
 
 /* ---- headline stat table ---- */
 .frp-stat-table {
@@ -109,7 +91,7 @@
 .frp-block-label {
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-bright);
   margin-top: 8px;

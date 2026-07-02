@@ -229,10 +229,10 @@ export default function OptimizerPanel({ opt }) {
                   <div className="opt-bar-fill" style={{
                     left: r.d >= 0 ? "50%" : `${50 - (Math.abs(r.d) / maxDelta) * 50}%`,
                     width: `${(Math.abs(r.d) / maxDelta) * 50}%`,
-                    background: r.d >= 0 ? "var(--green)" : "var(--red)",
+                    background: r.d >= 0 ? "var(--accent)" : "var(--frp-specific)",
                   }} />
                 </div>
-                <span className="opt-bar-val" style={{ color: r.d >= 0 ? "var(--green)" : "var(--red)" }}>
+                <span className="opt-bar-val" style={{ color: r.d >= 0 ? "var(--accent)" : "var(--frp-specific)" }}>
                   {r.d >= 0 ? "+" : ""}{r.d.toFixed(1)}
                 </span>
               </div>
