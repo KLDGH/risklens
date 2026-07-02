@@ -62,9 +62,10 @@
   font-size: 12px;
   white-space: nowrap;
 }
-.opt-table th, .opt-table td { padding: 7px 10px; text-align: right; }
+.opt-table th, .opt-table td { padding: 8px 12px; text-align: right; }
 .opt-table thead th {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-dim);
   border-bottom: 1px solid var(--border);
 }
 .opt-metric-col {
@@ -137,7 +138,7 @@
 .opt-bar-val { font-size: 11px; font-family: var(--font); font-variant-numeric: tabular-nums; text-align: right; }
 
 .opt-rc { width: 100%; border-collapse: collapse; font-size: 11.5px; }
-.opt-rc th { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+.opt-rc th { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); }
 .opt-rc th.num, .opt-rc td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .opt-rc td { padding: 4px 8px; color: var(--text); }
 .opt-rc tbody tr { border-bottom: 1px solid var(--wash-faint); }
