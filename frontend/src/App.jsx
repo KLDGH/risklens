@@ -14,6 +14,7 @@ import FactorRiskBridgePanel from "./components/FactorRiskBridgePanel.jsx";
 import PerformancePanel from "./components/PerformancePanel.jsx";
 import RegimeAlphaPanel from "./components/RegimeAlphaPanel.jsx";
 import SkillLuckPanel from "./components/SkillLuckPanel.jsx";
+import ThemeNowBanner from "./components/ThemeNowBanner.jsx";
 import {
   SectorSelector,
   RiskProfileCard,
@@ -515,6 +516,11 @@ export default function App() {
             TAB 1 — Portfolio Risk
             All sections that depend on the active portfolio mode.
             ============================================================= */}
+        {/* "NOW" theme banner — the portfolio's AI & semis exposure, above
+            the snapshot so the most topical systematic risk reads first. */}
+        {activeTab === "portfolio" && portfolio?.theme_now && (
+          <ThemeNowBanner data={portfolio.theme_now} />
+        )}
         {activeTab === "portfolio" && portfolio && (
           <Section
             id="risk-snapshot"
