@@ -28,7 +28,7 @@ from factor_models import (
     fetch_ff_carhart_daily, fit_ff_carhart, compute_beta,
     compute_rolling_ff_loadings, compute_thematic_exposures,
     compute_factor_risk_decomposition, compute_orthogonal_factor_cascade,
-    compute_factor_risk_bridge, THEMATIC_BASKETS,
+    compute_factor_risk_bridge, compute_theme_now, THEMATIC_BASKETS,
 )
 from performance import compute_performance_skill
 from reference_values import (
@@ -352,6 +352,29 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
                 print("    Skipped — no benchmark match or insufficient history")
         except Exception as e:
             print(f"  WARNING: performance & skill failed ({e})")
+
+    # "NOW" theme exposure — the portfolio's AI & semiconductors read
+    # (direct weight in classified names + beyond-market SMH beta). Runs for
+    # every mode; the function degrades gracefully when the book holds no
+    # classified names or history is short.
+    print("  Computing AI & semis NOW exposure...")
+    try:
+        if "SPY" in prices_long.columns and "SMH" in prices_long.columns:
+            spy_r = np.log(prices_long["SPY"] / prices_long["SPY"].shift(1)).dropna()
+            smh_r = np.log(prices_long["SMH"] / prices_long["SMH"].shift(1)).dropna()
+            avail = [t for t in weights
+                     if t in returns_10y.columns and returns_10y[t].dropna().shape[0] >= 252]
+            if avail:
+                raw_w  = np.array([weights[t] for t in avail])
+                norm_w = raw_w / raw_w.sum()
+                rdf    = returns_10y[avail].dropna()
+                port_r = pd.Series(rdf.values @ norm_w, index=rdf.index)
+                theme  = compute_theme_now(port_r, weights, spy_r, smh_r,
+                                           names=mode_cfg.get("names"))
+                if theme:
+                    result["theme_now"] = theme
+    except Exception as e:
+        print(f"  WARNING: AI & semis NOW exposure failed ({e})")
 
     # Systematic portfolio construction — only for modes flagged optimizable.
     if mode_cfg.get("optimizable") and spy_rets is not None:

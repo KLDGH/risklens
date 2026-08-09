@@ -1056,3 +1056,165 @@ def compute_beta(returns: pd.Series, mkt_returns: pd.Series, lookback: int = 252
     if cov[1, 1] <= 0:
         return None
     return round(float(cov[0, 1] / cov[1, 1]), 4)
+
+
+# ============================================================================
+# "Now" theme exposure — AI & Semiconductors
+# ============================================================================
+
+# Curated AI/semis complex for the direct-weight read. Versioned here so the
+# classification is explicit and auditable rather than implicit. Covers the
+# semis supply chain + the AI-capex mega-caps that appear in the look-through
+# baskets. ETFs (SPY/QQQ/...) are deliberately NOT classified — an index book
+# shows "n/a" rather than a pretend look-through.  (v1, 2026-07)
+AI_SEMIS_TICKERS = {
+    # US semis / hardware
+    "NVDA", "AMD", "AVGO", "MU", "INTC", "QCOM", "TXN", "AMAT", "LRCX",
+    "KLAC", "WDC", "STX", "MRVL", "ARM", "SMCI",
+    # Asia / Europe supply chain (incl. local listings used in look-throughs)
+    "TSM", "ASML", "000660.KS", "005930.KS", "2330.TW", "6857.T", "8035.T",
+    # AI-capex mega-caps (compute buyers with AI-driven earnings narratives)
+    "MSFT", "GOOGL", "GOOG", "META", "AMZN",
+}
+
+# Rough-cut tiers for the beyond-market semis beta. Documented in the UI tip;
+# same spirit as the app's other rule-of-thumb bands.
+def _theme_tier(beta: float) -> str:
+    b = abs(beta)
+    return "high" if b >= 0.35 else "elevated" if b >= 0.15 else "low"
+
+
+def compute_theme_now(
+    port_returns: pd.Series,
+    weights: dict,
+    spy_returns: pd.Series,
+    smh_returns: pd.Series,
+    names: dict | None = None,
+    lookback: int = 252,
+    roll_window: int = 90,
+    roll_step: int = 10,
+    roll_span: int = 504,
+) -> dict | None:
+    """
+    Portfolio-level "NOW" exposure to the AI & semiconductors complex.
+
+    Two distinct reads, computed from public data:
+      1. DIRECT WEIGHT — sum of portfolio weight in AI_SEMIS_TICKERS names
+         (None when the book holds no individually classified names, e.g.
+         pure ETF books — we don't pretend to see through an index).
+      2. RETURN-BASED BETA — two-factor regression of the portfolio on
+         [market, market-orthogonalized SMH residual] over `lookback` days.
+         The SMH-residual loading reads as "semis exposure beyond market
+         beta" — the same methodology as compute_thematic_exposures.
+
+    Plus: the theme's share of portfolio variance from that two-factor fit,
+    a raw (non-orthogonalized) SMH beta used ONLY for the "if SMH −20%"
+    translation (a semis drawdown arrives with its usual market co-movement,
+    so the raw beta is the honest multiplier), and a rolling beyond-market
+    beta series for the trend read.
+    """
+    df = pd.concat(
+        {"R": port_returns, "MKT": spy_returns, "SMH": smh_returns}, axis=1
+    ).dropna()
+    if len(df) < roll_window + 20:
+        return None
+
+    def _two_factor(sub: pd.DataFrame):
+        """Returns (beta_mkt, beta_smh_resid, tstat_smh, theme_var_share, n)."""
+        y = sub["R"].to_numpy()
+        m = sub["MKT"].to_numpy()
+        s = sub["SMH"].to_numpy()
+        vm = np.var(m, ddof=1)
+        if vm <= 0:
+            return None
+        b_sm = float(np.cov(s, m, ddof=1)[0, 1] / vm)
+        s_res = s - b_sm * m                     # market-orthogonalized SMH
+        X = np.column_stack([np.ones(len(y)), m, s_res])
+        beta, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
+        eps = y - X @ beta
+        dfree = len(y) - 3
+        if dfree <= 0:
+            return None
+        sigma2 = float(eps @ eps) / dfree
+        try:
+            cov_b = sigma2 * np.linalg.inv(X.T @ X)
+        except np.linalg.LinAlgError:
+            return None
+        t_smh = float(beta[2] / np.sqrt(cov_b[2, 2])) if cov_b[2, 2] > 0 else 0.0
+        vy = np.var(y, ddof=1)
+        theme_share = (
+            float(beta[2] ** 2 * np.var(s_res, ddof=1) / vy) if vy > 0 else 0.0
+        )
+        return float(beta[1]), float(beta[2]), t_smh, theme_share, len(y)
+
+    cur = df.tail(lookback)
+    fit = _two_factor(cur)
+    if fit is None:
+        return None
+    b_mkt, b_theme, t_theme, theme_share, n_obs = fit
+
+    # Raw SMH beta over the same window — the "if SMH −20%" multiplier.
+    vs = np.var(cur["SMH"].to_numpy(), ddof=1)
+    b_raw = (
+        float(np.cov(cur["R"].to_numpy(), cur["SMH"].to_numpy(), ddof=1)[0, 1] / vs)
+        if vs > 0 else 0.0
+    )
+
+    # Rolling beyond-market beta (trend read).
+    roll = []
+    tail = df.tail(roll_span)
+    idx = tail.index
+    for end in range(roll_window, len(tail) + 1, roll_step):
+        sub = tail.iloc[end - roll_window : end]
+        f = _two_factor(sub)
+        if f is not None:
+            roll.append(
+                {"date": idx[end - 1].strftime("%Y-%m-%d"), "beta": round(f[1], 3)}
+            )
+    # ~6 months ago (≈126 trading days / roll_step points back), for the trend note.
+    prior = None
+    back = 126 // roll_step
+    if len(roll) > back:
+        prior = roll[-1 - back]["beta"]
+
+    # Direct weight over classified names.
+    direct = None
+    if weights:
+        total = sum(float(w) for w in weights.values()) or 1.0
+        hits = [
+            {
+                "ticker": t,
+                "name": (names or {}).get(t, t),
+                "weight_pct": round(100.0 * float(w) / total, 2),
+            }
+            for t, w in weights.items()
+            if t in AI_SEMIS_TICKERS and float(w) > 0
+        ]
+        if hits:
+            hits.sort(key=lambda h: -h["weight_pct"])
+            direct = {
+                "weight_pct": round(sum(h["weight_pct"] for h in hits), 1),
+                "n_names": len(hits),
+                "names": hits,
+            }
+
+    shock = -20.0
+    return {
+        "model":       "AI & semis NOW exposure (market + orthogonalized SMH residual)",
+        "proxy":       "SMH",
+        "n_obs":       int(n_obs),
+        "first_date":  cur.index[0].strftime("%Y-%m-%d"),
+        "last_date":   cur.index[-1].strftime("%Y-%m-%d"),
+        "beta_market":       round(b_mkt, 2),
+        "beta_theme":        round(b_theme, 2),   # beyond-market semis beta
+        "beta_theme_tstat":  round(t_theme, 2),
+        "theme_significant": bool(abs(t_theme) >= 1.96),
+        "tier":              _theme_tier(b_theme),
+        "risk_share_pct":    round(100.0 * theme_share, 1),
+        "beta_raw":          round(b_raw, 2),
+        "shock_pct":         shock,
+        "shock_impact_pct":  round(b_raw * shock, 1),
+        "rolling":           roll,
+        "beta_prior_6m":     prior,
+        "direct":            direct,
+    }
