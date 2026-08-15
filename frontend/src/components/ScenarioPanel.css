@@ -403,3 +403,107 @@
   color: var(--hypo-text-dim);
   border-top-color: var(--hypo-border);
 }
+
+/* ── in-tile assumption adjustment (hypothetical cards) ── */
+.scenario-adjust {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+.adj-toggle {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  padding: 2px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.adj-toggle:hover { color: var(--text-bright); }
+.adj-toggle.modified { color: var(--accent); }
+
+.adj-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: inline-block;
+}
+
+.adj-body {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adj-row {
+  display: grid;
+  grid-template-columns: 96px 1fr 74px;
+  align-items: center;
+  gap: 8px;
+}
+
+.adj-label {
+  font-size: 10px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adj-row input[type="range"] {
+  width: 100%;
+  height: 3px;
+  accent-color: var(--accent);
+}
+
+.adj-val {
+  font-size: 11px;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  line-height: 1.2;
+}
+.adj-val.modified { color: var(--accent); }
+
+.adj-base {
+  display: block;
+  font-size: 8.5px;
+  font-weight: 400;
+  color: var(--text-dim);
+  letter-spacing: 0.02em;
+}
+
+.adj-footrow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.adj-reset {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 9.5px;
+  padding: 2px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.adj-reset:hover:not(:disabled) { color: var(--text-bright); border-color: var(--accent); }
+.adj-reset:disabled { opacity: 0.4; cursor: default; }
+
+.adj-note {
+  font-size: 9px;
+  font-style: italic;
+  color: var(--text-dim);
+  line-height: 1.5;
+}

@@ -136,12 +136,48 @@ function ComparisonTooltip({ comparisons, currentMode, currentPnl }) {
 }
 
 
+// Fixed display order for the assumption-group sliders.
+const GROUP_ORDER = ["tech_semis", "equities", "rates_credit", "real_assets", "crypto"];
+
 function ScenarioCard({ s, weights, comparisons, currentMode }) {
   const isHypo = s.type === "hypothetical";
-  const isLoss = s.portfolio_pnl < 0;
   const [refsOpen, setRefsOpen] = useState(false);
 
-  const sorted = Object.entries(s.contributions).sort((a, b) => a[1] - b[1]);
+  // ---- assumption adjustment (hypothetical cards only) ----
+  // Each group slider scales every member holding's curated shock together,
+  // so relative structure inside the group is preserved. Adjusted
+  // contribution = baseline contribution × the group's multiplier.
+  const [adjOpen, setAdjOpen] = useState(false);
+  const [adj, setAdj] = useState({});
+  const groups = isHypo && s.asset_groups
+    ? GROUP_ORDER.filter((g) => Object.values(s.asset_groups).includes(g))
+    : [];
+  const multOf = (g) => adj[g] ?? 1;
+  const multFor = (ticker) => multOf(s.asset_groups?.[ticker]);
+  const modified = groups.some((g) => multOf(g) !== 1);
+
+  const adjContrib = (ticker, contrib) =>
+    contrib * (isHypo ? multFor(ticker) : 1);
+  const displayPnl = modified
+    ? Object.entries(s.contributions).reduce(
+        (acc, [t, c]) => acc + adjContrib(t, c), 0)
+    : s.portfolio_pnl;
+  const isLoss = displayPnl < 0;
+
+  // Anchor per group: the member with the largest baseline |shock| — its
+  // scaled value is the slider's readout ("what −28% becomes").
+  const anchorRet = (g) => {
+    let best = 0;
+    for (const [t, grp] of Object.entries(s.asset_groups ?? {})) {
+      const r = s.asset_returns[t] ?? 0;
+      if (grp === g && Math.abs(r) > Math.abs(best)) best = r;
+    }
+    return best;
+  };
+
+  const sorted = Object.entries(s.contributions)
+    .map(([t, c]) => [t, adjContrib(t, c)])
+    .sort((a, b) => a[1] - b[1]);
   const maxAbs = Math.max(...sorted.map(([, v]) => Math.abs(v)));
 
   // Each ticker's effective weight inside this scenario (re-normalized when
@@ -183,12 +219,70 @@ function ScenarioCard({ s, weights, comparisons, currentMode }) {
         }
       >
         <div className={`scenario-pnl ${isLoss ? "loss" : "gain"}`}>
-          {s.portfolio_pnl > 0 ? "+" : ""}{s.portfolio_pnl.toFixed(1)}%
+          {displayPnl > 0 ? "+" : ""}{displayPnl.toFixed(1)}%
           <span className="scenario-pnl-label">
-            portfolio return
+            {modified ? (
+              <>
+                adjusted · baseline {s.portfolio_pnl > 0 ? "+" : ""}
+                {s.portfolio_pnl.toFixed(1)}%
+              </>
+            ) : (
+              "portfolio return"
+            )}
           </span>
         </div>
       </HoverTip>
+
+      {isHypo && groups.length > 0 && (
+        <div className="scenario-adjust">
+          <button
+            className={`adj-toggle${adjOpen ? " open" : ""}${modified ? " modified" : ""}`}
+            onClick={() => setAdjOpen((o) => !o)}
+            aria-expanded={adjOpen}
+          >
+            {adjOpen ? "▾" : "▸"} Adjust assumptions
+            {modified && <span className="adj-dot" title="assumptions modified" />}
+          </button>
+          {adjOpen && (
+            <div className="adj-body">
+              {groups.map((g) => {
+                const m = multOf(g);
+                const base = anchorRet(g);
+                return (
+                  <div key={g} className="adj-row">
+                    <span className="adj-label">{s.group_labels?.[g] ?? g}</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="200"
+                      step="5"
+                      value={Math.round(m * 100)}
+                      onChange={(e) =>
+                        setAdj({ ...adj, [g]: Number(e.target.value) / 100 })
+                      }
+                    />
+                    <span className={`adj-val${m !== 1 ? " modified" : ""}`}>
+                      {(base * m) > 0 ? "+" : ""}{(base * m).toFixed(0)}%
+                      <span className="adj-base">
+                        {m === 1 ? "curated" : `base ${base > 0 ? "+" : ""}${base.toFixed(0)}%`}
+                      </span>
+                    </span>
+                  </div>
+                );
+              })}
+              <div className="adj-footrow">
+                <button className="adj-reset" onClick={() => setAdj({})} disabled={!modified}>
+                  reset to analyst baseline
+                </button>
+                <span className="adj-note">
+                  each slider scales that group's curated shocks together —
+                  relative structure inside the group is preserved
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {s.references?.length > 0 && (
         <div className="scenario-refs">
@@ -212,8 +306,8 @@ function ScenarioCard({ s, weights, comparisons, currentMode }) {
             key={ticker}
             ticker={ticker}
             contrib={contrib}
-            ret={s.asset_returns[ticker] ?? 0}
-            weightPct={effectiveWeight(ticker, contrib)}
+            ret={(s.asset_returns[ticker] ?? 0) * (isHypo ? multFor(ticker) : 1)}
+            weightPct={effectiveWeight(ticker, s.contributions[ticker])}
             maxAbs={maxAbs}
           />
         ))}
