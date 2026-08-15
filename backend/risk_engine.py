@@ -10,6 +10,8 @@ from scenario_config import (
     SCENARIOS,
     HYPOTHETICAL_SCENARIOS,
     SCENARIO_PROXIES,
+    GROUP_LABELS,
+    resolve_group,
     effective_shocks,
     resolve_shock,
 )
@@ -587,6 +589,12 @@ def compute_hypothetical_scenarios(weights: dict) -> list[dict]:
         else:
             port_return, contributions, asset_returns, coverage = 0.0, {}, {}, 0.0
 
+        # Assumption-group per holding — powers the tile's adjustment
+        # sliders (scale a group's shocks together, preserving the curated
+        # relative structure inside the group).
+        asset_groups = {t: g for t in avail
+                        if (g := resolve_group(t, s)) is not None}
+
         results.append({
             "id":            s["id"],
             "name":          s["name"],
@@ -596,6 +604,8 @@ def compute_hypothetical_scenarios(weights: dict) -> list[dict]:
             "coverage_pct":  coverage,
             "asset_returns": asset_returns,
             "contributions": contributions,
+            "asset_groups":  asset_groups,
+            "group_labels":  GROUP_LABELS,
             "references":    _references_hypothetical(s),
         })
     return results

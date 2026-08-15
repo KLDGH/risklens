@@ -352,3 +352,61 @@ if __name__ == "__main__":
           f"{len(CLASS_PARENTS)} classes, {len(SECTORS)} sectors")
     print(f"  scenarios.yaml:  {len(SCENARIOS)} historical, "
           f"{len(HYPOTHETICAL_SCENARIOS)} hypothetical, {len(SCENARIO_PROXIES)} proxies")
+
+
+# ─────────────────────── assumption groups (tile sliders) ───────────────────
+# Coarse "general assumption" buckets for the interactive scenario tiles: each
+# hypothetical card exposes one slider per group, scaling every member
+# holding's shock together so the curated relative structure inside a group is
+# preserved. Tech/semis get their own group because they are the epicenter
+# assumption in several scenarios (Taiwan, AI bubble) and the thing a user
+# most wants to bend independently of the broad market.
+GROUP_LABELS = {
+    "tech_semis":   "Tech & semis",
+    "equities":     "Broad equities",
+    "rates_credit": "Rates & credit",
+    "real_assets":  "Gold & commodities",
+    "crypto":       "Crypto",
+}
+
+_ROOT_GROUP = {
+    "equity":     "equities",
+    "bond":       "rates_credit",
+    "cash":       "rates_credit",
+    "real_asset": "real_assets",
+    "crypto":     "crypto",
+}
+
+
+def _class_root(cls: str) -> str | None:
+    seen = set()
+    while cls is not None and cls not in seen:
+        seen.add(cls)
+        parent = CLASS_PARENTS.get(cls)
+        if parent is None or parent == cls:
+            return cls
+        cls = parent
+    return cls
+
+
+def resolve_group(ticker: str, scenario: dict) -> str | None:
+    """Assumption-group for one holding under one scenario. Mirrors
+    resolve_shock's resolution order so a holding's slider matches the path
+    its shock actually took (sector override vs class walk)."""
+    sec = SECURITIES.get(ticker)
+    if sec is None:
+        return None
+    cats = scenario.get("categories") or {}
+    if "weights" in sec:
+        # Blended fund: bucket by the dominant covered sleeve's root class.
+        best_cls, best_w = None, 0.0
+        for cls, w in sec["weights"].items():
+            if _resolve_class(cls, cats) is not None and w > best_w:
+                best_cls, best_w = cls, w
+        if best_cls is None:
+            return None
+        return _ROOT_GROUP.get(_class_root(best_cls), "equities")
+    sector = sec.get("sector")
+    if sector and sector in cats:
+        return "tech_semis" if sector in ("semis", "tech") else "equities"
+    return _ROOT_GROUP.get(_class_root(sec.get("class")), "equities")
