@@ -181,6 +181,23 @@ securities:
   INTC:      {class: us_large, sector: semis}      # Intel
   BBVA:      {class: dev_intl, sector: financials} # BBVA (Spain)
 
+  # ── ICA look-through holdings (AIVSX top-25, Q1-2026 disclosure) ────────
+  LLY:       {class: us_large, sector: healthcare}       # Eli Lilly
+  BTI:       {class: dev_intl, sector: consumer_staples} # British American Tobacco (UK ADR)
+  PM:        {class: us_large, sector: consumer_staples} # Philip Morris International
+  AAPL:      {class: us_large, sector: tech}             # Apple
+  GE:        {class: us_large, sector: industrials}      # GE Aerospace
+  RCL:       {class: us_large, sector: consumer_disc}    # Royal Caribbean
+  LIN:       {class: us_large, sector: materials}        # Linde
+  UBER:      {class: us_large, sector: industrials}      # Uber (industrials per GICS)
+  RTX:       {class: us_large, sector: industrials}      # RTX
+  AMAT:      {class: us_large, sector: semis}            # Applied Materials
+  NFLX:      {class: us_large, sector: communications}   # Netflix
+  HD:        {class: us_large, sector: consumer_disc}    # Home Depot
+  WFC:       {class: us_large, sector: financials}       # Wells Fargo
+  ABBV:      {class: us_large, sector: healthcare}       # AbbVie
+  CARR:      {class: us_large, sector: industrials}      # Carrier Global
+
   # ── DWLD look-through holdings ──────────────────────────────────────────
   YMM:       {class: em,       sector: industrials}# Full Truck Alliance (China)
   CTRA:      {class: us_large, sector: energy}     # Coterra Energy

@@ -19,7 +19,9 @@ import json
 import os
 import re
 import sys
+import zipfile
 from datetime import datetime
+from xml.etree import ElementTree as ET
 
 import pandas as pd
 
@@ -51,6 +53,81 @@ FUND_REGISTRY = {
         "file_glob":   "DavisSelectWorldwide*.csv",
         "sheet_name":  None,
     },
+    "AIVSX": {
+        # The Investment Company of America — CG's flagship mutual fund.
+        # Source is the quarterly "investment portfolio" Word disclosure
+        # (the only export CG's site offers): name + shares + value, no
+        # tickers, so ICA_NAME_TICKERS below carries the curated mapping.
+        "fund_name":   "The Investment Company of America",
+        "sponsor":     "Capital Group",
+        "mandate":     "Flagship US large-cap growth-and-income",
+        "inception":   "1934-01-01",
+        "category":    "Mutual fund (American Funds)",
+        "file_glob":   "ICA-public-*.docx",
+        "sheet_name":  None,
+    },
+}
+
+
+# Curated name→ticker map for the ICA Word disclosure (top holdings by
+# value; the pipeline models top-25, so coverage here comfortably exceeds
+# what gets a risk row). Bloomberg-style suffixes ("RR LN") route through
+# _BBG_SUFFIX. Unmapped long-tail names stay disclosure-only. (v1, Q1-2026)
+ICA_NAME_TICKERS = {
+    "NVIDIA Corp.":                                   "NVDA",
+    "Broadcom, Inc.":                                 "AVGO",
+    "Microsoft Corp.":                                "MSFT",
+    "Amazon.com, Inc.":                               "AMZN",
+    "Eli Lilly and Co.":                              "LLY",
+    "Meta Platforms, Inc., Class A":                  "META",
+    "British American Tobacco PLC":                   "BTI",
+    "Alphabet, Inc., Class A":                        "GOOGL",
+    "Philip Morris International, Inc.":              "PM",
+    "Apple, Inc.":                                    "AAPL",
+    "General Electric Co.":                           "GE",
+    "Alphabet, Inc., Class C":                        "GOOG",
+    "Royal Caribbean Cruises, Ltd.":                  "RCL",
+    "Vertex Pharmaceuticals, Inc.":                   "VRTX",
+    "Linde PLC":                                      "LIN",
+    "Uber Technologies, Inc.":                        "UBER",
+    "Taiwan Semiconductor Manufacturing Co., Ltd.":   "TSM",
+    "Taiwan Semiconductor Manufacturing Co., Ltd. (ADR)": "TSM",
+    "RTX Corp.":                                      "RTX",
+    "Applied Materials, Inc.":                        "AMAT",
+    "Starbucks Corp.":                                "SBUX",
+    "Netflix, Inc.":                                  "NFLX",
+    "Home Depot, Inc.":                               "HD",
+    "Wells Fargo & Co.":                              "WFC",
+    "AbbVie, Inc.":                                   "ABBV",
+    "Carrier Global Corp.":                           "CARR",
+    "JPMorgan Chase & Co.":                           "JPM",
+    "UnitedHealth Group, Inc.":                       "UNH",
+    "Canadian Natural Resources, Ltd.":               "CNQ",
+    "Oracle Corp.":                                   "ORCL",
+    "Morgan Stanley":                                 "MS",
+    "Progressive Corp.":                              "PGR",
+    "Abbott Laboratories":                            "ABT",
+    "Cisco Systems, Inc.":                            "CSCO",
+    "Rolls-Royce Holdings PLC":                       "RR LN",
+    "Comcast Corp., Class A":                         "CMCSA",
+    "Intel Corp.":                                    "INTC",
+    "Mastercard, Inc., Class A":                      "MA",
+    "BlackRock, Inc.":                                "BLK",
+    "GE HealthCare Technologies, Inc.":               "GEHC",
+    "Halliburton Co.":                                "HAL",
+    "Apollo Asset Management, Inc.":                  "APO",
+    "Ingersoll-Rand, Inc.":                           "IR",
+    "Corning, Inc.":                                  "GLW",
+    "General Dynamics Corp.":                         "GD",
+    "Amphenol Corp., Class A":                        "APH",
+    "Salesforce, Inc.":                               "CRM",
+    "United Rentals, Inc.":                           "URI",
+    "FTAI Aviation, Ltd.":                            "FTAI",
+    "Thermo Fisher Scientific, Inc.":                 "TMO",
+    "CenterPoint Energy, Inc.":                       "CNP",
+    "Marsh & McLennan Cos., Inc.":                    "MMC",
+    "Alnylam Pharmaceuticals, Inc.":                  "ALNY",
+    "Illinois Tool Works, Inc.":                      "ITW",
 }
 
 
@@ -231,12 +308,90 @@ def _detect_as_of(raw: pd.DataFrame, header_row: int) -> str | None:
     return None
 
 
+_DOCX_NS = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+_DOCX_QTR_AS_OF = {"Q1": "-03-31", "Q2": "-06-30", "Q3": "-09-30", "Q4": "-12-31"}
+
+
+def _read_docx_portfolio(path: str) -> tuple[pd.DataFrame, str | None]:
+    """
+    Parse a Capital Group quarterly "investment portfolio" Word disclosure
+    (the mutual-fund format: tables of security name / shares / value with
+    no tickers). Weights are derived as value ÷ total portfolio value, and
+    tickers come from the curated ICA_NAME_TICKERS map. Same-ticker rows
+    (e.g. a local line + its ADR) are merged. Stdlib-only parsing — CI never
+    runs this file, but keeping openpyxl-free symmetry costs nothing.
+    """
+    z = zipfile.ZipFile(path)
+    root = ET.fromstring(z.read("word/document.xml").decode("utf-8"))
+    body = root.find("w:body", _DOCX_NS)
+
+    def cells(tr):
+        return [
+            "".join(t.text or "" for t in tc.findall(".//w:t", _DOCX_NS)).strip()
+            for tc in tr.findall("w:tc", _DOCX_NS)
+        ]
+
+    rows = []
+    for tbl in body.findall(".//w:tbl", _DOCX_NS):
+        for tr in tbl.findall("w:tr", _DOCX_NS):
+            c = cells(tr)
+            if not c:
+                continue
+            name_raw = c[0]
+            vals = [x for x in c[1:] if x]
+            # A holding row ends in shares + value, both numeric.
+            if len(vals) >= 2 and re.fullmatch(r"\$?[\d,]+", vals[-1]) \
+                    and re.fullmatch(r"[\d,]+", vals[-2].replace("$", "")):
+                name = re.sub(
+                    r"\s*\((?:[a-z]|CAD denominated|EUR denominated|GBP denominated)\)\s*",
+                    " ", name_raw).strip()
+                name = re.sub(r"\s+", " ", name)
+                if not name or "%" in name:   # section-header cells carry "%"
+                    continue
+                rows.append((name, int(vals[-1].replace("$", "").replace(",", ""))))
+
+    if not rows:
+        raise ValueError(f"No holdings rows parsed from {path}")
+    total = sum(v for _, v in rows)
+
+    # Merge duplicate mapped tickers (local + ADR lines), keep first name.
+    merged: dict[str, list] = {}
+    order = []
+    for name, value in rows:
+        ticker = ICA_NAME_TICKERS.get(name, "")
+        key = ticker or f"__unmapped__{name}"
+        if key in merged:
+            merged[key][1] += value
+        else:
+            merged[key] = [name, value, ticker]
+            order.append(key)
+
+    df = pd.DataFrame(
+        [
+            {
+                "Security Name": merged[k][0],
+                "Ticker":        merged[k][2],
+                "Percent of Net Assets": 100.0 * merged[k][1] / total,
+            }
+            for k in order
+        ]
+    )
+
+    # as-of from the filename convention "ICA-public-Q1-2026.docx"
+    m = re.search(r"(Q[1-4])[-_](\d{4})", os.path.basename(path))
+    as_of = f"{m.group(2)}{_DOCX_QTR_AS_OF[m.group(1)]}" if m else None
+    return df, as_of
+
+
 def _read_holdings(path: str, sheet_name: str | None) -> tuple[pd.DataFrame, str | None]:
     """
     Read a holdings file (xlsx or csv), locate the header row, and return
     a clean DataFrame with normalized column names + an as-of date if found.
     """
     ext = os.path.splitext(path)[1].lower()
+
+    if ext == ".docx":
+        return _read_docx_portfolio(path)
 
     if ext == ".csv":
         # Davis Advisors and similar ship a title row + trailing-comma padding.

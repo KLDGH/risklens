@@ -114,6 +114,9 @@ benchmarks:
   acwi_global:
     label: "Benchmark · MSCI ACWI (global equity)"
     weights: {ACWI: 1.00}
+  sp500_us:
+    label: "Benchmark · S&P 500 (SPY)"
+    weights: {SPY: 1.00}
 
 
 # The registry. Order = display order; visible toggles the tab.
@@ -215,6 +218,15 @@ portfolios:
     benchmark: acwi_global
     holdings:
       look_through: {fund_ticker: CGGO, top_n: 25}
+
+  - id: ica_active
+    label: "ICA Look-Through"
+    name: "ICA Top-25 Basket (Look-Through)"
+    description: "The Investment Company of America (AIVSX) — Capital Group's flagship mutual fund, running since 1934 — modeled as a look-through basket of its top 25 disclosed holdings from the quarterly portfolio disclosure. Each underlying is a per-asset risk row weighted by its disclosed weight (re-normalized over the top 25). The AIVSX row at the bottom shows the fund's own NAV-based risk for comparison vs. the basket."
+    visible: true
+    benchmark: sp500_us
+    holdings:
+      look_through: {fund_ticker: AIVSX, top_n: 25}
 
   - id: dwld_active
     label: "DWLD Look-Through"
