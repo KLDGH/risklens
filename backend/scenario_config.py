@@ -363,30 +363,55 @@ if __name__ == "__main__":
 # most wants to bend independently of the broad market.
 GROUP_LABELS = {
     "tech_semis":   "Tech & semis",
-    "equities":     "Broad equities",
+    "us_equity":    "US equities",
+    "intl_equity":  "Intl developed",
+    "em_equity":    "EM equities",
     "rates_credit": "Rates & credit",
     "real_assets":  "Gold & commodities",
     "crypto":       "Crypto",
 }
 
-_ROOT_GROUP = {
-    "equity":     "equities",
-    "bond":       "rates_credit",
-    "cash":       "rates_credit",
-    "real_asset": "real_assets",
-    "crypto":     "crypto",
+# Class → assumption-group. Equities split by REGION because that is the
+# level at which the curated scenarios actually differentiate their shocks
+# (e.g. Taiwan: US -15 / dev-intl -13 / EM -22); sectors beyond tech/semis
+# don't carry distinct assumptions today, so they inherit their region.
+_CLASS_GROUP = {
+    "us_large":        "us_equity",
+    "us_mid":          "us_equity",
+    "us_small":        "us_equity",
+    "real_estate":     "us_equity",
+    "dev_intl":        "intl_equity",
+    "global_eq":       "intl_equity",
+    "em":              "em_equity",
+    "equity":          "us_equity",     # generic-equity fallback
+    "treasuries":      "rates_credit",
+    "long_treasuries": "rates_credit",
+    "us_agg":          "rates_credit",
+    "ig_credit":       "rates_credit",
+    "hy_credit":       "rates_credit",
+    "intl_bond":       "rates_credit",
+    "tips":            "rates_credit",
+    "bond":            "rates_credit",
+    "cash":            "rates_credit",
+    "commodity":       "real_assets",
+    "gold":            "real_assets",
+    "real_asset":      "real_assets",
+    "crypto":          "crypto",
 }
 
 
-def _class_root(cls: str) -> str | None:
+def _class_group(cls: str) -> str | None:
+    """Walk a class up its parent chain to the first _CLASS_GROUP hit."""
     seen = set()
     while cls is not None and cls not in seen:
+        if cls in _CLASS_GROUP:
+            return _CLASS_GROUP[cls]
         seen.add(cls)
         parent = CLASS_PARENTS.get(cls)
-        if parent is None or parent == cls:
-            return cls
+        if parent == cls:
+            break
         cls = parent
-    return cls
+    return None
 
 
 def resolve_group(ticker: str, scenario: dict) -> str | None:
@@ -398,15 +423,16 @@ def resolve_group(ticker: str, scenario: dict) -> str | None:
         return None
     cats = scenario.get("categories") or {}
     if "weights" in sec:
-        # Blended fund: bucket by the dominant covered sleeve's root class.
+        # Blended fund: bucket by the dominant covered sleeve's class.
         best_cls, best_w = None, 0.0
         for cls, w in sec["weights"].items():
             if _resolve_class(cls, cats) is not None and w > best_w:
                 best_cls, best_w = cls, w
         if best_cls is None:
             return None
-        return _ROOT_GROUP.get(_class_root(best_cls), "equities")
+        return _class_group(best_cls)
     sector = sec.get("sector")
-    if sector and sector in cats:
-        return "tech_semis" if sector in ("semis", "tech") else "equities"
-    return _ROOT_GROUP.get(_class_root(sec.get("class")), "equities")
+    if sector and sector in cats and sector in ("semis", "tech"):
+        return "tech_semis"
+    # All other sectors (and no-override holdings) inherit their region.
+    return _class_group(sec.get("class"))

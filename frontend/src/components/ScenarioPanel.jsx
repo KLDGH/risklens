@@ -1,6 +1,18 @@
 import { useState } from "react";
 import HoverTip from "./HoverTip.jsx";
+import InfoTip from "./InfoTip.jsx";
 import "./ScenarioPanel.css";
+
+// Plain-spoken mechanics disclosure for the assumption sliders. A reader who
+// sees sliders may assume a factor model with cross-asset propagation is
+// underneath — it deliberately is NOT, and saying so up front is the point.
+const ADJUST_MECHANICS_TIP =
+  "Not a factor model. Each slider multiplies this scenario's hand-set " +
+  "category shocks for one group (0×–2×); a holding's P&L is weight × shock, " +
+  "summed. Groups are independent — moving equities does not move rates or " +
+  "gold; nothing propagates unless you move it. Deliberately naive: what you " +
+  "set is exactly what is applied. Baselines are analyst assumptions " +
+  "versioned in the repo (scenarios.yaml), not model output.";
 
 const fmt = (iso) =>
   new Date(iso).toLocaleDateString("en-US", { month: "short", year: "numeric" });
@@ -136,8 +148,12 @@ function ComparisonTooltip({ comparisons, currentMode, currentPnl }) {
 }
 
 
-// Fixed display order for the assumption-group sliders.
-const GROUP_ORDER = ["tech_semis", "equities", "rates_credit", "real_assets", "crypto"];
+// Fixed display order for the assumption-group sliders. Equities split by
+// region — the level at which the curated scenarios differentiate shocks.
+const GROUP_ORDER = [
+  "tech_semis", "us_equity", "intl_equity", "em_equity",
+  "rates_credit", "real_assets", "crypto",
+];
 
 function ScenarioCard({ s, weights, comparisons, currentMode }) {
   const isHypo = s.type === "hypothetical";
@@ -243,14 +259,40 @@ function ScenarioCard({ s, weights, comparisons, currentMode }) {
             {adjOpen ? "▾" : "▸"} Adjust assumptions
             {modified && <span className="adj-dot" title="assumptions modified" />}
           </button>
+          {adjOpen && <InfoTip text={ADJUST_MECHANICS_TIP} />}
           {adjOpen && (
             <div className="adj-body">
               {groups.map((g) => {
                 const m = multOf(g);
                 const base = anchorRet(g);
+                // Provenance hover: the distinct curated shock values inside
+                // this group (each holding uses its own category's value).
+                const distinct = [...new Set(
+                  Object.entries(s.asset_groups ?? {})
+                    .filter(([, grp]) => grp === g)
+                    .map(([t]) => s.asset_returns[t] ?? 0)
+                )].sort((a, b) => a - b);
+                const provenance = (
+                  <div style={{ lineHeight: 1.6 }}>
+                    <div style={{ fontWeight: 600, color: "var(--text-bright)", marginBottom: 3 }}>
+                      Curated shocks in this group
+                    </div>
+                    {distinct.map((v) => (
+                      <div key={v} style={{ fontVariantNumeric: "tabular-nums" }}>
+                        {v > 0 ? "+" : ""}{v.toFixed(0)}% → {(v * m) > 0 ? "+" : ""}{(v * m).toFixed(0)}%
+                      </div>
+                    ))}
+                    <div style={{ color: "var(--text-dim)", marginTop: 3 }}>
+                      hand-set per category (scenarios.yaml); the slider scales
+                      them together
+                    </div>
+                  </div>
+                );
                 return (
                   <div key={g} className="adj-row">
-                    <span className="adj-label">{s.group_labels?.[g] ?? g}</span>
+                    <HoverTip content={provenance} width={230}>
+                      <span className="adj-label">{s.group_labels?.[g] ?? g}</span>
+                    </HoverTip>
                     <input
                       type="range"
                       min="0"
@@ -275,8 +317,9 @@ function ScenarioCard({ s, weights, comparisons, currentMode }) {
                   reset to analyst baseline
                 </button>
                 <span className="adj-note">
-                  each slider scales that group's curated shocks together —
-                  relative structure inside the group is preserved
+                  simple re-scaling of the analyst's hand-set shocks — no
+                  factor model, no cross-group propagation (hover a group
+                  name for its curated values)
                 </span>
               </div>
             </div>
