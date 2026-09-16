@@ -15,6 +15,7 @@ import PerformancePanel from "./components/PerformancePanel.jsx";
 import RegimeAlphaPanel from "./components/RegimeAlphaPanel.jsx";
 import SkillLuckPanel from "./components/SkillLuckPanel.jsx";
 import ThemeNowBanner from "./components/ThemeNowBanner.jsx";
+import PositioningPanel from "./components/PositioningPanel.jsx";
 import {
   SectorSelector,
   RiskProfileCard,
@@ -37,12 +38,16 @@ import "./App.css";
 //                for backwards-compat; user-facing label is "Sector
 //                Spotlight".)
 const TABS = [
-  { id: "portfolio",   label: "Portfolio Risk" },
-  // `badge` flags the tab as early-stage in the selector. Swap "alpha" for
-  // "preview"/"beta" (or remove) when the tab graduates.
-  { id: "performance", label: "Performance & Skill", badge: "alpha" },
+  { id: "positioning", label: "Positioning" },
+  { id: "tail",        label: "Extreme Risk" },
+  { id: "stress",      label: "Stress" },
   { id: "market",      label: "Market Context" },
-  { id: "anomaly",     label: "Sector Spotlight" },
+  // Retired from the nav — this dashboard is about extreme risk, and
+  // manager-skill evaluation / single-asset research answer different
+  // questions. Components and data are kept; re-add an entry here (and to
+  // VALID_TABS) to bring one back. `badge` flags a tab as early-stage.
+  // { id: "performance", label: "Performance & Skill", badge: "alpha" },
+  // { id: "anomaly",     label: "Sector Spotlight" },
   // Optimizer tab hidden for now (its "reference book" benchmark concept is being
   // reconciled with a consistent app-wide benchmark treatment). Component, data,
   // and render block are all kept intact — re-add this entry + "optimizer" to
@@ -238,11 +243,11 @@ export default function App() {
     };
   };
   const initialParams = readUrlParams();
-  const VALID_TABS = ["portfolio", "performance", "market", "anomaly"];  // "optimizer" hidden for now
+  const VALID_TABS = ["positioning", "tail", "stress", "market"];  // performance/anomaly/optimizer retired
 
   const [mode, setMode] = useState(initialParams.portfolio || "hypothetical");
   const [activeTab, setActiveTab] = useState(
-    VALID_TABS.includes(initialParams.tab) ? initialParams.tab : "portfolio"
+    VALID_TABS.includes(initialParams.tab) ? initialParams.tab : "positioning"
   );
   const [selectedTicker, setSelectedTicker] = useState(initialParams.ticker || null);
 
@@ -315,7 +320,7 @@ export default function App() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams();
-    if (activeTab && activeTab !== "portfolio") params.set("tab", activeTab);
+    if (activeTab && activeTab !== "positioning") params.set("tab", activeTab);
     if (mode && mode !== "hypothetical") params.set("portfolio", mode);
     if (selectedTicker && activeTab === "anomaly") {
       params.set("ticker", selectedTicker);
@@ -478,7 +483,7 @@ export default function App() {
           (Portfolio Risk + Performance & Skill) — they don't apply to
           market-context charts (reference data) or to the anomaly-detector
           single-asset view. */}
-      {(activeTab === "portfolio" || activeTab === "performance") && portfolio && (
+      {["positioning", "tail", "stress"].includes(activeTab) && portfolio && (
         <div className="mode-bar">
           <div className="mode-toggle-row">
             <span className="mode-toggle-label">
@@ -518,10 +523,20 @@ export default function App() {
             ============================================================= */}
         {/* "NOW" theme banner — the portfolio's AI & semis exposure, above
             the snapshot so the most topical systematic risk reads first. */}
-        {activeTab === "portfolio" && portfolio?.theme_now && (
+        {activeTab === "positioning" && portfolio?.exante && (
+          <Section
+            id="exante"
+            title="Ex-Ante Positioning"
+            question="Where is this portfolio positioned, right now?"
+            description="Predicted — not realized — from an 8-factor risk model (Fama-French 5 + momentum, plus orthogonalized duration and credit factors so multi-asset books get a real model rather than an equity-only one). Active risk is the tracking error the model expects against the policy benchmark, beta is the net market loading, and the style read is the active value tilt. The factor table shows exactly where that tracking error comes from; model capture reports how much of realized variance the model actually reproduces."
+          >
+            <PositioningPanel data={portfolio.exante} />
+          </Section>
+        )}
+        {activeTab === "positioning" && portfolio?.theme_now && (
           <ThemeNowBanner data={portfolio.theme_now} />
         )}
-        {activeTab === "portfolio" && portfolio && (
+        {activeTab === "tail" && portfolio && (
           <Section
             id="risk-snapshot"
             title="Current Risk Snapshot"
@@ -563,7 +578,7 @@ export default function App() {
             />
           </Section>
         )}
-        {activeTab === "portfolio" && portfolio?.factor_risk_decomposition && (
+        {activeTab === "positioning" && portfolio?.factor_risk_decomposition && (
           <Section
             id="factor-risk"
             title="Factor Risk Decomposition"
@@ -573,7 +588,7 @@ export default function App() {
             <FactorRiskPanel data={portfolio.factor_risk_decomposition} />
           </Section>
         )}
-        {activeTab === "portfolio" && portfolio?.factor_risk_bridge && (
+        {activeTab === "positioning" && portfolio?.factor_risk_bridge && (
           <Section
             id="factor-risk-bridge"
             title="Risk Change Attribution"
@@ -583,7 +598,7 @@ export default function App() {
             <FactorRiskBridgePanel data={portfolio.factor_risk_bridge} />
           </Section>
         )}
-        {activeTab === "portfolio" && portfolio?.risk_history?.length > 0 && (
+        {activeTab === "tail" && portfolio?.risk_history?.length > 0 && (
           <Section
             id="risk-trajectory"
             title="Portfolio Risk Trajectory"
@@ -593,7 +608,7 @@ export default function App() {
             <PortfolioRiskChart data={portfolio.risk_history} portfolioLabel={portfolio.label} />
           </Section>
         )}
-        {activeTab === "portfolio" && portfolio?.backtests && (
+        {activeTab === "tail" && portfolio?.backtests && (
           <Section
             id="model-validation"
             title="VaR Model Validation"
@@ -603,7 +618,7 @@ export default function App() {
             <BacktestPanel data={portfolio.backtests} portfolioLabel={portfolio.label} />
           </Section>
         )}
-        {activeTab === "portfolio" && portfolio?.scenarios && (
+        {activeTab === "stress" && portfolio?.scenarios && (
           <Section
             id="stress-tests"
             title="Historical Stress Tests & Scenarios"

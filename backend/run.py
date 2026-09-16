@@ -31,6 +31,7 @@ from factor_models import (
     compute_factor_risk_bridge, compute_theme_now, THEMATIC_BASKETS,
 )
 from performance import compute_performance_skill
+from exante import build_exante_factors, compute_exante
 from reference_values import (
     get_references_for_ticker, get_factor_reference,
 )
@@ -41,6 +42,8 @@ from reference_values import (
 # - UUP: USD index ETF — included in the cross-asset correlation basket as the
 #        FX risk-premium leg. Not held in the portfolio, so fetched separately.
 EXTRA_BOND_PROXIES = ["AGG", "UUP"]
+# Russell 1000 growth / value — the style spread behind the growth↔value label.
+STYLE_PROXIES = ["IWF", "IWD"]
 
 # Policy benchmarks, real-fund NAV tickers, and the portfolio registry live in
 # config/portfolios.yaml (imported above as BENCHMARKS / BENCHMARK_TICKERS /
@@ -209,7 +212,8 @@ def compute_portfolio_row(returns: pd.DataFrame, weights: dict, name: str,
 def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
                  prices_long: pd.DataFrame, mode_cfg: dict,
                  spy_rets: pd.Series = None, benchmark: tuple = None,
-                 ff_factors: pd.DataFrame = None) -> dict:
+                 ff_factors: pd.DataFrame = None,
+                 exante_factors: pd.DataFrame = None) -> dict:
     """Compute everything needed for one portfolio mode."""
     tickers  = mode_cfg["tickers"]
     names    = mode_cfg["names"]
@@ -322,6 +326,23 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
                 result["factor_risk_bridge"] = bridge
         except Exception as e:
             print(f"  WARNING: factor risk bridge failed ({e})")
+
+    # Ex-ante positioning — predicted active risk, beta, and style tilt
+    # against the policy benchmark, from the 8-factor risk model. This is
+    # the headline strip at the top of the portfolio view.
+    if exante_factors is not None and benchmark:
+        print("  Computing ex-ante positioning (active risk / beta / style)...")
+        try:
+            xa = compute_exante(returns_10y, weights, benchmark, exante_factors,
+                                names=mode_cfg.get("names"),
+                                fund_ticker=mode_cfg.get("fund_ticker")
+                                            or mode_cfg.get("nav_ticker"))
+            if xa:
+                result["exante"] = xa
+            else:
+                print("    Skipped — insufficient common history")
+        except Exception as e:
+            print(f"  WARNING: ex-ante positioning failed ({e})")
 
     # Policy-benchmark comparison row — an analyst-chosen proxy run through the
     # same engine as the portfolio total, surfaced as a muted row beneath it.
@@ -500,7 +521,7 @@ def main():
         all_tickers.extend(cfg["tickers"])
     scenario_ref_tickers = [tk for _, tk in SCENARIO_REF_INDICES]
     all_tickers = list(dict.fromkeys(
-        all_tickers + EXTRA_BOND_PROXIES + ANOMALY_TICKERS + BENCHMARK_TICKERS
+        all_tickers + EXTRA_BOND_PROXIES + STYLE_PROXIES + ANOMALY_TICKERS + BENCHMARK_TICKERS
         + NAV_TICKERS + scenario_ref_tickers
     ))
 
@@ -524,9 +545,15 @@ def main():
     try:
         ff_factors = fetch_ff_carhart_daily()
         print(f"    {len(ff_factors)} rows, latest {ff_factors.index[-1].date()}")
+        # 8-factor ex-ante panel: FF5+Mom plus orthogonalized duration/credit,
+        # so multi-asset books get a real model instead of equity-only.
+        exante_factors = build_exante_factors(ff_factors, prices_long)
+        print(f"    ex-ante factors: "
+              f"{'unavailable (need TLT/HYG)' if exante_factors is None else str(len(exante_factors)) + ' rows, 8 factors'}")
     except Exception as e:
         print(f"  WARNING: factor data unavailable ({e}); factor models will be omitted")
         ff_factors = None
+        exante_factors = None
 
     # Compute each portfolio mode
     portfolios = {}
@@ -534,7 +561,8 @@ def main():
         print(f"\n=== Mode: {cfg['label']} ===")
         portfolios[key] = compute_mode(prices_10y, returns_10y, prices_long, cfg,
                                        spy_rets=spy_rets, benchmark=BENCHMARKS.get(key),
-                                       ff_factors=ff_factors)
+                                       ff_factors=ff_factors,
+                                       exante_factors=exante_factors)
         # Echo flags so the frontend knows which modes need the holdings panel
         if cfg.get("is_active_fund_spotlight"):
             portfolios[key]["is_active_fund_spotlight"] = True

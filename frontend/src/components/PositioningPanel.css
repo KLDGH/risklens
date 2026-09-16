@@ -1,0 +1,223 @@
+/* Ex-ante positioning strip — the dashboard's opening read. */
+
+.pos-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 18px 22px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ---- headline strip ---- */
+.pos-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 30px;
+  align-items: flex-start;
+}
+
+.pos-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 130px;
+}
+
+.pos-stat-hero {
+  padding-right: 24px;
+  border-right: 1px solid var(--border);
+}
+
+.pos-stat-style { min-width: 190px; }
+.pos-stat-meta  { margin-left: auto; text-align: right; align-items: flex-end; }
+
+.pos-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.pos-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-bright);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.12;
+}
+.pos-value-sm { font-size: 20px; }
+
+.pos-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.pos-sub strong { color: var(--text); font-variant-numeric: tabular-nums; }
+
+.pos-up   { color: var(--green); }
+.pos-down { color: var(--red); }
+.pos-dim  { color: var(--text-dim); }
+.pos-strong { font-weight: 600; }
+
+.pos-good { color: var(--green); }
+.pos-mid  { color: var(--yellow); }
+.pos-weak { color: var(--red); }
+
+/* ---- growth <-> value track ---- */
+.pos-style-track {
+  position: relative;
+  height: 8px;
+  width: 100%;
+  min-width: 170px;
+  background: var(--bg3);
+  border-radius: 2px;
+  margin: 5px 0 3px;
+}
+
+.pos-style-mid {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--border);
+}
+
+.pos-style-dot {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translate(-50%, -50%);
+}
+
+.pos-style-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-width: 170px;
+}
+.pos-style-val { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ---- block header ---- */
+.pos-block-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-bright);
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.pos-block-sub {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ---- factor table ---- */
+.pos-table-wrap { overflow-x: auto; }
+
+.pos-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.pos-table thead th {
+  padding: 8px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+  text-align: right;
+}
+.pos-table thead th.left { text-align: left; }
+.pos-table thead th.bar-col { text-align: left; width: 34%; }
+
+.pos-table .left { text-align: left; }
+.pos-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.pos-table tbody tr { border-bottom: 1px solid var(--border); }
+.pos-table tbody tr:last-child { border-bottom: none; }
+.pos-table tbody td { padding: 8px 12px; color: var(--text); }
+
+.pos-factor { color: var(--text); font-weight: 500; }
+
+.pos-table .bar-col {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pos-track {
+  display: inline-block;
+  flex: 1;
+  min-width: 80px;
+  height: 9px;
+  background: var(--bg3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.pos-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.pos-fill.neg { background: var(--frp-specific); }
+
+.pos-share {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  min-width: 34px;
+  text-align: right;
+}
+
+/* ---- footnote ---- */
+.pos-foot {
+  font-size: 10px;
+  font-style: italic;
+  color: var(--text-dim);
+  line-height: 1.6;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+/* Insignificant active loadings (|t| < 2) are de-emphasized so they don't
+   read as positions. Same idiom as the factor-regression table. */
+.pos-table tbody tr.pos-row-dim { opacity: 0.5; }
+.pos-sig { color: var(--text-bright); font-weight: 600; }
+
+/* Fund-vs-basket contrast note */
+.pos-basket-note {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--callout-amber-bg);
+  border: 1px solid var(--callout-amber-border);
+  border-left: 3px solid var(--yellow);
+  border-radius: 3px;
+  padding: 9px 14px;
+}
+.pos-basket-note strong { color: var(--text-bright); font-weight: 600; }
