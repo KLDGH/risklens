@@ -22,3 +22,10 @@ frontend/public/data/risk_output.json
 .vscode/
 *.swp
 .claude/
+
+# Raw sponsor holdings exports stay local; the pipeline only needs the
+# preprocessed backend/data/active_fund_holdings.json, which is committed.
+ext-data/
+
+# Office lock files
+~$*

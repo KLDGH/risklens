@@ -16,6 +16,7 @@ import RegimeAlphaPanel from "./components/RegimeAlphaPanel.jsx";
 import SkillLuckPanel from "./components/SkillLuckPanel.jsx";
 import ThemeNowBanner from "./components/ThemeNowBanner.jsx";
 import PositioningPanel from "./components/PositioningPanel.jsx";
+import SummaryPanel from "./components/SummaryPanel.jsx";
 import {
   SectorSelector,
   RiskProfileCard,
@@ -38,6 +39,7 @@ import "./App.css";
 //                for backwards-compat; user-facing label is "Sector
 //                Spotlight".)
 const TABS = [
+  { id: "summary",     label: "Summary" },
   { id: "positioning", label: "Positioning" },
   { id: "tail",        label: "Extreme Risk" },
   { id: "stress",      label: "Stress" },
@@ -59,10 +61,12 @@ const TABS = [
 // Falls back to a generic "PORTFOLIO" label for any unknown mode.
 const PORTFOLIO_SHORT_LABELS = {
   aor:          "ISHARES CORE 60/40 (AOR)",
-  hypothetical: "HYPOTHETICAL PORTFOLIO",
+  hypothetical: "SAMPLE 60/40+",
   tdf_2055:     "VANGUARD 2055",
   cg_2035:      "AF TARGET 2035",
   cggo_active:  "CGGO TOP-25 BASKET",
+  ica_active:   "ICA TOP-25 BASKET",
+  npf_active:   "NEW PERSPECTIVE TOP-25 BASKET",
   dwld_active:  "DWLD TOP-25 BASKET",
 };
 
@@ -226,7 +230,7 @@ export default function App() {
 
   // ── URL-stateful view selectors ──
   // The dashboard's shareable state lives in the URL query string:
-  //   ?tab=<portfolio|market|anomaly>
+  //   ?tab=<summary|positioning|tail|stress|market>  (default: summary)
   //   ?portfolio=<mode_id>
   //   ?ticker=<sector_etf>
   // So a URL like https://kldgh.github.io/risklens/?tab=anomaly&ticker=KRE
@@ -243,11 +247,11 @@ export default function App() {
     };
   };
   const initialParams = readUrlParams();
-  const VALID_TABS = ["positioning", "tail", "stress", "market"];  // performance/anomaly/optimizer retired
+  const VALID_TABS = ["summary", "positioning", "tail", "stress", "market"];  // performance/anomaly/optimizer retired
 
   const [mode, setMode] = useState(initialParams.portfolio || "hypothetical");
   const [activeTab, setActiveTab] = useState(
-    VALID_TABS.includes(initialParams.tab) ? initialParams.tab : "positioning"
+    VALID_TABS.includes(initialParams.tab) ? initialParams.tab : "summary"
   );
   const [selectedTicker, setSelectedTicker] = useState(initialParams.ticker || null);
 
@@ -320,7 +324,7 @@ export default function App() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams();
-    if (activeTab && activeTab !== "positioning") params.set("tab", activeTab);
+    if (activeTab && activeTab !== "summary") params.set("tab", activeTab);
     if (mode && mode !== "hypothetical") params.set("portfolio", mode);
     if (selectedTicker && activeTab === "anomaly") {
       params.set("ticker", selectedTicker);
@@ -480,7 +484,7 @@ export default function App() {
       )}
 
       {/* Portfolio mode toggle + legend are scoped to the portfolio-aware tabs
-          (Portfolio Risk + Performance & Skill) — they don't apply to
+          (Summary drills into them) — they don't apply to
           market-context charts (reference data) or to the anomaly-detector
           single-asset view. */}
       {["positioning", "tail", "stress"].includes(activeTab) && portfolio && (
@@ -518,17 +522,31 @@ export default function App() {
           </div>
         )}
         {/* =============================================================
-            TAB 1 — Portfolio Risk
+            Portfolio-aware tabs — Positioning, Extreme Risk, Stress
             All sections that depend on the active portfolio mode.
             ============================================================= */}
         {/* "NOW" theme banner — the portfolio's AI & semis exposure, above
             the snapshot so the most topical systematic risk reads first. */}
+        {activeTab === "summary" && data?.portfolios && (
+          <Section
+            id="summary"
+            title="Risk Summary"
+            question="Which portfolios need attention, and why?"
+            description="Exception-first view across every portfolio. Each row reads the fund's predicted active risk against a tolerance band for its mandate type, its beta, its worst historical crisis replay, and whether its VaR models pass their backtests. Portfolios collect a flag for each breach (active risk outside band, beta drift, AI/semis concentration, failing models, thin data) and are sorted worst-first. The exceptions list below turns each flag into an owner and a next step. Tolerance bands are placeholders until agreed with the investment risk function. Click a row to drill into that portfolio."
+          >
+            <SummaryPanel
+              portfolios={data.portfolios}
+              order={modeKeys}
+              onOpen={(k) => { setMode(k); setActiveTab("positioning"); window.scrollTo(0, 0); }}
+            />
+          </Section>
+        )}
         {activeTab === "positioning" && portfolio?.exante && (
           <Section
             id="exante"
             title="Ex-Ante Positioning"
             question="Where is this portfolio positioned, right now?"
-            description="Predicted — not realized — from an 8-factor risk model (Fama-French 5 + momentum, plus orthogonalized duration and credit factors so multi-asset books get a real model rather than an equity-only one). Active risk is the tracking error the model expects against the policy benchmark, beta is the net market loading, and the style read is the active value tilt. The factor table shows exactly where that tracking error comes from; model capture reports how much of realized variance the model actually reproduces."
+            description="Predicted — not realized — from an 8-factor risk model (Fama-French 5 + momentum, plus orthogonalized duration and credit factors so multi-asset books get a real model rather than an equity-only one). Active risk is the tracking error the model expects against the benchmark; beta is predicted sensitivity to that benchmark (plus beta to global equities for stock/bond blends); growth ↔ value is the active loading on a growth-minus-value index spread, called only when statistically significant. Each predicted figure sits next to its realized value over the same window. For look-through funds the headline is the fund's own NAV; the factor table shows where the modeled basket's tracking error comes from, and model capture reports how much realized variance the model reproduces."
           >
             <PositioningPanel data={portfolio.exante} />
           </Section>

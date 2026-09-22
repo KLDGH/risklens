@@ -27,7 +27,7 @@ If you need investment advice, talk to a qualified professional licensed in your
 
 ## 2. Educational and illustrative only
 
-The dashboard exists as a transparent reference implementation of techniques used in quantitative risk management. Its purpose is to **show how the math works**, not to drive decisions. The methodology is open in `backend/risk_engine.py`, `backend/factor_models.py`, and the supporting documents (`README.md`, `FAQ.md`, `TECH_REVIEW.md`) precisely so readers can inspect, learn from, and improve the implementation.
+The dashboard exists as a transparent reference implementation of techniques used in quantitative risk management. Its purpose is to **show how the math works**, not to drive decisions. The methodology is open in `backend/risk_engine.py`, `backend/factor_models.py`, `backend/exante.py`, and the supporting documents (`README.md`, `FAQ.md`, `TECH_REVIEW.md`) precisely so readers can inspect, learn from, and improve the implementation.
 
 Any conclusion drawn from the displayed numbers should be tested against your own judgment and other sources.
 
@@ -40,8 +40,8 @@ This software is provided **"AS IS"**, without warranty of any kind, express or 
 The MIT license disclaims warranties on the **software code**. This document additionally disclaims warranties on the **numbers the software produces**:
 
 - The author makes no representation that any displayed risk metric, scenario P&L, factor loading, anomaly flag, or other figure is accurate, complete, current, fit for any specific use, or free from error.
-- The models implemented (Historical Simulation, EWMA, GARCH-t, GJR-t, EVT, Page CUSUM, Fama-French regression, etc.) are widely-published statistical methods with well-documented limitations. They are known to fail in specific regimes, and the dashboard surfaces some of those failure modes (in the Model Validation tab) precisely because no model is universally reliable.
-- Historical risk does not predict future risk. A model that has been "well-calibrated" on the trailing 504 days can fail dramatically tomorrow.
+- The models implemented (Historical Simulation, EWMA, GARCH-t, GJR-t, EVT, Page CUSUM, Fama-French regression, etc.) are widely-published statistical methods with well-documented limitations. They are known to fail in specific regimes, and the dashboard surfaces some of those failure modes (in the VaR Model Validation section of the Extreme Risk tab) precisely because no model is universally reliable.
+- Historical risk does not predict future risk. A model that has been "well-calibrated" over its backtest window can fail dramatically tomorrow. Predicted (ex-ante) figures are model estimates, not forecasts with guaranteed accuracy.
 
 ## 5. Data sources
 
@@ -56,7 +56,7 @@ The author has no control over upstream data quality. The dashboard's "Data as o
 
 Factor data (Mkt-Rf, SMB, HML, RMW, CMA, MOM) comes from the **Ken French Data Library** at Dartmouth, which is publicly published and updated periodically. See https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html for the source data and its terms of use.
 
-Active-fund holdings come from publicly-disclosed sponsor filings (Capital Group daily-holdings xlsx, Davis Advisors daily-holdings csv). These are the sponsors' own disclosures and are subject to whatever revision the sponsor makes.
+Fund holdings come from publicly-disclosed sponsor materials (Capital Group ETF daily-holdings downloads, Capital Group mutual-fund quarterly portfolio disclosures, Davis Advisors daily-holdings csv). These are the sponsors' own disclosures, subject to whatever revision the sponsor makes; mutual-fund holdings are published with a lag, and the mapping of disclosed security names to tickers is the author's, not the sponsor's.
 
 ## 6. Third-party trademarks and references
 
@@ -64,7 +64,7 @@ The dashboard references the following third-party products and trademarks, all 
 
 - **Bloomberg PORT**, **MSCI BarraOne**, **FactSet**, **Aladdin**, **Axioma** — referenced as commercial risk systems for comparison purposes.
 - **SPDR**, **iShares**, **Vanguard**, **Invesco**, **PowerShares**, **Capital Group**, **American Funds**, **Davis Advisors**, **Dimensional**, **T. Rowe Price**, **Fidelity**, **JPMorgan**, **Polen Capital** — referenced as ETF/fund sponsors of instruments included in one or more portfolio modes.
-- Specific tickers (SPY, QQQ, GLD, TLT, EEM, BTC-USD, IWM, HYG, LQD, XLF, VNQ, EFA, IEF, TIP, DBC, BND, BNDX, VTI, VXUS, KRE, SMH, IBB, XLK, XLE, XLV, XLY, XLP, XLU, XLB, XLRE, XLC, AGTHX, AIVSX, ANCFX, AWSHX, AMRMX, ANWPX, AEPGX, CWGIX, NEWFX, SMCWX, ABNDX, AMUSX, CGGO, DWLD, ...).
+- Specific tickers (SPY, QQQ, GLD, TLT, EEM, BTC-USD, IWM, HYG, LQD, XLF, VNQ, EFA, IEF, TIP, DBC, BND, BNDX, VTI, VXUS, KRE, SMH, IBB, XLK, XLE, XLV, XLY, XLP, XLU, XLB, XLRE, XLC, AGTHX, AIVSX, ANCFX, AWSHX, AMRMX, ANWPX, AEPGX, CWGIX, NEWFX, SMCWX, ABNDX, AMUSX, CGGO, DWLD, RNPGX, AOR, AAFTX, VFFVX, ACWI, AGG, IWF, IWD, ...).
 - **Yahoo Finance** — the data source via yfinance.
 - **MIT License** for the open-source code.
 - Quantitative methods named after their academic originators (Fama-French, Carhart, Glosten-Jagannathan-Runkle, Aït-Sahalia–Fan–Xiu, Christoffersen, Kupiec, Page, Roberts, Engle, Bollerslev, Hill, Estrella-Trubin, Hamilton, Rabiner, and others) are public-domain methodologies; citation is by reference, not for any commercial purpose.
@@ -73,11 +73,15 @@ If you are a holder of any trademark referenced here and would like the referenc
 
 ## 7. Hypothetical scenarios are illustrative
 
-The four hypothetical stress-test scenarios (Taiwan Invasion, Iran Conflict / Oil Shock, U.S. Recession, AI Bubble Burst) use **analyst-estimated shock vectors** — informed guesses about how prices might move conditional on each scenario occurring. These are **not forecasts**. They are not based on any proprietary model, market signal, or insider information. They are illustrative of the methodology's *form*, not predictions of the world's behavior.
+The four hypothetical stress-test scenarios (Taiwan Invasion, Iran Conflict / Oil Shock, U.S. Recession, AI Bubble Burst) use **analyst-estimated shock vectors** — informed guesses about how prices might move conditional on each scenario occurring. These are **not forecasts**. They are not based on any proprietary model, market signal, or insider information. They are illustrative of the methodology's *form*, not predictions of the world's behavior. The adjustable sliders on each scenario scale these same assumptions; they do not add a model.
 
 The probability links shown alongside each hypothetical scenario (Polymarket, Metaculus, CSIS war-game reports, CBOE SKEW, Shiller CAPE, NY Fed yield-curve model) are public references the reader can consult to form their own probability views. The dashboard does not endorse any of these sources and does not synthesize them into a single probability estimate.
 
-## 8. User responsibility
+## 8. Summary status and tolerance bands
+
+The status lights, tolerance bands, flags, owners, and suggested actions on the Summary tab are **illustrative placeholders** chosen by the author to demonstrate an exception-based risk view. They are not risk limits, are not endorsed or used by any fund sponsor, and say nothing about whether any fund is being managed appropriately. A fund shown outside a placeholder band has not breached any actual limit.
+
+## 9. User responsibility
 
 By accessing the dashboard or this repository, you agree that:
 
@@ -87,25 +91,25 @@ By accessing the dashboard or this repository, you agree that:
 - You will not hold the author liable for any loss, damage, missed opportunity, regulatory consequence, or other adverse outcome arising from your use of, reliance on, or interpretation of anything displayed.
 - If you redistribute, modify, fork, or build on the code under the MIT license, you are responsible for the use and presentation of your derived work in your jurisdiction.
 
-## 9. Limitation of liability
+## 10. Limitation of liability
 
 To the maximum extent permitted by applicable law, the author shall not be liable for any direct, indirect, incidental, consequential, special, exemplary, or punitive damages arising out of or in connection with the use of, or inability to use, the RiskLens software, its output, or this repository — including but not limited to lost profits, lost opportunities, business interruption, loss of data, or any other commercial or non-commercial damages or losses, even if advised of the possibility of such damages.
 
 Some jurisdictions do not allow the exclusion or limitation of certain damages, so the above limitations may not apply in your jurisdiction.
 
-## 10. Privacy
+## 11. Privacy
 
 The deployed dashboard at https://kldgh.github.io/risklens/ is a **static site** hosted on GitHub Pages. The author does not operate any backend server, database, analytics pipeline, or user-tracking infrastructure of their own. GitHub itself collects standard request logs as part of running its Pages service — those are subject to GitHub's own privacy policy (see https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
 
-The dashboard does not set cookies, use local-storage telemetry, or transmit any user data to the author. The only local-storage usage is to remember the user's theme preference (`risklens-theme: dark | light`) — this is stored only in the user's own browser and never transmitted anywhere.
+The dashboard does not set cookies, use local-storage telemetry, or transmit any user data to the author. The only local-storage usage is to remember display preferences: the theme (`risklens-theme: dark | light`) and which sections are collapsed (`risklens.collapsed.*`). These are stored only in the user's own browser and never transmitted anywhere.
 
-## 11. Jurisdiction
+## 12. Jurisdiction
 
 This project is published in the United States. The dashboard is accessible globally via GitHub Pages but is not specifically targeted at, marketed in, or available to investors in any specific jurisdiction. Visitors are responsible for ensuring that their use complies with their local law.
 
 The MIT License covering the source code is interpreted under its standard terms. To the extent a court of competent jurisdiction holds that any provision of this document is unenforceable, the remainder of the document remains in effect.
 
-## 12. Changes to this document
+## 13. Changes to this document
 
 This document may be updated from time to time. The version in the `main` branch of the repository at https://github.com/KLDGH/risklens is the current version. Significant changes will be reflected in the commit history.
 

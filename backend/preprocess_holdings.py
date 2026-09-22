@@ -65,6 +65,21 @@ FUND_REGISTRY = {
         "category":    "Mutual fund (American Funds)",
         "file_glob":   "ICA-public-*.docx",
         "sheet_name":  None,
+        "name_map":    "ICA",
+    },
+    "RNPGX": {
+        # New Perspective Fund — CG's flagship global growth mutual fund,
+        # modeled on the R-6 share class (lowest fee, so NAV returns track
+        # the portfolio rather than the fee schedule). Same quarterly Word
+        # disclosure format as ICA; NPF_NAME_TICKERS carries its mapping.
+        "fund_name":   "New Perspective Fund",
+        "sponsor":     "Capital Group",
+        "mandate":     "Flagship global growth equity (multi-manager)",
+        "inception":   "1973-03-13",
+        "category":    "Mutual fund (American Funds)",
+        "file_glob":   "NPF-public-*.docx",
+        "sheet_name":  None,
+        "name_map":    "NPF",
     },
 }
 
@@ -129,6 +144,66 @@ ICA_NAME_TICKERS = {
     "Alnylam Pharmaceuticals, Inc.":                  "ALNY",
     "Illinois Tool Works, Inc.":                      "ITW",
 }
+
+
+# Curated name→ticker map for the New Perspective Word disclosure. Values
+# follow the same conventions as ICA (US symbol, ADR, Bloomberg-style
+# "SYMBOL XX", or Korean A-prefix) and are translated by _map_to_yf_ticker.
+# ADRs are preferred over local listings for non-US names: the fund reports
+# in USD, and an ADR carries the currency move the local line would miss.
+# Covers the top ~45 by weight; the pipeline models top-25. (v1, Q3-2026)
+NPF_NAME_TICKERS = {
+    "Taiwan Semiconductor Manufacturing Co., Ltd.":    "TSM",
+    "Meta Platforms, Inc., Class A":                   "META",
+    "NVIDIA Corp.":                                    "NVDA",
+    "Broadcom, Inc.":                                  "AVGO",
+    "Tesla, Inc.":                                     "TSLA",
+    "Microsoft Corp.":                                 "MSFT",
+    "ASML Holding NV":                                 "ASML",
+    "ASML Holding NV (ADR)":                           "ASML",
+    "SK hynix, Inc.":                                  "A000660",
+    "AstraZeneca PLC":                                 "AZN",
+    "Micron Technology, Inc.":                         "MU",
+    "Eli Lilly and Co.":                               "LLY",
+    "Alphabet, Inc., Class C":                         "GOOG",
+    "Amazon.com, Inc.":                                "AMZN",
+    "Alphabet, Inc., Class A":                         "GOOGL",
+    "Samsung Electronics Co., Ltd.":                   "A005930",
+    "Royal Caribbean Cruises, Ltd.":                   "RCL",
+    "KLA Corp.":                                       "KLAC",
+    "UniCredit SpA":                                   "UNCRY",
+    "Shopify, Inc., Class A, subordinate voting shares": "SHOP",
+    "Philip Morris International, Inc.":               "PM",
+    "Vertex Pharmaceuticals, Inc.":                    "VRTX",
+    "TotalEnergies SE":                                "TTE",
+    "General Electric Co.":                            "GE",
+    "Apple, Inc.":                                     "AAPL",
+    "Cloudflare, Inc., Class A":                       "NET",
+    "Deere & Co.":                                     "DE",
+    "Visa, Inc., Class A":                             "V",
+    "Rolls-Royce Holdings PLC":                        "RYCEY",
+    "Intel Corp.":                                     "INTC",
+    "DSV A/S":                                         "DSDVY",
+    "Amphenol Corp., Class A":                         "APH",
+    "Welltower, Inc. REIT":                            "WELL",
+    "Costco Wholesale Corp.":                          "COST",
+    "Starbucks Corp.":                                 "SBUX",
+    "Royalty Pharma PLC, Class A":                     "RPRX",
+    "Airbus SE, non-registered shares":                "EADSY",
+    "Schneider Electric SE":                           "SBGSY",
+    "Hitachi, Ltd.":                                   "HTHIY",
+    "Engie SA":                                        "ENGIY",
+    "BAE Systems PLC":                                 "BAESY",
+    "Intuitive Surgical, Inc.":                        "ISRG",
+    "Netflix, Inc.":                                   "NFLX",
+    "Citigroup, Inc.":                                 "C",
+    "Ryanair Holdings PLC (ADR)":                      "RYAAY",
+    "SAP SE":                                          "SAP",
+    "Cadence Design Systems, Inc.":                    "CDNS",
+    "ARM Holdings PLC (ADR)":                          "ARM",
+}
+
+NAME_MAPS = {"ICA": ICA_NAME_TICKERS, "NPF": NPF_NAME_TICKERS}
 
 
 # Trailing security-name boilerplate to strip so the holdings table stays
@@ -312,12 +387,12 @@ _DOCX_NS = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
 _DOCX_QTR_AS_OF = {"Q1": "-03-31", "Q2": "-06-30", "Q3": "-09-30", "Q4": "-12-31"}
 
 
-def _read_docx_portfolio(path: str) -> tuple[pd.DataFrame, str | None]:
+def _read_docx_portfolio(path: str, name_map: dict | None = None) -> tuple[pd.DataFrame, str | None]:
     """
     Parse a Capital Group quarterly "investment portfolio" Word disclosure
     (the mutual-fund format: tables of security name / shares / value with
     no tickers). Weights are derived as value ÷ total portfolio value, and
-    tickers come from the curated ICA_NAME_TICKERS map. Same-ticker rows
+    tickers come from the fund's curated name→ticker map. Same-ticker rows
     (e.g. a local line + its ADR) are merged. Stdlib-only parsing — CI never
     runs this file, but keeping openpyxl-free symmetry costs nothing.
     """
@@ -358,7 +433,7 @@ def _read_docx_portfolio(path: str) -> tuple[pd.DataFrame, str | None]:
     merged: dict[str, list] = {}
     order = []
     for name, value in rows:
-        ticker = ICA_NAME_TICKERS.get(name, "")
+        ticker = (name_map or {}).get(name, "")
         key = ticker or f"__unmapped__{name}"
         if key in merged:
             merged[key][1] += value
@@ -383,7 +458,8 @@ def _read_docx_portfolio(path: str) -> tuple[pd.DataFrame, str | None]:
     return df, as_of
 
 
-def _read_holdings(path: str, sheet_name: str | None) -> tuple[pd.DataFrame, str | None]:
+def _read_holdings(path: str, sheet_name: str | None,
+                   name_map: dict | None = None) -> tuple[pd.DataFrame, str | None]:
     """
     Read a holdings file (xlsx or csv), locate the header row, and return
     a clean DataFrame with normalized column names + an as-of date if found.
@@ -391,7 +467,7 @@ def _read_holdings(path: str, sheet_name: str | None) -> tuple[pd.DataFrame, str
     ext = os.path.splitext(path)[1].lower()
 
     if ext == ".docx":
-        return _read_docx_portfolio(path)
+        return _read_docx_portfolio(path, name_map)
 
     if ext == ".csv":
         # Davis Advisors and similar ship a title row + trailing-comma padding.
@@ -524,7 +600,8 @@ def main():
             continue
         print(f"  Reading {ticker} from {os.path.basename(path)} ...")
         try:
-            df, as_of = _read_holdings(path, meta["sheet_name"])
+            df, as_of = _read_holdings(path, meta["sheet_name"],
+                                       NAME_MAPS.get(meta.get("name_map")))
             payload  = _normalize(df, ticker)
         except Exception as e:
             print(f"    FAILED: {e}")

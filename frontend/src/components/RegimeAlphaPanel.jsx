@@ -57,7 +57,7 @@ export default function RegimeAlphaPanel({ data }) {
           // Left-anchored magnitude bar: length = |active| relative to the
           // largest regime, so the biggest bar always fills the track. Sign is
           // carried by color (and the signed number above) — a diverging bar
-          // with a subtle center line read as arbitrary fill.
+          // with a subtle center line reads as arbitrary fill.
           const w = Math.min(100, (Math.abs(a) / maxAbs) * 100);
           const pos = a >= 0;
           return (

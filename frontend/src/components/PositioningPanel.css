@@ -163,7 +163,7 @@
 
 .pos-factor { color: var(--text); font-weight: 500; }
 
-.pos-table .bar-col {
+.pos-table td.bar-col {
   display: flex;
   align-items: center;
   gap: 8px;

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T18:27:02Z",
+  "generated_at": "2026-09-22T19:32:42Z",
   "funds": {
     "CGGO": {
       "ticker": "CGGO",
@@ -2038,6 +2038,1737 @@
           "ticker": "",
           "weight": 0.0188,
           "rank": 153
+        }
+      ]
+    },
+    "RNPGX": {
+      "ticker": "RNPGX",
+      "fund_name": "New Perspective Fund",
+      "sponsor": "Capital Group",
+      "mandate": "Flagship global growth equity (multi-manager)",
+      "category": "Mutual fund (American Funds)",
+      "inception": "1973-03-13",
+      "as_of": "2026-09-30",
+      "source_file": "NPF-public-Q3-2026.docx",
+      "n_holdings": 278,
+      "total_weight_pct": 100.0007,
+      "top10_concentration_pct": 28.1915,
+      "top25_concentration_pct": 46.4357,
+      "holdings": [
+        {
+          "security": "Taiwan Semiconductor Manufacturing Co",
+          "ticker": "TSM",
+          "weight": 4.992,
+          "yf_ticker": "TSM",
+          "rank": 1
+        },
+        {
+          "security": "Meta Platforms",
+          "ticker": "META",
+          "weight": 3.3324,
+          "yf_ticker": "META",
+          "rank": 2
+        },
+        {
+          "security": "Nvidia",
+          "ticker": "NVDA",
+          "weight": 3.2135,
+          "yf_ticker": "NVDA",
+          "rank": 3
+        },
+        {
+          "security": "Broadcom",
+          "ticker": "AVGO",
+          "weight": 3.1987,
+          "yf_ticker": "AVGO",
+          "rank": 4
+        },
+        {
+          "security": "Asml Holding",
+          "ticker": "ASML",
+          "weight": 2.8831,
+          "yf_ticker": "ASML",
+          "rank": 5
+        },
+        {
+          "security": "Tesla",
+          "ticker": "TSLA",
+          "weight": 2.8505,
+          "yf_ticker": "TSLA",
+          "rank": 6
+        },
+        {
+          "security": "Microsoft",
+          "ticker": "MSFT",
+          "weight": 2.094,
+          "yf_ticker": "MSFT",
+          "rank": 7
+        },
+        {
+          "security": "Sk Hynix",
+          "ticker": "A000660",
+          "weight": 1.9557,
+          "yf_ticker": "000660.KS",
+          "rank": 8
+        },
+        {
+          "security": "Astrazeneca",
+          "ticker": "AZN",
+          "weight": 1.8963,
+          "yf_ticker": "AZN",
+          "rank": 9
+        },
+        {
+          "security": "Micron Technology",
+          "ticker": "MU",
+          "weight": 1.7753,
+          "yf_ticker": "MU",
+          "rank": 10
+        },
+        {
+          "security": "Eli Lilly And Co",
+          "ticker": "LLY",
+          "weight": 1.775,
+          "yf_ticker": "LLY",
+          "rank": 11
+        },
+        {
+          "security": "Alphabet",
+          "ticker": "GOOG",
+          "weight": 1.6088,
+          "yf_ticker": "GOOG",
+          "rank": 12
+        },
+        {
+          "security": "Amazon.Com",
+          "ticker": "AMZN",
+          "weight": 1.6068,
+          "yf_ticker": "AMZN",
+          "rank": 13
+        },
+        {
+          "security": "Alphabet",
+          "ticker": "GOOGL",
+          "weight": 1.5145,
+          "yf_ticker": "GOOGL",
+          "rank": 14
+        },
+        {
+          "security": "Samsung Electronics Co",
+          "ticker": "A005930",
+          "weight": 1.4466,
+          "yf_ticker": "005930.KS",
+          "rank": 15
+        },
+        {
+          "security": "Royal Caribbean Cruises",
+          "ticker": "RCL",
+          "weight": 1.2928,
+          "yf_ticker": "RCL",
+          "rank": 16
+        },
+        {
+          "security": "Kla",
+          "ticker": "KLAC",
+          "weight": 1.2704,
+          "yf_ticker": "KLAC",
+          "rank": 17
+        },
+        {
+          "security": "Unicredit Spa",
+          "ticker": "UNCRY",
+          "weight": 1.1883,
+          "yf_ticker": "UNCRY",
+          "rank": 18
+        },
+        {
+          "security": "Shopify,., Subordinate Voting Shares",
+          "ticker": "SHOP",
+          "weight": 1.0779,
+          "yf_ticker": "SHOP",
+          "rank": 19
+        },
+        {
+          "security": "Philip Morris International",
+          "ticker": "PM",
+          "weight": 1.0445,
+          "yf_ticker": "PM",
+          "rank": 20
+        },
+        {
+          "security": "Vertex Pharmaceuticals",
+          "ticker": "VRTX",
+          "weight": 1.0039,
+          "yf_ticker": "VRTX",
+          "rank": 21
+        },
+        {
+          "security": "Totalenergies",
+          "ticker": "TTE",
+          "weight": 0.8617,
+          "yf_ticker": "TTE",
+          "rank": 22
+        },
+        {
+          "security": "General Electric Co",
+          "ticker": "GE",
+          "weight": 0.8592,
+          "yf_ticker": "GE",
+          "rank": 23
+        },
+        {
+          "security": "Apple",
+          "ticker": "AAPL",
+          "weight": 0.8478,
+          "yf_ticker": "AAPL",
+          "rank": 24
+        },
+        {
+          "security": "Cloudflare",
+          "ticker": "NET",
+          "weight": 0.846,
+          "yf_ticker": "NET",
+          "rank": 25
+        },
+        {
+          "security": "Deere & Co",
+          "ticker": "DE",
+          "weight": 0.8455,
+          "yf_ticker": "DE",
+          "rank": 26
+        },
+        {
+          "security": "Visa",
+          "ticker": "V",
+          "weight": 0.8384,
+          "yf_ticker": "V",
+          "rank": 27
+        },
+        {
+          "security": "Rolls-Royce Holdings",
+          "ticker": "RYCEY",
+          "weight": 0.8321,
+          "yf_ticker": "RYCEY",
+          "rank": 28
+        },
+        {
+          "security": "Intel",
+          "ticker": "INTC",
+          "weight": 0.8068,
+          "yf_ticker": "INTC",
+          "rank": 29
+        },
+        {
+          "security": "Dsv A/S",
+          "ticker": "DSDVY",
+          "weight": 0.7987,
+          "yf_ticker": "DSDVY",
+          "rank": 30
+        },
+        {
+          "security": "Amphenol",
+          "ticker": "APH",
+          "weight": 0.7899,
+          "yf_ticker": "APH",
+          "rank": 31
+        },
+        {
+          "security": "Welltower,. Reit",
+          "ticker": "WELL",
+          "weight": 0.7276,
+          "yf_ticker": "WELL",
+          "rank": 32
+        },
+        {
+          "security": "Costco Wholesale",
+          "ticker": "COST",
+          "weight": 0.6962,
+          "yf_ticker": "COST",
+          "rank": 33
+        },
+        {
+          "security": "Starbucks",
+          "ticker": "SBUX",
+          "weight": 0.6626,
+          "yf_ticker": "SBUX",
+          "rank": 34
+        },
+        {
+          "security": "Royalty Pharma",
+          "ticker": "RPRX",
+          "weight": 0.6614,
+          "yf_ticker": "RPRX",
+          "rank": 35
+        },
+        {
+          "security": "Airbus, Non-Registered Shares",
+          "ticker": "EADSY",
+          "weight": 0.6271,
+          "yf_ticker": "EADSY",
+          "rank": 36
+        },
+        {
+          "security": "Schneider Electric",
+          "ticker": "SBGSY",
+          "weight": 0.6013,
+          "yf_ticker": "SBGSY",
+          "rank": 37
+        },
+        {
+          "security": "Hitachi",
+          "ticker": "HTHIY",
+          "weight": 0.5925,
+          "yf_ticker": "HTHIY",
+          "rank": 38
+        },
+        {
+          "security": "Engie",
+          "ticker": "ENGIY",
+          "weight": 0.5786,
+          "yf_ticker": "ENGIY",
+          "rank": 39
+        },
+        {
+          "security": "Bae Systems",
+          "ticker": "BAESY",
+          "weight": 0.5548,
+          "yf_ticker": "BAESY",
+          "rank": 40
+        },
+        {
+          "security": "Intuitive Surgical",
+          "ticker": "ISRG",
+          "weight": 0.5515,
+          "yf_ticker": "ISRG",
+          "rank": 41
+        },
+        {
+          "security": "Netflix",
+          "ticker": "NFLX",
+          "weight": 0.5369,
+          "yf_ticker": "NFLX",
+          "rank": 42
+        },
+        {
+          "security": "Citigroup",
+          "ticker": "C",
+          "weight": 0.5316,
+          "yf_ticker": "C",
+          "rank": 43
+        },
+        {
+          "security": "Ryanair Holdings (Adr)",
+          "ticker": "RYAAY",
+          "weight": 0.5254,
+          "yf_ticker": "RYAAY",
+          "rank": 44
+        },
+        {
+          "security": "Mastercard",
+          "ticker": "",
+          "weight": 0.5129,
+          "rank": 45
+        },
+        {
+          "security": "Restaurant Brands International",
+          "ticker": "",
+          "weight": 0.5092,
+          "rank": 46
+        },
+        {
+          "security": "Northrop Grumman",
+          "ticker": "",
+          "weight": 0.5085,
+          "rank": 47
+        },
+        {
+          "security": "Nestle",
+          "ticker": "",
+          "weight": 0.4806,
+          "rank": 48
+        },
+        {
+          "security": "Siemens",
+          "ticker": "",
+          "weight": 0.4706,
+          "rank": 49
+        },
+        {
+          "security": "Societe Generale",
+          "ticker": "",
+          "weight": 0.4686,
+          "rank": 50
+        },
+        {
+          "security": "Mercadolibre",
+          "ticker": "",
+          "weight": 0.4642,
+          "rank": 51
+        },
+        {
+          "security": "Abb",
+          "ticker": "",
+          "weight": 0.4639,
+          "rank": 52
+        },
+        {
+          "security": "Linde",
+          "ticker": "",
+          "weight": 0.4612,
+          "rank": 53
+        },
+        {
+          "security": "Bank Of America",
+          "ticker": "",
+          "weight": 0.4599,
+          "rank": 54
+        },
+        {
+          "security": "Beone Medicines,. (Adr)",
+          "ticker": "",
+          "weight": 0.4558,
+          "rank": 55
+        },
+        {
+          "security": "Safran",
+          "ticker": "",
+          "weight": 0.4551,
+          "rank": 56
+        },
+        {
+          "security": "Thermo Fisher Scientific",
+          "ticker": "",
+          "weight": 0.4425,
+          "rank": 57
+        },
+        {
+          "security": "Ftai Aviation",
+          "ticker": "",
+          "weight": 0.4407,
+          "rank": 58
+        },
+        {
+          "security": "Bharti Airtel",
+          "ticker": "",
+          "weight": 0.4348,
+          "rank": 59
+        },
+        {
+          "security": "Glencore",
+          "ticker": "",
+          "weight": 0.4276,
+          "rank": 60
+        },
+        {
+          "security": "Dbs Group Holdings",
+          "ticker": "",
+          "weight": 0.4141,
+          "rank": 61
+        },
+        {
+          "security": "Arm Holdings (Adr)",
+          "ticker": "ARM",
+          "weight": 0.4118,
+          "yf_ticker": "ARM",
+          "rank": 62
+        },
+        {
+          "security": "British American Tobacco",
+          "ticker": "",
+          "weight": 0.4058,
+          "rank": 63
+        },
+        {
+          "security": "Bombardier",
+          "ticker": "",
+          "weight": 0.4044,
+          "rank": 64
+        },
+        {
+          "security": "Mettler-Toledo International",
+          "ticker": "",
+          "weight": 0.4043,
+          "rank": 65
+        },
+        {
+          "security": "Transdigm Group",
+          "ticker": "",
+          "weight": 0.3914,
+          "rank": 66
+        },
+        {
+          "security": "Cenovus Energy",
+          "ticker": "",
+          "weight": 0.3905,
+          "rank": 67
+        },
+        {
+          "security": "Jpmorgan Chase & Co",
+          "ticker": "",
+          "weight": 0.3798,
+          "rank": 68
+        },
+        {
+          "security": "Cadence Design Systems",
+          "ticker": "CDNS",
+          "weight": 0.3717,
+          "yf_ticker": "CDNS",
+          "rank": 69
+        },
+        {
+          "security": "Sap",
+          "ticker": "SAP",
+          "weight": 0.3658,
+          "yf_ticker": "SAP",
+          "rank": 70
+        },
+        {
+          "security": "Aia Group",
+          "ticker": "",
+          "weight": 0.3617,
+          "rank": 71
+        },
+        {
+          "security": "Essilorluxottica",
+          "ticker": "",
+          "weight": 0.3551,
+          "rank": 72
+        },
+        {
+          "security": "Sherwin-Williams Co",
+          "ticker": "",
+          "weight": 0.3507,
+          "rank": 73
+        },
+        {
+          "security": "Ihi",
+          "ticker": "",
+          "weight": 0.3501,
+          "rank": 74
+        },
+        {
+          "security": "Deutsche Bank",
+          "ticker": "",
+          "weight": 0.3479,
+          "rank": 75
+        },
+        {
+          "security": "Tencent Holdings",
+          "ticker": "",
+          "weight": 0.3473,
+          "rank": 76
+        },
+        {
+          "security": "Hermes International",
+          "ticker": "",
+          "weight": 0.3195,
+          "rank": 77
+        },
+        {
+          "security": "Carrier Global",
+          "ticker": "",
+          "weight": 0.3176,
+          "rank": 78
+        },
+        {
+          "security": "Booking Holdings",
+          "ticker": "",
+          "weight": 0.3114,
+          "rank": 79
+        },
+        {
+          "security": "Ge Vernova",
+          "ticker": "",
+          "weight": 0.3065,
+          "rank": 80
+        },
+        {
+          "security": "Trip.Com Group,. (Adr)",
+          "ticker": "",
+          "weight": 0.303,
+          "rank": 81
+        },
+        {
+          "security": "Hewlett Packard Enterprise Co",
+          "ticker": "",
+          "weight": 0.3026,
+          "rank": 82
+        },
+        {
+          "security": "Cisco Systems",
+          "ticker": "",
+          "weight": 0.3024,
+          "rank": 83
+        },
+        {
+          "security": "Danone",
+          "ticker": "",
+          "weight": 0.2959,
+          "rank": 84
+        },
+        {
+          "security": "Nintendo Co",
+          "ticker": "",
+          "weight": 0.2912,
+          "rank": 85
+        },
+        {
+          "security": "Veolia Environnement",
+          "ticker": "",
+          "weight": 0.2895,
+          "rank": 86
+        },
+        {
+          "security": "Kioxia Holdings",
+          "ticker": "",
+          "weight": 0.2888,
+          "rank": 87
+        },
+        {
+          "security": "First Quantum Minerals",
+          "ticker": "",
+          "weight": 0.2878,
+          "rank": 88
+        },
+        {
+          "security": "Banco Santander",
+          "ticker": "",
+          "weight": 0.2831,
+          "rank": 89
+        },
+        {
+          "security": "Panasonic Holdings",
+          "ticker": "",
+          "weight": 0.2816,
+          "rank": 90
+        },
+        {
+          "security": "Mitsubishi Electric",
+          "ticker": "",
+          "weight": 0.28,
+          "rank": 91
+        },
+        {
+          "security": "Tdk",
+          "ticker": "",
+          "weight": 0.2758,
+          "rank": 92
+        },
+        {
+          "security": "Boeing Co. (The)",
+          "ticker": "",
+          "weight": 0.2735,
+          "rank": 93
+        },
+        {
+          "security": "Keysight Technologies",
+          "ticker": "",
+          "weight": 0.2732,
+          "rank": 94
+        },
+        {
+          "security": "Ajinomoto Co",
+          "ticker": "",
+          "weight": 0.2722,
+          "rank": 95
+        },
+        {
+          "security": "Recruit Holdings Co",
+          "ticker": "",
+          "weight": 0.2714,
+          "rank": 96
+        },
+        {
+          "security": "Novo Nordisk",
+          "ticker": "",
+          "weight": 0.2702,
+          "rank": 97
+        },
+        {
+          "security": "Prosus",
+          "ticker": "",
+          "weight": 0.2605,
+          "rank": 98
+        },
+        {
+          "security": "Carlsberg A/S",
+          "ticker": "",
+          "weight": 0.2598,
+          "rank": 99
+        },
+        {
+          "security": "Air Liquide",
+          "ticker": "",
+          "weight": 0.2585,
+          "rank": 100
+        },
+        {
+          "security": "Bunge Global",
+          "ticker": "",
+          "weight": 0.2554,
+          "rank": 101
+        },
+        {
+          "security": "Yum! Brands",
+          "ticker": "",
+          "weight": 0.252,
+          "rank": 102
+        },
+        {
+          "security": "Mtn Group",
+          "ticker": "",
+          "weight": 0.2517,
+          "rank": 103
+        },
+        {
+          "security": "Bayer",
+          "ticker": "",
+          "weight": 0.2482,
+          "rank": 104
+        },
+        {
+          "security": "Roblox",
+          "ticker": "",
+          "weight": 0.2454,
+          "rank": 105
+        },
+        {
+          "security": "Allianz",
+          "ticker": "",
+          "weight": 0.2389,
+          "rank": 106
+        },
+        {
+          "security": "Wise Group, (Cdi)",
+          "ticker": "",
+          "weight": 0.2366,
+          "rank": 107
+        },
+        {
+          "security": "Ul Solutions",
+          "ticker": "",
+          "weight": 0.2342,
+          "rank": 108
+        },
+        {
+          "security": "Marubeni",
+          "ticker": "",
+          "weight": 0.2331,
+          "rank": 109
+        },
+        {
+          "security": "S&P Global",
+          "ticker": "",
+          "weight": 0.2317,
+          "rank": 110
+        },
+        {
+          "security": "Corteva",
+          "ticker": "",
+          "weight": 0.2308,
+          "rank": 111
+        },
+        {
+          "security": "Salesforce",
+          "ticker": "",
+          "weight": 0.2298,
+          "rank": 112
+        },
+        {
+          "security": "Compagnie Financiere Richemont",
+          "ticker": "",
+          "weight": 0.2268,
+          "rank": 113
+        },
+        {
+          "security": "Industria De Diseno Textil",
+          "ticker": "",
+          "weight": 0.2267,
+          "rank": 114
+        },
+        {
+          "security": "Prudential",
+          "ticker": "",
+          "weight": 0.2238,
+          "rank": 115
+        },
+        {
+          "security": "Kkr & Co",
+          "ticker": "",
+          "weight": 0.2233,
+          "rank": 116
+        },
+        {
+          "security": "Fujitsu",
+          "ticker": "",
+          "weight": 0.2201,
+          "rank": 117
+        },
+        {
+          "security": "Pfizer",
+          "ticker": "",
+          "weight": 0.2089,
+          "rank": 118
+        },
+        {
+          "security": "Abbvie",
+          "ticker": "",
+          "weight": 0.2086,
+          "rank": 119
+        },
+        {
+          "security": "Goodman Logistics (Hk),. Reit",
+          "ticker": "",
+          "weight": 0.2034,
+          "rank": 120
+        },
+        {
+          "security": "Heico",
+          "ticker": "",
+          "weight": 0.2024,
+          "rank": 121
+        },
+        {
+          "security": "Canadian Natural Resources",
+          "ticker": "",
+          "weight": 0.2008,
+          "rank": 122
+        },
+        {
+          "security": "Mcdonald’S",
+          "ticker": "",
+          "weight": 0.1993,
+          "rank": 123
+        },
+        {
+          "security": "Deutsche Post",
+          "ticker": "",
+          "weight": 0.1991,
+          "rank": 124
+        },
+        {
+          "security": "Relx",
+          "ticker": "",
+          "weight": 0.1988,
+          "rank": 125
+        },
+        {
+          "security": "Agnico Eagle Mines",
+          "ticker": "",
+          "weight": 0.1984,
+          "rank": 126
+        },
+        {
+          "security": "Arthur J. Gallagher & Co",
+          "ticker": "",
+          "weight": 0.1983,
+          "rank": 127
+        },
+        {
+          "security": "Align Technology",
+          "ticker": "",
+          "weight": 0.1976,
+          "rank": 128
+        },
+        {
+          "security": "London Stock Exchange Group",
+          "ticker": "",
+          "weight": 0.1962,
+          "rank": 129
+        },
+        {
+          "security": "Itt",
+          "ticker": "",
+          "weight": 0.1947,
+          "rank": 130
+        },
+        {
+          "security": "Hong Kong Exchanges And Clearing",
+          "ticker": "",
+          "weight": 0.192,
+          "rank": 131
+        },
+        {
+          "security": "Keyence",
+          "ticker": "",
+          "weight": 0.1916,
+          "rank": 132
+        },
+        {
+          "security": "Marriott International",
+          "ticker": "",
+          "weight": 0.1884,
+          "rank": 133
+        },
+        {
+          "security": "Ryohin Keikaku Co",
+          "ticker": "",
+          "weight": 0.1882,
+          "rank": 134
+        },
+        {
+          "security": "Wynn Resorts",
+          "ticker": "",
+          "weight": 0.1873,
+          "rank": 135
+        },
+        {
+          "security": "Alnylam Pharmaceuticals",
+          "ticker": "",
+          "weight": 0.1844,
+          "rank": 136
+        },
+        {
+          "security": "Wheaton Precious Metals",
+          "ticker": "",
+          "weight": 0.1836,
+          "rank": 137
+        },
+        {
+          "security": "Danaher",
+          "ticker": "",
+          "weight": 0.1827,
+          "rank": 138
+        },
+        {
+          "security": "Sanofi",
+          "ticker": "",
+          "weight": 0.1827,
+          "rank": 139
+        },
+        {
+          "security": "L’Oreal, Bonus Shares",
+          "ticker": "",
+          "weight": 0.1808,
+          "rank": 140
+        },
+        {
+          "security": "Lvmh Moet Hennessy-Louis Vuitton",
+          "ticker": "",
+          "weight": 0.1804,
+          "rank": 141
+        },
+        {
+          "security": "Aon",
+          "ticker": "",
+          "weight": 0.1764,
+          "rank": 142
+        },
+        {
+          "security": "Regeneron Pharmaceuticals",
+          "ticker": "",
+          "weight": 0.1751,
+          "rank": 143
+        },
+        {
+          "security": "Constellation Brands",
+          "ticker": "",
+          "weight": 0.1741,
+          "rank": 144
+        },
+        {
+          "security": "Pernod Ricard",
+          "ticker": "",
+          "weight": 0.1699,
+          "rank": 145
+        },
+        {
+          "security": "Shin-Etsu Chemical Co",
+          "ticker": "",
+          "weight": 0.1695,
+          "rank": 146
+        },
+        {
+          "security": "Arista Networks",
+          "ticker": "",
+          "weight": 0.1684,
+          "rank": 147
+        },
+        {
+          "security": "Mondelez International",
+          "ticker": "",
+          "weight": 0.1682,
+          "rank": 148
+        },
+        {
+          "security": "Daikin Industries",
+          "ticker": "",
+          "weight": 0.167,
+          "rank": 149
+        },
+        {
+          "security": "America Movil, Sab De Cv, (Adr)",
+          "ticker": "",
+          "weight": 0.1649,
+          "rank": 150
+        },
+        {
+          "security": "Carrefour, Non-Registered Shares",
+          "ticker": "",
+          "weight": 0.1644,
+          "rank": 151
+        },
+        {
+          "security": "Standard Chartered",
+          "ticker": "",
+          "weight": 0.1643,
+          "rank": 152
+        },
+        {
+          "security": "Entain",
+          "ticker": "",
+          "weight": 0.1614,
+          "rank": 153
+        },
+        {
+          "security": "Hsbc Holdings",
+          "ticker": "",
+          "weight": 0.1596,
+          "rank": 154
+        },
+        {
+          "security": "Dassault Systemes",
+          "ticker": "",
+          "weight": 0.1518,
+          "rank": 155
+        },
+        {
+          "security": "Diploma",
+          "ticker": "",
+          "weight": 0.1517,
+          "rank": 156
+        },
+        {
+          "security": "Axa",
+          "ticker": "",
+          "weight": 0.1501,
+          "rank": 157
+        },
+        {
+          "security": "Grupo Mexico, Sab De Cv, Series B",
+          "ticker": "",
+          "weight": 0.1497,
+          "rank": 158
+        },
+        {
+          "security": "Illumina",
+          "ticker": "",
+          "weight": 0.1475,
+          "rank": 159
+        },
+        {
+          "security": "Renault",
+          "ticker": "",
+          "weight": 0.1467,
+          "rank": 160
+        },
+        {
+          "security": "Brookfield",
+          "ticker": "",
+          "weight": 0.1326,
+          "rank": 161
+        },
+        {
+          "security": "Amgen",
+          "ticker": "",
+          "weight": 0.1305,
+          "rank": 162
+        },
+        {
+          "security": "Nike",
+          "ticker": "",
+          "weight": 0.1299,
+          "rank": 163
+        },
+        {
+          "security": "Ingersoll-Rand",
+          "ticker": "",
+          "weight": 0.1275,
+          "rank": 164
+        },
+        {
+          "security": "Chubb",
+          "ticker": "",
+          "weight": 0.1275,
+          "rank": 165
+        },
+        {
+          "security": "Swisscom",
+          "ticker": "",
+          "weight": 0.1271,
+          "rank": 166
+        },
+        {
+          "security": "Tokyo Electron",
+          "ticker": "",
+          "weight": 0.1267,
+          "rank": 167
+        },
+        {
+          "security": "Ferrari",
+          "ticker": "",
+          "weight": 0.126,
+          "rank": 168
+        },
+        {
+          "security": "Applovin",
+          "ticker": "",
+          "weight": 0.1254,
+          "rank": 169
+        },
+        {
+          "security": "Roche Holding, Nonvoting Shares",
+          "ticker": "",
+          "weight": 0.1253,
+          "rank": 170
+        },
+        {
+          "security": "Abbott Laboratories",
+          "ticker": "",
+          "weight": 0.1247,
+          "rank": 171
+        },
+        {
+          "security": "Munchener Ruckversicherungs-Gesellschaft",
+          "ticker": "",
+          "weight": 0.1226,
+          "rank": 172
+        },
+        {
+          "security": "Anheuser-Busch Inbev/Nv",
+          "ticker": "",
+          "weight": 0.1222,
+          "rank": 173
+        },
+        {
+          "security": "Icici Bank,. (Adr)",
+          "ticker": "",
+          "weight": 0.1206,
+          "rank": 174
+        },
+        {
+          "security": "Chugai Pharmaceutical Co",
+          "ticker": "",
+          "weight": 0.1175,
+          "rank": 175
+        },
+        {
+          "security": "Edenred",
+          "ticker": "",
+          "weight": 0.1174,
+          "rank": 176
+        },
+        {
+          "security": "Millicom International Cellular",
+          "ticker": "",
+          "weight": 0.1172,
+          "rank": 177
+        },
+        {
+          "security": "Servicenow",
+          "ticker": "",
+          "weight": 0.117,
+          "rank": 178
+        },
+        {
+          "security": "Intercontinental Exchange",
+          "ticker": "",
+          "weight": 0.1133,
+          "rank": 179
+        },
+        {
+          "security": "Delta Air Lines",
+          "ticker": "",
+          "weight": 0.1125,
+          "rank": 180
+        },
+        {
+          "security": "Brookfield Asset Management",
+          "ticker": "",
+          "weight": 0.1123,
+          "rank": 181
+        },
+        {
+          "security": "Conocophillips",
+          "ticker": "",
+          "weight": 0.1116,
+          "rank": 182
+        },
+        {
+          "security": "Caterpillar",
+          "ticker": "",
+          "weight": 0.1104,
+          "rank": 183
+        },
+        {
+          "security": "Boston Scientific",
+          "ticker": "",
+          "weight": 0.1102,
+          "rank": 184
+        },
+        {
+          "security": "Resonac Holdings Co",
+          "ticker": "",
+          "weight": 0.1076,
+          "rank": 185
+        },
+        {
+          "security": "Western Digital",
+          "ticker": "",
+          "weight": 0.1066,
+          "rank": 186
+        },
+        {
+          "security": "Tmx Group",
+          "ticker": "",
+          "weight": 0.1064,
+          "rank": 187
+        },
+        {
+          "security": "Walmart",
+          "ticker": "",
+          "weight": 0.1064,
+          "rank": 188
+        },
+        {
+          "security": "Monster Beverage",
+          "ticker": "",
+          "weight": 0.1062,
+          "rank": 189
+        },
+        {
+          "security": "Copart",
+          "ticker": "",
+          "weight": 0.1059,
+          "rank": 190
+        },
+        {
+          "security": "Bnp Paribas",
+          "ticker": "",
+          "weight": 0.1033,
+          "rank": 191
+        },
+        {
+          "security": "Suzuki Motor",
+          "ticker": "",
+          "weight": 0.1032,
+          "rank": 192
+        },
+        {
+          "security": "Coca-Cola Co",
+          "ticker": "",
+          "weight": 0.1031,
+          "rank": 193
+        },
+        {
+          "security": "Itochu",
+          "ticker": "",
+          "weight": 0.1018,
+          "rank": 194
+        },
+        {
+          "security": "Mongodb",
+          "ticker": "",
+          "weight": 0.1008,
+          "rank": 195
+        },
+        {
+          "security": "Aristocrat Leisure",
+          "ticker": "",
+          "weight": 0.0997,
+          "rank": 196
+        },
+        {
+          "security": "Sony Group",
+          "ticker": "",
+          "weight": 0.0978,
+          "rank": 197
+        },
+        {
+          "security": "Publicis Groupe",
+          "ticker": "",
+          "weight": 0.0973,
+          "rank": 198
+        },
+        {
+          "security": "Constellation Software",
+          "ticker": "",
+          "weight": 0.0949,
+          "rank": 199
+        },
+        {
+          "security": "Valeo, Non-Registered Shares",
+          "ticker": "",
+          "weight": 0.0934,
+          "rank": 200
+        },
+        {
+          "security": "Corning",
+          "ticker": "",
+          "weight": 0.0926,
+          "rank": 201
+        },
+        {
+          "security": "Icon",
+          "ticker": "",
+          "weight": 0.0913,
+          "rank": 202
+        },
+        {
+          "security": "Slb",
+          "ticker": "",
+          "weight": 0.0899,
+          "rank": 203
+        },
+        {
+          "security": "L3Harris Technologies",
+          "ticker": "",
+          "weight": 0.0888,
+          "rank": 204
+        },
+        {
+          "security": "Nokia. (Adr)",
+          "ticker": "",
+          "weight": 0.0877,
+          "rank": 205
+        },
+        {
+          "security": "Coherent",
+          "ticker": "",
+          "weight": 0.0872,
+          "rank": 206
+        },
+        {
+          "security": "Trane Technologies",
+          "ticker": "",
+          "weight": 0.0858,
+          "rank": 207
+        },
+        {
+          "security": "Akamai Technologies",
+          "ticker": "",
+          "weight": 0.0852,
+          "rank": 208
+        },
+        {
+          "security": "Xpo",
+          "ticker": "",
+          "weight": 0.0836,
+          "rank": 209
+        },
+        {
+          "security": "Evolution",
+          "ticker": "",
+          "weight": 0.0821,
+          "rank": 210
+        },
+        {
+          "security": "Banco Bilbao Vizcaya Argentaria",
+          "ticker": "",
+          "weight": 0.0817,
+          "rank": 211
+        },
+        {
+          "security": "Advanced Micro Devices",
+          "ticker": "",
+          "weight": 0.0813,
+          "rank": 212
+        },
+        {
+          "security": "Ms&Ad Insurance Group Holdings",
+          "ticker": "",
+          "weight": 0.0754,
+          "rank": 213
+        },
+        {
+          "security": "Sempra",
+          "ticker": "",
+          "weight": 0.0744,
+          "rank": 214
+        },
+        {
+          "security": "Amadeus It Group, Non-Registered Shares",
+          "ticker": "",
+          "weight": 0.0743,
+          "rank": 215
+        },
+        {
+          "security": "Ascendis Pharma",
+          "ticker": "",
+          "weight": 0.0742,
+          "rank": 216
+        },
+        {
+          "security": "Space Exploration Technologies",
+          "ticker": "",
+          "weight": 0.0711,
+          "rank": 217
+        },
+        {
+          "security": "Tetra Tech",
+          "ticker": "",
+          "weight": 0.0706,
+          "rank": 218
+        },
+        {
+          "security": "Equifax",
+          "ticker": "",
+          "weight": 0.0694,
+          "rank": 219
+        },
+        {
+          "security": "Mtu Aero Engines",
+          "ticker": "",
+          "weight": 0.0679,
+          "rank": 220
+        },
+        {
+          "security": "Weir Group (The)",
+          "ticker": "",
+          "weight": 0.0671,
+          "rank": 221
+        },
+        {
+          "security": "Leonardo Spa",
+          "ticker": "",
+          "weight": 0.0669,
+          "rank": 222
+        },
+        {
+          "security": "Vestas Wind Systems",
+          "ticker": "",
+          "weight": 0.0667,
+          "rank": 223
+        },
+        {
+          "security": "Crh",
+          "ticker": "",
+          "weight": 0.0667,
+          "rank": 224
+        },
+        {
+          "security": "Freeport-Mcmoran",
+          "ticker": "",
+          "weight": 0.0667,
+          "rank": 225
+        },
+        {
+          "security": "American Express Co",
+          "ticker": "",
+          "weight": 0.0655,
+          "rank": 226
+        },
+        {
+          "security": "Sumitomo Electric Industries",
+          "ticker": "",
+          "weight": 0.0645,
+          "rank": 227
+        },
+        {
+          "security": "Crispr Therapeutics",
+          "ticker": "",
+          "weight": 0.0637,
+          "rank": 228
+        },
+        {
+          "security": "Partners Group Holding",
+          "ticker": "",
+          "weight": 0.0634,
+          "rank": 229
+        },
+        {
+          "security": "Rwe",
+          "ticker": "",
+          "weight": 0.0625,
+          "rank": 230
+        },
+        {
+          "security": "3I Group",
+          "ticker": "",
+          "weight": 0.0623,
+          "rank": 231
+        },
+        {
+          "security": "Vat Group",
+          "ticker": "",
+          "weight": 0.0597,
+          "rank": 232
+        },
+        {
+          "security": "Grifols, (Adr)",
+          "ticker": "",
+          "weight": 0.0597,
+          "rank": 233
+        },
+        {
+          "security": "Bristol-Myers Squibb Co",
+          "ticker": "",
+          "weight": 0.0594,
+          "rank": 234
+        },
+        {
+          "security": "Techtronic Industries Co",
+          "ticker": "",
+          "weight": 0.059,
+          "rank": 235
+        },
+        {
+          "security": "Cme Group",
+          "ticker": "",
+          "weight": 0.0587,
+          "rank": 236
+        },
+        {
+          "security": "Delta Electronics",
+          "ticker": "",
+          "weight": 0.0585,
+          "rank": 237
+        },
+        {
+          "security": "Spotify Technology",
+          "ticker": "",
+          "weight": 0.0577,
+          "rank": 238
+        },
+        {
+          "security": "Contemporary Amperex Technology Co",
+          "ticker": "",
+          "weight": 0.0559,
+          "rank": 239
+        },
+        {
+          "security": "Seagate Technology Holdings",
+          "ticker": "",
+          "weight": 0.0541,
+          "rank": 240
+        },
+        {
+          "security": "Doordash",
+          "ticker": "",
+          "weight": 0.0535,
+          "rank": 241
+        },
+        {
+          "security": "Canadian Imperial Bank Of Commerce",
+          "ticker": "",
+          "weight": 0.0535,
+          "rank": 242
+        },
+        {
+          "security": "Metso",
+          "ticker": "",
+          "weight": 0.052,
+          "rank": 243
+        },
+        {
+          "security": "Seven & I Holdings Co",
+          "ticker": "",
+          "weight": 0.0507,
+          "rank": 244
+        },
+        {
+          "security": "Tourmaline Oil",
+          "ticker": "",
+          "weight": 0.0506,
+          "rank": 245
+        },
+        {
+          "security": "Softbank Group",
+          "ticker": "",
+          "weight": 0.049,
+          "rank": 246
+        },
+        {
+          "security": "Gerdau (Adr)",
+          "ticker": "",
+          "weight": 0.0489,
+          "rank": 247
+        },
+        {
+          "security": "Adyen",
+          "ticker": "",
+          "weight": 0.0486,
+          "rank": 248
+        },
+        {
+          "security": "Compagnie Generale Des Etablissements Michelin",
+          "ticker": "",
+          "weight": 0.0485,
+          "rank": 249
+        },
+        {
+          "security": "Hanwha Aerospace Co",
+          "ticker": "",
+          "weight": 0.0482,
+          "rank": 250
+        },
+        {
+          "security": "Epam Systems",
+          "ticker": "",
+          "weight": 0.0469,
+          "rank": 251
+        },
+        {
+          "security": "Orange",
+          "ticker": "",
+          "weight": 0.0465,
+          "rank": 252
+        },
+        {
+          "security": "Euronext",
+          "ticker": "",
+          "weight": 0.0441,
+          "rank": 253
+        },
+        {
+          "security": "Zimmer Biomet Holdings",
+          "ticker": "",
+          "weight": 0.0411,
+          "rank": 254
+        },
+        {
+          "security": "Wynn Macau",
+          "ticker": "",
+          "weight": 0.041,
+          "rank": 255
+        },
+        {
+          "security": "Loar Holdings",
+          "ticker": "",
+          "weight": 0.0403,
+          "rank": 256
+        },
+        {
+          "security": "Ati",
+          "ticker": "",
+          "weight": 0.0398,
+          "rank": 257
+        },
+        {
+          "security": "Beone Medicines",
+          "ticker": "",
+          "weight": 0.0376,
+          "rank": 258
+        },
+        {
+          "security": "Lg Chem",
+          "ticker": "",
+          "weight": 0.0375,
+          "rank": 259
+        },
+        {
+          "security": "Berkshire Hathaway",
+          "ticker": "",
+          "weight": 0.0372,
+          "rank": 260
+        },
+        {
+          "security": "Iberdrola, Non-Registered Shares",
+          "ticker": "",
+          "weight": 0.0332,
+          "rank": 261
+        },
+        {
+          "security": "Smc",
+          "ticker": "",
+          "weight": 0.0324,
+          "rank": 262
+        },
+        {
+          "security": "Sage Group (The)",
+          "ticker": "",
+          "weight": 0.0318,
+          "rank": 263
+        },
+        {
+          "security": "Haleon",
+          "ticker": "",
+          "weight": 0.0309,
+          "rank": 264
+        },
+        {
+          "security": "Crane Co",
+          "ticker": "",
+          "weight": 0.0299,
+          "rank": 265
+        },
+        {
+          "security": "L’Oreal, Non-Registered Shares",
+          "ticker": "",
+          "weight": 0.0272,
+          "rank": 266
+        },
+        {
+          "security": "Dsm-Firmenich",
+          "ticker": "",
+          "weight": 0.0266,
+          "rank": 267
+        },
+        {
+          "security": "Rtx",
+          "ticker": "",
+          "weight": 0.0256,
+          "rank": 268
+        },
+        {
+          "security": "Hilton Worldwide Holdings",
+          "ticker": "",
+          "weight": 0.0217,
+          "rank": 269
+        },
+        {
+          "security": "Assa Abloy",
+          "ticker": "",
+          "weight": 0.0202,
+          "rank": 270
+        },
+        {
+          "security": "Singapore Telecommunications",
+          "ticker": "",
+          "weight": 0.0195,
+          "rank": 271
+        },
+        {
+          "security": "Daiichi Sankyo Co",
+          "ticker": "",
+          "weight": 0.0184,
+          "rank": 272
+        },
+        {
+          "security": "Shell",
+          "ticker": "",
+          "weight": 0.0178,
+          "rank": 273
+        },
+        {
+          "security": "Strategy",
+          "ticker": "",
+          "weight": 0.0136,
+          "rank": 274
+        },
+        {
+          "security": "Lyondellbasell Industries",
+          "ticker": "",
+          "weight": 0.0077,
+          "rank": 275
+        },
+        {
+          "security": "Westlake",
+          "ticker": "",
+          "weight": 0.0075,
+          "rank": 276
+        },
+        {
+          "security": "Bp (Adr)",
+          "ticker": "",
+          "weight": 0.0061,
+          "rank": 277
+        },
+        {
+          "security": "Accenture",
+          "ticker": "",
+          "weight": 0.0026,
+          "rank": 278
         }
       ]
     }

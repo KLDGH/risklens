@@ -1,7 +1,7 @@
 """
 optimizer.py — systematic portfolio construction for the Optimizer tab.
 
-Takes a base strategy (the hypothetical portfolio's weights) and produces a small
+Takes a base strategy (the Sample 60/40+ portfolio's weights) and produces a small
 set of mean-variance / risk-based variants, plus per-variant metric deltas
 (return, vol, Sharpe, beta, alpha, tracking error, concentration, turnover,
 risk budget). It is a prototype, not a replacement for a production
@@ -185,7 +185,7 @@ def compute_optimizer(returns_10y, base_weights, prices_long, spy_rets,
     }
 
     base = {"id": "base", "label": "Reference book", "needs_mu": False, "fragile": False,
-            "description": "The current hypothetical portfolio, as-is — the benchmark every variant's active risk, active return, and information ratio is measured against.",
+            "description": "The current Sample 60/40+ portfolio, as-is — the benchmark every variant's active risk, active return, and information ratio is measured against.",
             **_metrics(w0_dict, w0_dict, avail, Sig, mu_ann, sig_diag, ret_df, spy_rets, prices_long)}
 
     variants = []

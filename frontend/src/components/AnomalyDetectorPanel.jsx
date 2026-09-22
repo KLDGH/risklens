@@ -20,8 +20,8 @@ import InfoTip from "./InfoTip.jsx";
 // Color palette per detector — chosen so none collide with the amber
 // accent (reserved for primary UI) OR the app's semantic hues: green/red
 // mean gain/loss and yellow means elevated risk, so detectors avoid all
-// three. (The old red-up / yellow-down CUSUM pair inverted the sign
-// language and the yellow was illegible on the light theme.) CUSUM is ONE detector with two directions, so both share a
+// three. (A red-up / yellow-down CUSUM pair would invert the sign
+// language, and yellow is illegible on the light theme.) CUSUM is ONE detector with two directions, so both share a
 // single magenta; the down-shift line is dashed to tell them apart.
 const DETECTOR_COLORS = {
   zscore:      "#06b6d4",   // cyan

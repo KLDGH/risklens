@@ -9,23 +9,70 @@ Common questions, organized as: what it tells you, what it doesn't, how it compa
 ## At a glance
 
 **What is this, in one sentence?**
-A daily-refresh risk dashboard that runs five VaR models, a Fama-French factor regression, anomaly detectors, and historical + hypothetical stress tests across a configurable book, with the methodology in the open.
+A daily-refresh investment risk dashboard that flags which portfolios are out of bounds, shows where each is positioned against its benchmark, runs five VaR models with formal backtests, and replays historical and hypothetical stress scenarios, with the methodology in the open.
 
 **What is it not?**
 Not a signal generator, not a trading system, not a vendor replacement. It's a monitoring and research tool that surfaces how risk is changing and which model assumptions may break, not where prices are heading.
 
 **How do I use it day-to-day?**
-- **Position sizing reference** — if BTC VaR is $12 on $100, a bad day costs 12% of notional. Sanity-check whether that fits your sizing.
+- **Start on Summary** — see which portfolios are flagged and why, then click a row to drill in.
+- **Mandate check** — on Positioning, is predicted active risk and beta what you'd expect for this kind of fund?
+- **Position sizing reference** — if BTC's daily VaR is 12%, a bad day costs 12% of the position. Sanity-check whether that fits your sizing.
 - **Regime awareness** — multiple holdings at 90%+ risk-percentile simultaneously indicates building macro stress.
 - **Pre-event diligence** — before a known catalyst, look at the corresponding stress-test card to see how the book is exposed.
 - **Model-disagreement diagnostic** — when EVT diverges sharply from EWMA, the tail is fatter than a normal-distribution model assumes. Weight EVT-style estimates more heavily.
 
 **What would have helped historically?**
-Mixed. Risk-percentile would have been elevated going into late 2007 and Feb 2020 — vol was building before the crashes. But VaR is procyclical: it spikes during the crash, not weeks ahead. The correlation chart and Sector Spotlight detectors are the more leading indicators. VaR tells you how bad things are, not how bad they're about to get.
+Mixed. Risk-percentile would have been elevated going into late 2007 and Feb 2020 — vol was building before the crashes. But VaR is procyclical: it spikes during the crash, not weeks ahead. The correlation charts and the predicted-vs-realized gap on Positioning are the more leading reads. VaR tells you how bad things are, not how bad they're about to get.
 
 ---
 
-## Portfolio Risk tab
+## Summary tab
+
+**What is it for?**
+A one-screen read across every portfolio for someone who doesn't need the factor tables. Each row shows predicted active risk against a tolerance band for that type of mandate, beta, the largest stress shortfall against the benchmark, and whether the VaR models pass their backtests. Rows are sorted worst first; click one to open that portfolio.
+
+**Why stress vs benchmark rather than the worst crisis loss?**
+An absolute crisis loss mostly restates market exposure: nearly every equity fund lost 30–40% in 2008, so "it lost a lot in the GFC" says little. The gap to the benchmark in the same scenario shows where a fund behaves worse than its mandate implies. The column takes the largest gap across all nine scenarios, historical and forward-looking. Historical crises use the fund's own price where it existed for the whole window; otherwise the modeled holdings (marked "holdings"), which for look-through funds overstate the gap. It's context, not a flag.
+
+**How is the status light set?**
+Each portfolio collects a flag for: active risk outside its band; beta more than 0.25 away from 1; high AI and semis concentration; VaR models failing (every model under-predicts) or on watch (misses cluster); or thin data (under a year of shared history, the factor model explaining under 70% of variance, or no backtest). No flags = green, one = amber, two or more = red.
+
+**Where do the tolerance bands come from?**
+They are placeholders: 0.5–3% for index-based allocation funds, 2–6% for active US large-cap, 3–8% for active global equity. Real bands would be agreed between the independent investment risk function and each portfolio manager. They are constants at the top of `frontend/src/components/SummaryPanel.jsx`.
+
+**What are the owners and actions in the exceptions list?**
+Suggested defaults (investment risk, model validation, data), so each breach reads as something with a next step rather than just a red number.
+
+## Positioning tab
+
+**What's the difference between ex-ante and realized?**
+Ex-ante (predicted) figures come from a factor risk model, the way commercial risk systems report them. Realized figures are what actually happened over the same year, the way fund fact sheets report them. RiskLens shows both. Predicted running above realized means risk has been rising recently.
+
+**Why don't these match the numbers on a fund's fact sheet?**
+Fact sheets publish trailing 3- or 5-year figures from monthly returns. RiskLens uses the last year of daily returns. Different window and frequency, so expect differences; direction and rough size should agree.
+
+**What model produces the predicted numbers?**
+Eight factors: the five Fama-French equity factors, momentum, and two macro factors for duration and credit so stock/bond funds are modeled too. The factor covariance weights recent months more heavily (about a six-month half-life). Active risk comes from regressing the portfolio-minus-benchmark return directly on the factors. Full detail in `TECH_REVIEW.md` §5.1.
+
+**Why is the look-through fund's headline different from its basket?**
+The basket is the fund's top 25 holdings re-normalized to 100%, which is far more concentrated than the fund. CGGO's basket predicts ~20% active risk; the fund itself runs ~10%. The headline uses the fund's own daily price; the basket number is shown for contrast, and the factor table describes the basket.
+
+**How is growth ↔ value measured?**
+By regressing the fund's active return on a growth-minus-value index spread (Russell 1000 Growth minus Value), with market moves stripped out. A tilt is only called when it is statistically significant and at least ±0.05 (roughly a 5% net growth-over-value position). The Fama-French value factor alone misreads modern growth funds as neutral, because mega-cap growth shows up as profitability and momentum.
+
+**What are the dimmed rows in the factor table?**
+Active loadings that aren't statistically distinguishable from zero (|t| < 2). They shouldn't be read as positions.
+
+**Why is there a second beta for some portfolios?**
+When the benchmark is a stock/bond blend, beta to that blend and beta to equities are different questions. The second line is the same model beta measured against ACWI.
+
+**What does model capture mean?**
+How much of the portfolio's realized variance the model reproduces. Near 100% means the eight factors describe the book well; below ~70% means it holds bets the model can't see (industry or country concentration), so read the numbers as directional.
+
+---
+
+## Extreme Risk and Stress tabs
 
 ### The risk table
 
@@ -36,7 +83,7 @@ The spread across models is itself informative. EWMA assumes normal innovations 
 Convention, and it matches the liquidity assumption for liquid ETFs. Basel originally standardized on 10-day (scaling 1-day by √10) but the industry mostly works in 1-day and scales when needed. Multi-period VaR is a known gap in this build — see *What's missing* below.
 
 **What does the VaR number actually mean?**
-On the worst 1% of trading days historically, you'd lose *at least* this many dollars on a $100 position. SPY at 2.10 = a genuinely bad day costs about 2.1% of notional. Floor estimate, not ceiling.
+On the worst 1% of trading days, you'd lose *at least* this percentage of the position. SPY at 2.10% = a genuinely bad day costs about 2.1%. Floor estimate, not ceiling.
 
 **VaR vs ES — what's the difference?**
 VaR = where the bad days start. ES (also called CVaR) = how bad on average once you're past that threshold. ES is always larger. Regulators now prefer ES (Basel III/IV) because it describes the *shape* of the tail, not just its starting point.
@@ -59,21 +106,26 @@ Component VaR — each holding's contribution to portfolio daily VaR via the EWM
 ### Portfolio modes
 
 **What does the toggle do?**
-Swaps the entire risk snapshot between five different book definitions:
+Swaps the book behind the Positioning, Extreme Risk, and Stress tabs. Seven are visible:
 
-1. **Hypothetical** — illustrative 60/30/8/2 mix from 14 asset-class ETFs. The reference engine demo.
-2. **Vanguard Target 2055 (VFFVX)** — passive TDF, modeled via its 4 broad index ETFs.
-3. **American Funds Target 2055 (AAFTX)** — active TDF, modeled via 12 actively-managed mutual funds.
-4. **CGGO Look-Through** — Capital Group Global Growth Equity ETF as a basket of its top-25 disclosed holdings.
-5. **DWLD Look-Through** — Davis Select Worldwide ETF, same treatment.
+1. **Sample 60/40+** — illustrative 60/30/8/2 mix from 14 asset-class ETFs. The reference engine demo.
+2. **iShares Core 60/40 (AOR)** — multi-asset allocation ETF, modeled through its underlying holdings.
+3. **Vanguard Target 2055 (VFFVX)** — passive target-date fund, modeled via its 4 broad index funds.
+4. **American Funds Target 2035 (AAFTX)** — active target-date fund, modeled via its underlying funds.
+5. **CGGO Look-Through** — Capital Group Global Growth Equity ETF as a basket of its top-25 disclosed holdings.
+6. **ICA Look-Through** — The Investment Company of America (AIVSX), top 25 from its quarterly portfolio disclosure.
+7. **New Perspective Look-Through** — New Perspective Fund (R-6, RNPGX), same quarterly-disclosure treatment.
 
-When you toggle, the asset rows, weights, portfolio summary, scenarios, backtests, and risk trajectory all rebuild against the selected book.
+A Davis Select Worldwide (DWLD) look-through is configured but hidden. When you toggle, the asset rows, weights, positioning, scenarios, backtests, and risk trajectory all rebuild against the selected book. The Summary tab reads all of them at once.
 
-**Why model active ETFs (CGGO/DWLD) via their holdings instead of just their NAV?**
-NAV-based risk gives you one number per day. Look-through gives per-name VaR, per-name component VaR, and a Fama-French factor decomposition of the fund's return drivers. The fund's own ETF appears as a final reference row in the table so you can compare basket-aggregate vs actual-NAV (the difference is the manager's discretionary trading effect plus expense ratio).
+**Why model active funds via their holdings instead of just their NAV?**
+NAV-based risk gives you one number per day. Look-through gives per-name VaR, per-name component VaR, and a factor decomposition of the fund's return drivers. The fund's own NAV appears as a final reference row so you can compare basket vs actual fund. The Positioning headline uses the fund's NAV; the basket is shown for contrast.
 
 **The basket only models top-25 — what about the long tail?**
-For CGGO the top 25 cover ~52% of fund weight; for DWLD ~83%. The coverage caveat is surfaced as a yellow callout on the Fund Holdings panel. Modeling the full ~100 (CGGO) or ~40 (DWLD) names would be possible but adds noisy international-listing fetches with limited marginal value — the top 25 capture the manager's actual concentrated bets.
+The top 25 cover ~52% of CGGO, ~64% of ICA, and ~46% of New Perspective. Re-normalized to 100%, the basket is materially more concentrated than the fund, so its active risk runs well above the fund's (CGGO basket ~20% vs fund ~10%; New Perspective ~13% vs ~4%). That's why the headline figures use the fund's own NAV. The coverage share is stated on the Fund Holdings panel.
+
+**Which share class is used for mutual funds?**
+The lowest-fee class (R-6 for New Perspective). Holdings are identical across share classes and risk is effectively identical; classes differ only in fees, which would otherwise show up as apparent underperformance against the benchmark.
 
 **Why two TDFs at the same vintage?**
 A passive-vs-active comparison at the same vintage. Same risk profile (~90/10 equity/bonds), different construction. In the stress tests, topline P&L is similar but the contribution bars differ. Capital Group's growth fund (AGTHX) gets hit harder than VTI in the AI Bubble scenario because active growth concentrates in mega-cap tech.
@@ -101,16 +153,19 @@ Each model has a *known* calibration drift in a specific direction. EWMA chronic
 ### Stress tests
 
 **Historical vs hypothetical?**
-Historical (grey badge) replays actual price data — 100% data-driven, no assumptions. Hypothetical (amber badge) applies analyst-estimated shock vectors per asset. Historical numbers are reproducible; hypothetical numbers are forward-looking judgments, not forecasts.
+Historical (grey badge) replays actual price data — 100% data-driven, no assumptions. Hypothetical (amber badge) applies analyst-set shocks by asset class, region, and sector. Historical numbers are reproducible; hypothetical numbers are forward-looking judgments, not forecasts.
 
 **How are the shock vectors estimated?**
-By informed analyst judgment, looking at directional exposures. For a Taiwan invasion: semis hit hard (QQQ ~−22% from TSMC/NVDA exposure), Asian EM heavily exposed (EEM ~−22%), gold and Treasuries rally on flight to safety. Exact numbers are illustrative — *relative sensitivity across holdings* matters more than the absolute %s. The vectors live in `backend/risk_engine.py::HYPOTHETICAL_SCENARIOS` and are editable in one place.
+By informed analyst judgment, looking at directional exposures. For a Taiwan invasion: semis hit hard (QQQ ~−22% from TSMC/NVDA exposure), Asian EM heavily exposed (EEM ~−22%), gold and Treasuries rally on flight to safety. Exact numbers are illustrative — *relative sensitivity across holdings* matters more than the absolute %s. Shocks are set per category in `backend/config/scenarios.yaml` and reach each holding through the taxonomy in `categories.yaml`.
+
+**What do the sliders on the scenario cards do?**
+Each slider scales the hand-set shock for one group of holdings (tech and semis, US equities, international developed, EM, rates and credit, gold and commodities, crypto) and the card's P&L recomputes. It's a way to test your own assumptions, not a factor model; the card says so.
 
 **Why are some scenario cards missing assets?**
-Some tickers didn't exist during all scenarios (BTC pre-2014, CGGO pre-2022). The engine excludes them and re-normalizes weights, with a "X% of portfolio weight covered" note on the card.
+Some tickers didn't exist during all scenarios (BTC pre-2014, CGGO pre-2022, Tesla and Meta pre-2008). Funds use configured long-history proxies where possible; otherwise the engine excludes them and re-normalizes weights, with a "X% of portfolio weight covered" note on the card.
 
 **Why does the 2022 rate shock look similar across portfolios?**
-Because in 2022 there was no hedge. Stocks AND bonds both sold off. The 60/40 portfolio's traditional defense — bonds rallying when stocks fall — broke completely. The bond allocation didn't help any of the three portfolios. Taiwan and Recession scenarios show much bigger cross-mode differences because in those, the bond allocation matters.
+Because in 2022 there was no hedge. Stocks AND bonds both sold off. The 60/40 portfolio's traditional defense — bonds rallying when stocks fall — broke completely. The bond allocation didn't help any of the balanced portfolios. Taiwan and Recession scenarios show much bigger cross-mode differences because in those, the bond allocation matters.
 
 **What's the "Probability outlook" section?**
 Curated external probability sources, plus one live computation where the methodology is rock-solid (NY Fed yield-curve recession probability — Estrella-Trubin 2006 probit on the 10Y−3M spread, refreshed every run). For Taiwan / Iran / AI Bubble we don't synthesize a single number — we link to Polymarket, Metaculus, CSIS wargames, CBOE SKEW, Shiller CAPE. A single sourceless probability would be unsupported.
@@ -120,7 +175,7 @@ Curated external probability sources, plus one live computation where the method
 ## Market Context tab
 
 **Why does this tab not respond to the portfolio toggle?**
-By design. Market context is the same regardless of what you hold. The S&P 500 risk chart, the cross-asset correlation, and the intraday correlation are reference data — they answer "what regime is the market in," not "what does my book look like." Everything portfolio-specific lives on Tab 1.
+By design. Market context is the same regardless of what you hold. The S&P 500 risk chart, the cross-asset correlation, and the intraday correlation are reference data — they answer "what regime is the market in," not "what does my book look like." Everything portfolio-specific lives on the Summary, Positioning, Extreme Risk, and Stress tabs.
 
 **The S&P 500 chart shows three things — what are they?**
 For each year back to 1928: the calmest day's risk (green), the most stressed day's risk (blue), and the annual return when negative (red). The VIX line (amber, right axis) overlays the market's own forward-looking fear gauge. The key reveal: blue bars spike *during* crises in real time, red bars only confirm the damage after.
@@ -142,7 +197,7 @@ A noise-robust correlation estimator (Aït-Sahalia, Fan & Xiu 2010 polarization 
 
 ---
 
-## Sector Spotlight tab
+## Sector Spotlight (built, hidden from navigation)
 
 **What's the elevator pitch for this tab?**
 Pick a sector ETF, see four runs at "is this asset behaving unusually right now?" alongside its standalone risk profile and a Fama-French factor regression. Single-asset deep-dive, complementary to the portfolio view.
@@ -174,11 +229,11 @@ The spread itself tells a story. XLK (Tech) is 93% factor-driven — almost no i
 ## Limits and what's missing
 
 **How does this compare to Bloomberg PORT / MSCI Barra / FactSet?**
-Methodology coverage is comparable for what's implemented (five VaR models with disagreement surfaced, EVT, formal backtesting, component VaR, historical + hypothetical scenarios, factor regression). The actual gaps:
+Methodology coverage is comparable for what's implemented (five VaR models with disagreement surfaced, EVT, formal backtesting, component VaR, historical + hypothetical scenarios, ex-ante active risk and beta, factor attribution). The actual gaps:
 
-1. **Factor model is FF-Carhart, not Barra-class.** No industry-within-country granularity, no proprietary covariance shrinkage, no daily refit of factor loadings, no factor-tilt risk model. Adequate for a sector ETF deep-dive; not what an institutional risk team would run as their daily attribution.
+1. **The ex-ante model has 8 factors, not a commercial model's 40+.** No industry, country, or currency factors, no covariance shrinkage, and exposures come from a trailing regression rather than security characteristics. Concentrated industry or country bets land in residual risk, so predicted active risk runs low for concentrated books.
 2. **Asset universe is liquid public ETFs and mutual funds.** No private credit, no derivatives, no structured products, no FX, no commodity futures with proper roll handling.
-3. **Multi-period VaR is missing.** Everything is 1-day. A real fund needs 1-day + 10-day + 1-month for different liquidity and regulatory requirements.
+3. **Multi-period VaR is approximate.** Backtests are 1-day. The monthly figure is an empirical 21-day distribution and the 1-year figure uses √t scaling; neither is a rigorous multi-period model.
 4. **Single-data-source dependency.** All prices from Yahoo Finance via yfinance. No vendor data, no enterprise reliability guarantees, no audit trail.
 5. **Operational risk surface is small.** Personal project. No SOC 2, no SLAs, no DR plan, no logging/alerting infrastructure.
 
@@ -194,7 +249,7 @@ For a typical long-only shop the realistic stack is vendor primary + internal re
 **What would make this production-grade?**
 In rough priority order:
 1. **Multi-period VaR** (1d / 10d / 1m) with proper handling of fat-tail time-scaling.
-2. **Factor model upgrade** — at minimum, sector and country-region factors layered onto FF, ideally a daily-refit covariance matrix.
+2. **Factor model upgrade** — industry and country factors layered onto the 8-factor model, and full-holdings look-through from SEC N-PORT filings instead of the top 25.
 3. **Multi-source price data** with vendor failover (e.g., Tiingo or Polygon as backup to yfinance).
 4. **Options-implied risk overlay** — IV term structure, put-call skew, risk-neutral density.
 5. **Realized-kernel / multivariate noise-corrected intraday covariance** — extends the QMLE we already have on SPY×TLT to the full portfolio.
@@ -207,23 +262,23 @@ In rough priority order:
 Yahoo Finance via the `yfinance` Python library. Free, no API key. Daily adjusted closes (splits/dividends baked in). About a one-business-day lag — if you check after 4pm ET you see the prior day's close.
 
 **Is anything pulled from a paid data vendor?**
-No. The only external fetches are raw closing prices (yfinance) and the Fama-French factors (Ken French Data Library, public). Every metric in the dashboard is computed locally on each run; methodology is in `backend/risk_engine.py` and `backend/factor_models.py`.
+No. The only external inputs are raw closing prices (yfinance), the Fama-French factors (Ken French Data Library, public), and sponsors' public holdings disclosures. Every metric in the dashboard is computed locally on each run; methodology is in `backend/risk_engine.py` and `backend/factor_models.py`.
 
 **How often does it refresh?**
 A scheduled GitHub Actions workflow runs every weekday at 6:30 AM UTC and rebuilds the entire dashboard. The "Data as of" timestamp in the header shows the latest trading day represented. Can also be triggered manually from the GitHub Actions tab.
 
 **What about holdings for the active-fund modes?**
-Refresh on user cadence by dropping a new sponsor-disclosed xlsx/csv in `ext-data/` and re-running `python backend/preprocess_holdings.py`. Capital Group publishes CGGO holdings daily; Davis publishes DWLD daily. The dashboard reflects whatever's most recently committed.
+Refresh on user cadence by dropping a new sponsor disclosure in `ext-data/` and re-running `python backend/preprocess_holdings.py`. ETFs (CGGO) publish holdings daily as a spreadsheet; Capital Group mutual funds (ICA, New Perspective) publish quarterly with a lag, exported from the fund page as a Word document. Mutual-fund disclosures list names without tickers, so each needs a curated name-to-ticker map in `preprocess_holdings.py`. The dashboard reflects whatever's most recently committed.
 
 ---
 
 ## Technical
 
 **Is the math from scratch?**
-Yes for everything except the GARCH fitting (uses the `arch` Python library) and the OLS solve in the factor regression (numpy). Historical simulation, EWMA, EVT (Hill estimator + Generalized Pareto fit), risk-percentile gauge, exception counting, Kupiec/Christoffersen tests, scenario aggregation, component VaR via EWMA covariance, Page CUSUM, intraday QMLE polarization — all implemented directly in `backend/risk_engine.py` and `backend/factor_models.py`.
+Yes for everything except the GARCH fitting (uses the `arch` Python library) and the OLS solves (numpy). Historical simulation, EWMA, EVT (Hill estimator + Generalized Pareto fit), risk-percentile gauge, exception counting, Kupiec/Christoffersen tests, scenario aggregation, component VaR via EWMA covariance, Page CUSUM, intraday QMLE polarization, and the ex-ante factor model — all implemented directly in `backend/risk_engine.py`, `backend/factor_models.py`, and `backend/exante.py`.
 
 **Why are the GARCH backtests cached?**
 Multi-year rolling refits of GARCH-t and GJR-t (one MLE fit per day over each portfolio's full out-of-sample window) take seconds-to-minutes per portfolio. Daily refresh doesn't need to recompute them — backtest verdicts are a methodology check, not a current-state metric. They're cached in `backend/cache/garch_backtests.json` and regenerated on demand via `RISKLENS_FULL_BACKTEST=1 python backend/run.py`.
 
 **Can I add my own portfolio?**
-Yes — `backend/run.py` has a `PORTFOLIO_MODES` dict. Add a key with your tickers and weights, the pipeline runs everything against the new mode automatically. No frontend changes needed; the toggle picks it up.
+Yes. Add an entry to `backend/config/portfolios.yaml` with an id, label, benchmark, and holdings; give each new ticker a display name there and a taxonomy entry in `categories.yaml`. The run stops with the exact missing ticker if either is absent. The toggle and Summary tab pick it up automatically; set a tolerance band for it in `SummaryPanel.jsx`. Run once with `RISKLENS_FULL_BACKTEST=1` so the new book gets GARCH backtest verdicts.

@@ -128,8 +128,8 @@
 }
 
 .sort-icon.inactive {
-  /* 0.25 was effectively invisible — users couldn't tell columns sort at all. Keep it clearly quieter than the active arrow,
-     but present. */
+  /* Lower opacity makes it effectively invisible, so columns don't read as
+     sortable. Keep it clearly quieter than the active arrow, but present. */
   opacity: 0.55;
 }
 
@@ -412,7 +412,7 @@
 .benchmark-row {
   background: var(--portfolio-row-bg);
   border-bottom: 2px solid var(--accent);
-  /* No row-level opacity: it washed out the VaR traffic-light colors on the
+  /* No row-level opacity: it washes out the VaR traffic-light colors on the
      two most important rows. The tinted background +
      dim ticker typography already mark it as a rollup row. */
 }
@@ -448,6 +448,6 @@
   font-style: italic;
 }
 
-/* .portfolio-cell opacity removed — it faded the portfolio row's VaR colors
+/* No .portfolio-cell opacity — it would fade the portfolio row's VaR colors
    below the individual assets'. Class kept in markup
    for targeting. */

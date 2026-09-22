@@ -1,6 +1,6 @@
 # RiskLens
 
-A daily-refresh market-risk dashboard that runs **five VaR/ES models, a monthly empirical downside, Fama-French factor attribution, anomaly detection,** and **historical + hypothetical stress tests** across a configurable book — diversified portfolios, allocation and target-date funds, or active ETFs (with full look-through to their disclosed holdings).
+A daily-refresh investment risk dashboard: an **exception-first summary** across portfolios, **ex-ante active risk and beta** from an 8-factor model beside their realized values, **five VaR/ES models** with formal backtests, and **historical + hypothetical stress tests**, across a configurable book of diversified portfolios, allocation and target-date funds, and active Capital Group funds modeled through their disclosed holdings.
 
 **Live:** https://kldgh.github.io/risklens/ · **Version:** v1.0.0
 
@@ -8,30 +8,39 @@ A reference implementation of techniques real risk desks use, with the methodolo
 
 ## What it answers
 
-Three tabs, each answering a distinct question:
+Five tabs, each answering a distinct question:
 
 | Tab | Question | Key components |
 |---|---|---|
-| **Portfolio Risk** | How much risk am I carrying, where is it concentrated, and would the models survive a real stress event? | 5 VaR/ES models (HS, EWMA, GARCH-t, GJR-t, EVT) · monthly (21-day) empirical downside · 1-year parametric VaR · risk-percentile gauge · component VaR per holding · policy-benchmark comparison row · out-of-sample backtests (Kupiec + Christoffersen) · historical + hypothetical stress tests |
+| **Summary** | Which portfolios need attention, and why? | one row per portfolio, worst first · predicted active risk against a tolerance band per mandate type (placeholder bands) · beta · largest stress shortfall vs benchmark · VaR model check · exceptions list with owner and next step · click through to any portfolio |
+| **Positioning** | Where is this portfolio positioned, right now? | ex-ante active risk and beta from an 8-factor model (FF5 + momentum + orthogonalized duration and credit, EWMA covariance), each beside its realized value · growth ↔ value from a growth-minus-value spread · active factor exposures with t-stats · AI and semis exposure · factor risk decomposition |
+| **Extreme Risk** | How bad can a day, a month, or a year get, and do the models hold up? | 5 VaR/ES models (HS, EWMA, GARCH-t, GJR-t, EVT) · monthly (21-day) empirical downside · 1-year parametric VaR · component VaR per holding · risk trajectory · out-of-sample backtests (Kupiec + Christoffersen) |
+| **Stress** | How would the portfolio handle past crises and plausible shocks? | historical crisis replays on today's holdings · hypothetical scenarios with adjustable analyst assumptions |
 | **Market Context** | What regime is the market in, and is diversification still working? | S&P 500 risk + VIX, 1928 → today · cross-asset rolling correlation · multi-window stock-bond correlation (20d / 60d / 252d, four bond proxies) · intraday SPY×TLT correlation with a QMLE noise correction |
-| **Sector Spotlight** | Is a sector ETF behaving unusually, and what is driving its risk? | risk profile per ETF · Fama-French 5 + momentum regression with bootstrap CIs · stacked detectors: z-score, Page CUSUM, GARCH-residual outliers |
+
+Performance & Skill and Sector Spotlight views are built but hidden from the navigation; see `TABS` in `frontend/src/App.jsx`.
 
 ## Portfolios
 
-Switch via the toggle on the Portfolio Risk tab:
+Switch via the toggle on the Positioning, Extreme Risk, and Stress tabs:
 
-- **Hypothetical Portfolio** — illustrative ~60/40 diversified book, 14 holdings across equities, bonds, gold, and crypto (the default)
+- **Sample 60/40+** — illustrative ~60/40 diversified book, 14 holdings across equities, bonds, gold, and crypto (the default)
 - **iShares Core 60/40 (AOR)** — multi-asset allocation ETF, modeled through its underlying holdings
 - **Vanguard Target 2055 (VFFVX)** — passive target-date fund, modeled via its four underlying index funds (VTI / VXUS / BND / BNDX)
 - **American Funds Target 2035 (AAFTX)** — active target-date fund, modeled via its underlying funds
 - **CGGO Look-Through** — Capital Group Global Growth ETF, modeled as a basket of its top disclosed holdings and validated against the fund's own NAV
-- **DWLD Look-Through** — Davis Select Worldwide ETF, same look-through treatment
+- **ICA Look-Through** — The Investment Company of America (AIVSX), modeled from its quarterly portfolio disclosure
+- **New Perspective Look-Through** — New Perspective Fund (R-6, RNPGX), same quarterly-disclosure treatment
 
-For the fund modes the pipeline models each underlying individually — per-name VaR/ES, component VaR, and factor loadings — not just the fund's aggregate NAV. The share of fund weight modeled is stated in the app, and the synthetic basket is pinned next to the fund's actual NAV so the gap is visible rather than assumed away.
+A Davis Select Worldwide (DWLD) look-through is configured but hidden (`visible: false` in `backend/config/portfolios.yaml`).
+
+For the fund modes the pipeline models each underlying individually — per-name VaR/ES, component VaR, and factor loadings — and runs the same models on the fund's own NAV. Headline positioning figures use the fund's NAV; the top-25 basket, which is more concentrated than the fund, is shown for contrast. The share of fund weight modeled and the disclosure date are stated in the app.
 
 ## Methodology in 60 seconds
 
-The five VaR/ES columns compute on a rolling 1,000-day window, expressed as the **daily 1% loss as a percent of the position**.
+**Positioning.** Predicted (ex-ante) active risk and beta come from an 8-factor model: the five Fama-French factors, momentum, and orthogonalized duration (TLT) and credit (HYG − TLT) factors so stock/bond funds are modeled too. The factor covariance is EWMA-weighted with a ~6-month half-life. Active risk regresses the portfolio-minus-benchmark return directly on the factors, so every active loading carries a t-stat. Growth ↔ value is the active loading on a growth-minus-value spread (IWF − IWD), called only when significant. Each predicted figure sits beside its realized value over the same year.
+
+**Loss models.** The five VaR/ES columns compute on a rolling 1,000-day window, expressed as the **daily 1% loss as a percent of the position**.
 
 | Model | What it does | When it dominates |
 |---|---|---|
@@ -61,7 +70,7 @@ Loaders validate these at build time (every security maps to a category, every b
 
 - **Prices:** Yahoo Finance via [yfinance](https://github.com/ranaroussi/yfinance) — free, no API key, daily adjusted closes.
 - **Factors:** Ken French Data Library, daily; fetched each run and cached for fallback.
-- **Holdings** for the allocation and active-fund books: sponsor-disclosed files, preprocessed into `backend/data/active_fund_holdings.json` by `python backend/preprocess_holdings.py`.
+- **Holdings** for the active-fund books: sponsor disclosures in `ext-data/` (daily xlsx for Capital Group ETFs; the quarterly Word portfolio export for Capital Group mutual funds, which lists names without tickers and uses a curated per-fund ticker map), preprocessed into `backend/data/active_fund_holdings.json` by `python backend/preprocess_holdings.py`. Mutual funds use the lowest-fee (R-6) share class for NAV.
 - **Refresh:** a scheduled GitHub Actions workflow runs every weekday at 06:30 UTC, regenerates the data, and redeploys. The "Data as of" timestamp in the header shows what is loaded — roughly one business day of latency.
 
 ## Quick start
@@ -71,11 +80,18 @@ git clone https://github.com/kldgh/risklens.git
 cd risklens
 python -m venv .venv && source .venv/bin/activate
 pip install -r backend/requirements.lock.txt
-python backend/run.py                       # ~2–3 min (GARCH backtests cached)
+python backend/run.py                       # ~5–7 min (GARCH backtests cached)
 cd frontend && npm install && npm run dev   # http://localhost:5173
 ```
 
-`run.py` writes a single static `risk_output.json` that the frontend reads. Set `RISKLENS_FULL_BACKTEST=1` to recompute the GARCH backtests from scratch (~15 min). GitHub Codespaces works too — the devcontainer installs and runs both on startup.
+`run.py` writes a single static `risk_output.json` that the frontend reads. Set `RISKLENS_FULL_BACKTEST=1` to recompute the GARCH backtests from scratch (slow); do this once after adding a portfolio, since the cache is keyed by portfolio. GitHub Codespaces works too — the devcontainer installs and runs both on startup.
+
+## Documentation
+
+- [`EXECUTIVE_SUMMARY.md`](./EXECUTIVE_SUMMARY.md) — what it is and who it's for, in two pages
+- [`FAQ.md`](./FAQ.md) — common questions, tab by tab
+- [`TECH_REVIEW.md`](./TECH_REVIEW.md) — architecture, JSON contract, and full methodology
+- [`LEGAL.md`](./LEGAL.md) — disclaimers
 
 ## Stack
 

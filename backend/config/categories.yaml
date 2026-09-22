@@ -131,6 +131,7 @@ securities:
   AMCPX: {class: us_large}                         # AMCAP (US growth)
   AGTHX: {class: us_large}                         # Growth Fund of America
   AIVSX: {class: us_large}                         # Investment Co of America
+  RNPGX: {class: global_eq}                        # New Perspective Fund (global growth)
   ANCFX: {class: us_large}                         # Fundamental Investors
   AWSHX: {class: us_large}                         # Washington Mutual (value)
   AMRMX: {class: us_large}                         # American Mutual (div)
@@ -161,6 +162,13 @@ securities:
   GOOGL:     {class: us_large, sector: tech}       # Alphabet
   GOOG:      {class: us_large, sector: tech}       # Alphabet
   ASML:      {class: dev_intl, sector: semis}      # ASML (Netherlands)
+  KLAC:      {class: us_large, sector: semis}      # KLA
+  TSLA:      {class: us_large, sector: consumer_disc}  # Tesla
+  SHOP:      {class: us_large, sector: tech}       # Shopify (US-listed)
+  NET:       {class: us_large, sector: tech}       # Cloudflare
+  AZN:       {class: dev_intl, sector: healthcare} # AstraZeneca ADR
+  TTE:       {class: dev_intl, sector: energy}     # TotalEnergies ADR
+  UNCRY:     {class: dev_intl, sector: financials} # UniCredit ADR
   MSFT:      {class: us_large, sector: tech}       # Microsoft
   WDC:       {class: us_large, sector: semis}      # Western Digital
   005930.KS: {class: em,       sector: semis}      # Samsung Electronics (Korea)

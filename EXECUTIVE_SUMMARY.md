@@ -1,65 +1,70 @@
-# RiskLens — Executive Summary
+# RiskLens: Executive Summary
 
 ## What it is
 
-RiskLens is a daily-refresh quantitative risk dashboard built as a transparent reference implementation of techniques real risk desks use, with the methodology in the open instead of behind a vendor license. The current build covers five distinct portfolios — a synthetic 60/30/8/2 diversified mix, two target-date funds (Vanguard and American Funds 2055), and two active equity ETFs (CGGO and DWLD) modeled as look-through baskets of their disclosed holdings.
+RiskLens is a daily-refresh investment risk dashboard built from public data, with every method in the open rather than behind a vendor license. It covers seven portfolios: an illustrative diversified book, a 60/40 allocation ETF, two target-date funds (one passive, one active), and three Capital Group equity funds modeled through their disclosed holdings: the CGGO global growth ETF, The Investment Company of America, and New Perspective Fund.
 
-Across each portfolio it computes five VaR/ES models, formal out-of-sample backtests, component-VaR risk attribution, historical and hypothetical stress tests, and (for individual sector ETFs) a Fama-French six-factor regression and a univariate anomaly-detector view. Refresh is daily via a scheduled GitHub Actions workflow.
+For each portfolio it answers four questions a risk function asks, in this order: which books need attention, where each book is positioned against its benchmark, how bad a day, month, or year can get, and what a replay of a past crisis would do to today's holdings. Refresh is automatic every weekday.
 
 **Live at https://kldgh.github.io/risklens/**
 
-## Three tabs, three questions
+## Five tabs, five questions
 
-**Portfolio Risk** — *How much risk am I carrying right now, where is it concentrated, would the models survive a real stress event?* Five VaR/ES models per holding (HS, EWMA, GARCH-t, GJR-t, EVT), risk-percentile gauge, component VaR per holding, formal Kupiec + Christoffersen backtesting with directional verdicts, historical (replay-actual-prices) and hypothetical (analyst-shock-vector) stress tests.
+**Summary**: *Which portfolios need attention, and why?* One row per portfolio, worst first. Each is read against a tolerance band for its mandate type, with its beta, its largest stress shortfall against the benchmark, and whether its risk models pass their backtests. Every breach becomes a line in an exceptions list with a suggested owner and next step. This is the view built for a senior reader who doesn't need the factor tables.
 
-**Market Context** — *What regime is the market in right now? Is diversification still working?* S&P 500 risk and VIX back to 1928, cross-asset rolling correlation, multi-window stock-bond correlation across four bond proxies, intraday SPY×TLT correlation with QMLE noise-correction toggle.
+**Positioning**: *Where is this portfolio positioned, right now?* Predicted (ex-ante) active risk and beta against the benchmark, each shown next to what actually happened over the same year, plus a growth ↔ value read and the factor exposures driving the active risk. Also shows how much of the book's risk comes from AI and semiconductors.
 
-**Sector Spotlight** — *Is a sector ETF behaving unusually, and what's driving its risk?* Per-ticker risk profile with same VaR/ES models, Fama-French 5 + Momentum factor regression (open-data substitute for Barra-style attribution), three stacked detectors on the same timeline: standardized z-score, Page CUSUM mean-shift, GARCH-residual outliers.
+**Extreme Risk**: *How bad can it get, and do the models hold up?* Five loss models per holding and per portfolio, monthly and one-year downside, each holding's contribution to portfolio risk, and formal backtests of every model against realized losses.
 
-## Methodology in 60 seconds
+**Stress**: *What would past crises and plausible shocks do?* Five historical crises replayed on today's holdings, plus four forward-looking scenarios whose assumptions can be adjusted with sliders.
 
-All VaR/ES is daily 1% loss on a $100 position, computed on a rolling 1,000-day window:
+**Market Context**: *What regime is the market in?* Long-run S&P 500 risk and VIX, cross-asset correlation, and whether stocks and bonds are still diversifying each other.
 
-- **HS** — empirical 1st percentile of actual returns. No distributional assumption.
-- **EWMA** — Gaussian, λ=0.94 RiskMetrics standard. Fast reaction, known fat-tail miss.
-- **GARCH-t** — GARCH(1,1) with **Student-t innovations** (not Normal). Captures heavy tails.
-- **GJR-t** — GARCH-t plus leverage term (negative shocks raise vol more than positive).
-- **EVT** — Generalized Pareto fit to the loss tail directly.
+## What makes it useful
 
-The five-model spread is itself the signal. Tight = models agree, fat tails not a concern. Wide (usually EVT pulling high) = the asset has tail behavior the other models miss. The "Range" and "Consensus" columns surface this.
+- **Exception-first.** The Summary tab shows what is out of bounds and who owns it, rather than a wall of metrics. This mirrors how large managers report investment risk upward: agreed ranges per portfolio, breaches flagged, escalation tracked.
+- **Predicted and realized side by side.** Commercial risk systems report predicted figures; fund fact sheets report trailing realized ones. RiskLens shows both, and the gap between them is itself a signal that risk is rising or falling.
+- **Fund-level truth, holding-level detail.** For the Capital Group funds, headline risk comes from the fund's own daily price, while the factor and holding breakdowns come from its top 25 disclosed holdings. The page states how much of the fund those 25 names cover.
+- **Differences that matter.** CGGO and New Perspective share a style family and a benchmark, yet CGGO runs roughly two and a half times the active risk and a higher beta. That is the kind of contrast a risk review should surface.
+- **Model governance built in.** Every loss model is backtested against what actually happened, with a verdict on how it fails (too low, or slow to react when volatility jumps), not just whether.
 
-**Backtesting** runs Kupiec UC and Christoffersen IC tests on 504-day out-of-sample windows for all five models. The verdict column tells you *how* a model is mis-calibrated, not just whether it fails — CALIBRATED, UNDER-EST, OVER-CONSERV, CLUSTERED.
+## Methodology in brief
 
-**Factor attribution** uses Fama-French 5 + Momentum daily factors (Ken French Data Library, public). For each sector ETF: regression on 252-day excess returns, per-factor loadings with t-stats and significance, R² and variance decomposition (factor vol vs idiosyncratic vol). Same output shape as Barra-style attribution; less granular but legitimate and auditable.
+- **Positioning model.** Eight factors: the five Fama-French equity factors, momentum, and two macro factors for duration and credit so stock/bond funds are modeled too. The factor covariance weights recent months more heavily (about a six-month half-life), so predictions lean toward the current regime.
+- **Growth ↔ value.** Measured directly against a growth-minus-value index spread, with market moves stripped out, and only called a tilt when statistically significant. The standard value factor alone misreads modern growth funds as neutral.
+- **Loss models.** Historical simulation, EWMA, GARCH with fat tails, an asymmetric GARCH variant, and extreme value theory, each on a 1,000-day window. When they disagree, the disagreement is information.
+- **Backtesting.** Standard frequency and clustering tests (Kupiec, Christoffersen) on the full available out-of-sample history.
+- **Stress.** Historical scenarios replay actual prices. Forward scenarios apply analyst-set shocks by asset class, region, and sector; the sliders scale those assumptions and say plainly that this is not a factor model.
 
 ## What it's good for
 
-- **Position sizing reference** — sanity-checking whether your typical position fits the asset's risk profile.
-- **Regime awareness** — multiple holdings at 90%+ risk-percentile simultaneously is a macro stress signal building.
-- **Pre-event diligence** — looking at the stress-test card for the next event you're worried about and seeing how the book is exposed.
-- **Model-disagreement diagnostic** — when EVT diverges from EWMA, you're being told the tail is fatter than the normal assumption — time to weight EVT estimates more heavily.
-- **Sector deep-dive** — anomaly detector reveals which sectors are factor-driven (XLK, 93% R²) vs which are doing their own thing (XLU, 30% R²).
+- **A senior-level risk read** on a handful of portfolios in one screen.
+- **Mandate checks**: is each fund running the kind of risk its mandate implies?
+- **Pre-event diligence**: how exposed is a book to the scenario you're worried about?
+- **Model skepticism**: when the loss models disagree, or fail their backtests, the numbers deserve less weight.
+- **A reference implementation** of institutional techniques that can be read line by line.
 
 ## What it's not
 
-Not a signal generator, not a trading system, not a vendor replacement. It's a monitoring + research tool that surfaces *how* risk is changing and *which model assumptions are at risk of breaking*. The honest framing: **VaR tells you how bad things are, not how bad they're about to get.**
+Not a signal generator, not a trading system, and not a replacement for a vendor risk platform. It monitors how risk is changing and which model assumptions are under strain. Risk figures describe how bad things are, not how bad they are about to get.
 
-## Position vs Bloomberg PORT / MSCI Barra / FactSet
+Tolerance bands on the Summary tab are placeholders. Real limits belong to the independent investment risk function, agreed with each portfolio manager.
 
-| | RiskLens | Vendor systems |
+## Position vs commercial risk systems
+
+| | RiskLens | Vendor systems (Barra, Axioma, Aladdin, Bloomberg PORT) |
 |---|---|---|
-| VaR / ES models | 5 (HS, EWMA, GARCH-t, GJR-t, EVT) | Same families, often with proprietary refinements |
+| Ex-ante model | 8 factors, estimated from returns | 40+ factors incl. industry, country, currency; estimated from security characteristics |
+| Loss models | 5 (HS, EWMA, GARCH-t, GJR-t, EVT) | Same families, often with proprietary refinements |
 | Backtesting | Kupiec + Christoffersen on all 5 | Same plus regulatory-format reports |
-| Component VaR | EWMA-covariance based | Same plus factor-decomposed components |
-| Factor model | Fama-French 5 + Momentum (open data) | Barra-class (industry-within-country, daily refit factor loadings) |
-| Asset universe | Liquid public ETFs + mutual funds | Thousands of asset classes incl. private credit, derivatives, structured |
-| Stress tests | Historical + hypothetical | Same plus regulator-prescribed scenario libraries |
-| Methodology transparency | Fully open in source | Vendor-licensed black box |
-| Data sources | Yahoo Finance + Ken French | Bloomberg / Refinitiv / proprietary |
-| Operational maturity | Personal-project, no SLA | Enterprise-grade with audit + compliance |
+| Holdings | Public disclosures; mutual funds quarterly with a lag | Daily holdings feeds |
+| Asset universe | Liquid public ETFs, mutual funds, and their holdings | Thousands of asset types incl. private credit, derivatives |
+| Transparency | Fully open source | Licensed, largely opaque |
+| Data | Yahoo Finance + Ken French Data Library | Bloomberg / Refinitiv / proprietary |
+| Operational maturity | Personal project, no SLA | Enterprise-grade with audit and compliance |
 
-The deliberate trade: methodology fully exposed, source fully auditable, every metric attributable back to a peer-reviewed reference. The cost: smaller asset universe, single-source data dependency, no enterprise reliability.
+The trade: every method is exposed and every number is reproducible, at the cost of a smaller factor model, lagged public holdings, and no enterprise reliability. The known gaps (no industry or country factors, top-25 look-through, trailing-regression exposures) are stated on the page where they affect a number.
 
 ## Bottom line
 
-RiskLens is a working multi-model risk monitor that goes deeper than most demo dashboards (formal backtesting, look-through baskets for active ETFs, factor attribution, anomaly detection) while keeping the methodology fully open. It's complementary to vendor risk systems — same conceptual output for what's implemented, methodologically transparent in a way licensed products aren't, deliberately scoped to liquid public assets. Best used as a research tool, a teaching reference, or as the inspection layer for a methodology a vendor system handles in production.
+RiskLens shows what an exception-first investment risk view looks like on real Capital Group funds, using only public data: which funds are out of bounds, why, and whether the models behind that call can be trusted. It is best used as a demonstration and discussion tool for a risk function, a teaching reference, or an inspection layer alongside a vendor system that handles production.

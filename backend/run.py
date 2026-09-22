@@ -277,6 +277,53 @@ def compute_mode(prices_10y: pd.DataFrame, returns_10y: pd.DataFrame,
     hypo = compute_hypothetical_scenarios(weights)
     scenarios = hist + hypo
 
+    # Same scenarios on the benchmark, so each card can be read as ACTIVE
+    # P&L (portfolio − benchmark). An absolute crisis loss mostly restates
+    # equity beta; the shortfall vs benchmark is what says whether a book
+    # behaves worse than its mandate implies under stress.
+    if benchmark:
+        try:
+            bm_w = benchmark[0]
+            bm_pnl = {
+                sc["id"]: sc["portfolio_pnl"]
+                for sc in compute_scenarios(prices_long, bm_w)
+                          + compute_hypothetical_scenarios(bm_w)
+            }
+            for sc in scenarios:
+                b = bm_pnl.get(sc["id"])
+                if b is not None:
+                    sc["benchmark_pnl"] = round(float(b), 2)
+                    sc["active_pnl"] = round(float(sc["portfolio_pnl"]) - float(b), 2)
+        except Exception as e:
+            print(f"  WARNING: benchmark scenarios failed ({e})")
+
+    # Historical crises replayed on the FUND's own price where one exists.
+    # For look-through modes the scenario P&L above is the top-N basket,
+    # which is more concentrated than the fund and overstates its gap to the
+    # benchmark; the NAV replay is what the fund actually did. Hypothetical
+    # scenarios have no price history to replay, so they stay basket-based.
+    fund_tk = mode_cfg.get("fund_ticker") or mode_cfg.get("nav_ticker")
+    if fund_tk and fund_tk in prices_long.columns:
+        try:
+            f_pnl = {sc["id"]: sc for sc in compute_scenarios(prices_long, {fund_tk: 1.0})}
+            f_first = prices_long[fund_tk].first_valid_index()
+            for sc in scenarios:
+                if sc.get("type") != "historical":
+                    continue
+                f = f_pnl.get(sc["id"])
+                # Only when the fund's own price covers the WHOLE window: a fund
+                # launched mid-crisis would only catch the recovery, and a proxy
+                # substitution would not be the fund.
+                covers = (f_first is not None
+                          and f_first <= pd.Timestamp(sc["start"]) + pd.Timedelta(days=7))
+                if f and covers and not f.get("proxied") \
+                        and f.get("coverage_pct", 0) >= 99:
+                    sc["fund_pnl"] = round(float(f["portfolio_pnl"]), 2)
+                    if "benchmark_pnl" in sc:
+                        sc["fund_active_pnl"] = round(sc["fund_pnl"] - sc["benchmark_pnl"], 2)
+        except Exception as e:
+            print(f"  WARNING: fund scenario replay failed ({e})")
+
     # Portfolio risk trajectory — daily EWMA VaR over full available history.
     # Pass raw prices so the function can compute returns over only this
     # portfolio's tickers (avoids truncation by unrelated short-history names).

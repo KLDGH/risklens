@@ -76,6 +76,7 @@ names:
   ANCFX: Fundamental Investors
   IGAAX: International Growth & Income Fund
   AIVSX: Investment Company of America
+  RNPGX: New Perspective Fund (R-6)
   AWSHX: Washington Mutual Investors
   CAIBX: Capital Income Builder
   AMECX: The Income Fund of America
@@ -122,7 +123,7 @@ benchmarks:
 # The registry. Order = display order; visible toggles the tab.
 portfolios:
   - id: hypothetical
-    label: "Hypothetical Portfolio"
+    label: "Sample 60/40+"
     name: "60/40 Blended Portfolio"
     description: "An illustrative diversified mix: 60% equity (US + intl developed + EM), 30% fixed income (Treasuries + IG + HY + TIPS), 8% real assets (gold + broad commodities + REITs), 2% crypto. Built from 14 asset-class ETFs."
     visible: true
@@ -228,11 +229,22 @@ portfolios:
     holdings:
       look_through: {fund_ticker: AIVSX, top_n: 25}
 
+  - id: npf_active
+    label: "New Perspective Look-Through"
+    name: "New Perspective Top-25 Basket (Look-Through)"
+    description: "New Perspective Fund (R-6 share class, RNPGX) — Capital Group's flagship global growth fund, running since 1973 and split across many managers — modeled as a look-through basket of its top 25 disclosed holdings from the quarterly portfolio disclosure. Holdings are published quarterly with a lag, so the basket is as of the disclosure date rather than today. The top 25 are only about 46% of the fund, so the basket is materially more concentrated than the fund; the RNPGX row shows the fund's own NAV-based risk for comparison."
+    visible: true
+    benchmark: acwi_global
+    holdings:
+      look_through: {fund_ticker: RNPGX, top_n: 25}
+
   - id: dwld_active
     label: "DWLD Look-Through"
     name: "DWLD Top-25 Basket (Look-Through)"
     description: "Davis Select Worldwide ETF (DWLD) modeled as a look-through basket of its top 25 disclosed holdings. Each underlying is a per-asset risk row weighted by its disclosed weight (re-normalized over the top 25). The DWLD ETF row at the bottom shows the fund's own NAV-based risk for comparison vs. the basket."
-    visible: true
+    # Hidden: not a Capital Group fund, and its shared price history is under
+    # a year, which flags it on the summary. Flip to true to bring it back.
+    visible: false
     benchmark: acwi_global
     holdings:
       look_through: {fund_ticker: DWLD, top_n: 25}
