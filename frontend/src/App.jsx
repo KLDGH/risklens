@@ -472,14 +472,6 @@ export default function App() {
               )}
             </svg>
           </button>
-          <a
-            href="https://github.com/KLDGH/risklens/blob/main/FAQ.md"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="tab-btn tab-external"
-          >
-            Methodology &amp; FAQ ↗
-          </a>
         </nav>
       )}
 
@@ -838,7 +830,16 @@ export default function App() {
         <span>
           Data via yfinance + Ken French Library ·{" "}
           <a
-            href="https://github.com/KLDGH/risklens/blob/main/LEGAL.md"
+            href="https://github.com/KLDGH/risklens/blob/main/docs/FAQ.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-link"
+          >
+            Methodology &amp; FAQ
+          </a>
+          {" · "}
+          <a
+            href="https://github.com/KLDGH/risklens/blob/main/docs/LEGAL.md"
             target="_blank"
             rel="noopener noreferrer"
             className="footer-link"

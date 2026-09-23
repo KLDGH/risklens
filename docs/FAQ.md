@@ -53,7 +53,7 @@ Ex-ante (predicted) figures come from a factor risk model, the way commercial ri
 Fact sheets publish trailing 3- or 5-year figures from monthly returns. RiskLens uses the last year of daily returns. Different window and frequency, so expect differences; direction and rough size should agree.
 
 **What model produces the predicted numbers?**
-Eight factors: the five Fama-French equity factors, momentum, and two macro factors for duration and credit so stock/bond funds are modeled too. The factor covariance weights recent months more heavily (about a six-month half-life). Active risk comes from regressing the portfolio-minus-benchmark return directly on the factors. Full detail in `TECH_REVIEW.md` §5.1.
+Eight factors: the five Fama-French equity factors, momentum, and two macro factors for duration and credit so stock/bond funds are modeled too. The factor covariance weights recent months more heavily (about a six-month half-life). Active risk comes from regressing the portfolio-minus-benchmark return directly on the factors. Full detail in `ARCHITECTURE.md` §5.1.
 
 **Why is the look-through fund's headline different from its basket?**
 The basket is the fund's top 25 holdings re-normalized to 100%, which is far more concentrated than the fund. CGGO's basket predicts ~20% active risk; the fund itself runs ~10%. The headline uses the fund's own daily price; the basket number is shown for contrast, and the factor table describes the basket.

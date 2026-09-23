@@ -414,7 +414,8 @@ risklens/
 │   │   └── components/           # One component (+ CSS) per section; see §7
 │   └── public/data/risk_output.json   # Generated; gitignored
 ├── .github/workflows/deploy.yml
-├── README.md · FAQ.md · EXECUTIVE_SUMMARY.md · TECH_REVIEW.md · LEGAL.md
+├── docs/                         # EXECUTIVE_SUMMARY · FAQ · ARCHITECTURE (this document) · LEGAL
+├── README.md · CHANGELOG.md
 └── LICENSE
 ```
 

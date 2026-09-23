@@ -2,7 +2,7 @@
 
 A daily-refresh investment risk dashboard: an **exception-first summary** across portfolios, **ex-ante active risk and beta** from an 8-factor model beside their realized values, **five VaR/ES models** with formal backtests, and **historical + hypothetical stress tests**, across a configurable book of diversified portfolios, allocation and target-date funds, and active Capital Group funds modeled through their disclosed holdings.
 
-**Live:** https://kldgh.github.io/risklens/ · **Version:** v1.0.0
+**Live:** https://kldgh.github.io/risklens/ · **Version:** v2.0.0 ([changelog](./CHANGELOG.md))
 
 A reference implementation of techniques real risk desks use, with the methodology in the open rather than behind a vendor license. Every figure is reproducible from public data and readable code.
 
@@ -88,10 +88,16 @@ cd frontend && npm install && npm run dev   # http://localhost:5173
 
 ## Documentation
 
-- [`EXECUTIVE_SUMMARY.md`](./EXECUTIVE_SUMMARY.md) — what it is and who it's for, in two pages
-- [`FAQ.md`](./FAQ.md) — common questions, tab by tab
-- [`TECH_REVIEW.md`](./TECH_REVIEW.md) — architecture, JSON contract, and full methodology
-- [`LEGAL.md`](./LEGAL.md) — disclaimers
+In [`docs/`](./docs):
+
+- [Executive summary](./docs/EXECUTIVE_SUMMARY.md) — what it is and who it's for, in two pages
+- [FAQ](./docs/FAQ.md) — common questions, tab by tab
+- [Architecture](./docs/ARCHITECTURE.md) — architecture, JSON contract, and full methodology
+- [Legal](./docs/LEGAL.md) — disclaimers
+
+At the root:
+
+- [`CHANGELOG.md`](./CHANGELOG.md) — versions, and what each version number means
 
 ## Stack
 
@@ -107,4 +113,4 @@ MIT. Free to use, modify, and distribute.
 
 Personal project. Not affiliated with, endorsed by, or supported by any employer, financial institution, or data vendor. Nothing here is investment, financial, trading, or risk-management advice, and the figures should not drive investment, hedging, or position-sizing decisions. The models are publicly-known statistical methods applied to public price data; the output is illustrative and methodological, not actionable. Past performance and historical risk metrics are not indicative of future results.
 
-**Full legal disclaimers** — data-source caveats, third-party trademark references, limitation of liability, privacy, and jurisdiction — are in [`LEGAL.md`](./LEGAL.md). The MIT license covers the code; LEGAL.md covers the output and methodology presentation.
+**Full legal disclaimers** — data-source caveats, third-party trademark references, limitation of liability, privacy, and jurisdiction — are in [`docs/LEGAL.md`](./docs/LEGAL.md). The MIT license covers the code; LEGAL.md covers the output and methodology presentation.
